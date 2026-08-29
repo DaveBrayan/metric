@@ -18,6 +18,7 @@ require $baseDir . '/vendor/autoload.php';
 $app = require_once $baseDir . '/bootstrap/app.php';
 
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+$kernel->bootstrap();
 
 ?>
 <!DOCTYPE html>
