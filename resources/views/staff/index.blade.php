@@ -48,9 +48,9 @@
                     <tr>
                         <th style="width: 50px;">#</th>
                         <th>Colaborador</th>
-                        <th>Departamento & Especialidad</th>
-                        <th>Regional Asignada</th>
-                        <th>Teléfono Corporativo</th>
+                        <th>Departamento & Regional</th>
+                        <th>Proyecto Asignado</th>
+                        <th>Dispositivo Vinculado</th>
                         <th>Estado</th>
                         <th style="text-align: right;">Acciones</th>
                     </tr>
@@ -76,20 +76,34 @@
                                 </div>
                             </td>
 
-                            <!-- 3. Departamento & Cargo -->
+                            <!-- 3. Departamento & Regional -->
                             <td>
-                                <div style="font-weight: 600; color: var(--ink-secondary);">{{ $member['position'] ?? 'Técnico de Campo' }}</div>
-                                <div style="font-size: 11px; color: #64748b;">{{ $member['department'] ?? 'Operaciones' }}</div>
+                                <div style="font-weight: 700; color: var(--ink);">{{ $member['department'] ?? 'Operaciones' }}</div>
+                                <div style="font-size: 11.5px; color: var(--cyan); font-weight: 600; display: inline-flex; align-items: center; gap: 4px; margin-top: 2px;">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                                        <circle cx="12" cy="10" r="3"/>
+                                    </svg>
+                                    <span>{{ $member['region'] ?? 'Sede Central' }}</span>
+                                </div>
                             </td>
 
-                            <!-- 4. Regional Asignada -->
+                            <!-- 4. Proyecto Asignado -->
                             <td>
-                                <span class="status-pill-badge in_progress">{{ $member['region'] ?? 'Central' }}</span>
+                                <span class="status-pill-badge in_progress" style="font-size: 11.5px; font-weight: 700;">
+                                    {{ $member['assigned_project'] ?? 'PRJ-General' }}
+                                </span>
                             </td>
 
-                            <!-- 5. Teléfono -->
-                            <td style="font-family: monospace; font-size: 12px; color: #475569; font-weight: 600;">
-                                {{ $member['phone'] ?? '—' }}
+                            <!-- 5. Dispositivo Vinculado -->
+                            <td>
+                                <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 12px; font-weight: 600; color: #334155;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b9df" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
+                                        <path d="M12 18h.01"/>
+                                    </svg>
+                                    <span>{{ $member['linked_device'] ?? $member['phone'] ?? 'Colector Móvil' }}</span>
+                                </div>
                             </td>
 
                             <!-- 6. Estado -->

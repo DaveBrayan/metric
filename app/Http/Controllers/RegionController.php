@@ -15,19 +15,21 @@ class RegionController extends Controller
         $userRole = $currentUser ? $currentUser->role : 'Superadministrador';
 
         $regions = Region::withCount(['projects', 'staff'])->get()->map(function ($reg, $index) {
+            $isOperativo = in_array(strtolower($reg->status), ['operativo', 'activo']);
             return [
                 'id' => $reg->id,
                 'num' => str_pad($index + 1, 2, '0', STR_PAD_LEFT),
                 'name' => $reg->name,
                 'code' => $reg->code,
+                'department' => $reg->department ?? 'La Paz',
                 'initial' => strtoupper(substr($reg->code, 0, 2)),
                 'theme' => $reg->theme ?? 'cyan',
                 'manager' => $reg->manager_name ?? 'Ing. Reynaldo Sirpa',
                 'address' => $reg->address,
-                'assigned_projects' => $reg->projects_count . ' Proyectos Asignados',
-                'staff_count' => $reg->staff_count . ' Especialistas',
-                'status' => $reg->status,
-                'status_type' => ($reg->status === 'Operativo') ? 'done' : 'in_progress',
+                'assigned_projects' => ($reg->projects_count ?? 0) . ' Proyectos Asignados',
+                'staff_count' => ($reg->staff_count ?? 0) . ' Especialistas',
+                'status' => $reg->status ?? 'Operativo',
+                'status_type' => $isOperativo ? 'done' : 'in_progress',
             ];
         })->toArray();
 
@@ -42,6 +44,7 @@ class RegionController extends Controller
             'department' => 'required|string',
             'address' => 'nullable|string',
             'manager_name' => 'nullable|string',
+            'status' => 'nullable|in:Operativo,Mantenimiento,Inactivo',
         ]);
 
         Region::create([
@@ -51,9 +54,53 @@ class RegionController extends Controller
             'address' => $validated['address'] ?? null,
             'manager_name' => $validated['manager_name'] ?? 'Ing. Reynaldo Sirpa',
             'theme' => 'cyan',
-            'status' => 'Operativo',
+            'status' => $validated['status'] ?? 'Operativo',
         ]);
 
         return redirect()->route('regions.index')->with('success', 'Regional registrada exitosamente.');
+    }
+
+    public function update(Request $request, $id)
+    {
+        $region = Region::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|unique:regions,code,' . $region->id,
+            'department' => 'required|string',
+            'address' => 'nullable|string',
+            'manager_name' => 'nullable|string',
+            'status' => 'required|in:Operativo,Mantenimiento,Inactivo',
+        ]);
+
+        $region->update([
+            'name' => $validated['name'],
+            'code' => strtoupper($validated['code']),
+            'department' => $validated['department'],
+            'address' => $validated['address'] ?? null,
+            'manager_name' => $validated['manager_name'] ?? 'Ing. Reynaldo Sirpa',
+            'status' => $validated['status'],
+        ]);
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Regional actualizada exitosamente.']);
+        }
+
+        return redirect()->route('regions.index')->with('success', 'Regional actualizada exitosamente.');
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        $region = Region::find($id);
+
+        if ($region) {
+            $region->delete();
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Regional eliminada exitosamente.']);
+        }
+
+        return redirect()->route('regions.index')->with('success', 'Regional eliminada exitosamente.');
     }
 }

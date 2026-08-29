@@ -5,8 +5,13 @@
     "isEntry": true
   },
   "resources/css/app.css": {
-    "file": "assets/app-CmcWrcoo.css",
+    "file": "assets/app-C74w_dCd.css",
     "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/css/companies.css": {
+    "file": "assets/companies-CIml-E6r.css",
+    "src": "resources/css/companies.css",
     "isEntry": true
   },
   "resources/css/dashboard.css": {
@@ -22,6 +27,11 @@
   "resources/css/managers.css": {
     "file": "assets/managers-DF65FRau.css",
     "src": "resources/css/managers.css",
+    "isEntry": true
+  },
+  "resources/css/regions.css": {
+    "file": "assets/regions--nUzRfKI.css",
+    "src": "resources/css/regions.css",
     "isEntry": true
   },
   "resources/css/settings.css": {
@@ -46,6 +56,12 @@
     "src": "resources/js/app.js",
     "isEntry": true
   },
+  "resources/js/companies.js": {
+    "file": "assets/companies-DGWKIT1z.js",
+    "name": "companies",
+    "src": "resources/js/companies.js",
+    "isEntry": true
+  },
   "resources/js/dashboard.js": {
     "file": "assets/dashboard-Cm_jyQyG.js",
     "name": "dashboard",
@@ -62,6 +78,12 @@
     "file": "assets/managers-D0Pplg-e.js",
     "name": "managers",
     "src": "resources/js/managers.js",
+    "isEntry": true
+  },
+  "resources/js/regions.js": {
+    "file": "assets/regions-DEC1acF2.js",
+    "name": "regions",
+    "src": "resources/js/regions.js",
     "isEntry": true
   },
   "resources/js/settings.js": {

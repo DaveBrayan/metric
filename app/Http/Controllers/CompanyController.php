@@ -15,6 +15,7 @@ class CompanyController extends Controller
         $userRole = $currentUser ? $currentUser->role : 'Superadministrador';
 
         $companies = Company::withCount(['projects', 'managers'])->get()->map(function ($comp, $index) {
+            $isActive = in_array(strtolower($comp->status), ['activo', 'online']);
             return [
                 'id' => $comp->id,
                 'num' => str_pad($index + 1, 2, '0', STR_PAD_LEFT),
@@ -30,8 +31,8 @@ class CompanyController extends Controller
                 'contact_email' => $comp->email ?? '—',
                 'email' => $comp->email ?? '—',
                 'phone' => $comp->phone ?? '—',
-                'status' => $comp->status ?? 'Activo',
-                'status_type' => ($comp->status === 'Activo') ? 'done' : 'in_progress',
+                'status' => $isActive ? 'Activo' : 'Inactivo',
+                'status_type' => $isActive ? 'done' : 'pending',
                 'projects_count' => ($comp->projects_count ?? 0) . ' Proyectos',
                 'active_projects' => ($comp->projects_count ?? 0) . ' Proyectos',
                 'total_plants' => ($comp->managers_count ?? 0) . ' Plantas',
@@ -50,6 +51,7 @@ class CompanyController extends Controller
             'contact_person' => 'nullable|string',
             'email' => 'nullable|email',
             'phone' => 'nullable|string',
+            'status' => 'nullable|in:Activo,Inactivo',
         ]);
 
         Company::create([
@@ -60,9 +62,55 @@ class CompanyController extends Controller
             'email' => $validated['email'] ?? null,
             'phone' => $validated['phone'] ?? null,
             'theme' => 'cyan',
-            'status' => 'Activo',
+            'status' => $validated['status'] ?? 'Activo',
         ]);
 
-        return redirect()->route('companies.index')->with('success', 'Empresa registrada exitosamente.');
+        return redirect()->route('companies.index')->with('success', 'Empresa cliente registrada exitosamente.');
+    }
+
+    public function update(Request $request, $id)
+    {
+        $company = Company::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|unique:companies,code,' . $company->id,
+            'industry' => 'required|string',
+            'contact_person' => 'nullable|string',
+            'email' => 'nullable|email',
+            'phone' => 'nullable|string',
+            'status' => 'required|in:Activo,Inactivo',
+        ]);
+
+        $company->update([
+            'name' => $validated['name'],
+            'code' => strtoupper($validated['code']),
+            'industry' => $validated['industry'],
+            'contact_person' => $validated['contact_person'] ?? null,
+            'email' => $validated['email'] ?? null,
+            'phone' => $validated['phone'] ?? null,
+            'status' => $validated['status'],
+        ]);
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Empresa actualizada exitosamente.']);
+        }
+
+        return redirect()->route('companies.index')->with('success', 'Empresa actualizada exitosamente.');
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        $company = Company::find($id);
+
+        if ($company) {
+            $company->delete();
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Empresa eliminada exitosamente.']);
+        }
+
+        return redirect()->route('companies.index')->with('success', 'Empresa eliminada exitosamente.');
     }
 }

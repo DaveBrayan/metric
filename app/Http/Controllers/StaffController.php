@@ -19,17 +19,23 @@ class StaffController extends Controller
 
         $regions = Region::all();
 
-        $staff = Staff::with('region')->get()->map(function ($s, $index) {
+        $staff = Staff::with(['region', 'modules.project'])->get()->map(function ($s, $index) {
             $isActive = in_array(strtolower($s->status), ['online', 'activo']);
+            $firstModule = $s->modules->first();
+            $assignedProject = $firstModule && $firstModule->project ? $firstModule->project->name : 'PRJ-METRIC-General';
+            $linkedDevice = $s->phone ?? 'Terminal Colector v2.4';
+
             return [
                 'id' => $s->id,
                 'num' => str_pad($index + 1, 2, '0', STR_PAD_LEFT),
                 'name' => $s->name,
                 'email' => $s->email,
                 'phone' => $s->phone ?? '—',
+                'linked_device' => $linkedDevice,
+                'assigned_project' => $assignedProject,
                 'region_id' => $s->region_id,
                 'initial' => strtoupper(substr($s->name, 0, 1)),
-                'department' => $s->department ?? 'Operaciones & Campo',
+                'department' => $s->department ?? 'Ingeniería de Automatización',
                 'position' => $s->position ?? 'Especialista en Sensores',
                 'region' => $s->region ? $s->region->name : 'Sede Central',
                 'role_theme' => $s->role_theme ?? 'cyan',

@@ -1516,17 +1516,27 @@ table.modern-table tr:last-child td {
     line-height: 1.6 !important;
 }
 
+.metric-swal-popup .swal2-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 14px !important;
+    margin-top: 22px !important;
+    width: 100% !important;
+}
+
 .metric-swal-btn-confirm {
     background: var(--cyan-gradient) !important;
     color: #ffffff !important;
     font-weight: 700 !important;
     font-size: 13.5px !important;
-    padding: 10px 22px !important;
+    padding: 11px 24px !important;
     border-radius: 10px !important;
     border: none !important;
     box-shadow: 0 4px 14px rgba(16, 185, 223, 0.35) !important;
     cursor: pointer !important;
     transition: all 0.2s ease !important;
+    margin: 0 !important;
 }
 
 .metric-swal-btn-confirm:hover {
@@ -1539,12 +1549,13 @@ table.modern-table tr:last-child td {
     color: #ffffff !important;
     font-weight: 700 !important;
     font-size: 13.5px !important;
-    padding: 10px 22px !important;
+    padding: 11px 24px !important;
     border-radius: 10px !important;
     border: none !important;
     box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35) !important;
     cursor: pointer !important;
     transition: all 0.2s ease !important;
+    margin: 0 !important;
 }
 
 .metric-swal-btn-danger:hover {
@@ -1557,12 +1568,12 @@ table.modern-table tr:last-child td {
     color: #475569 !important;
     font-weight: 700 !important;
     font-size: 13.5px !important;
-    padding: 10px 20px !important;
+    padding: 11px 22px !important;
     border-radius: 10px !important;
-    border: 1px solid #cbd5e1 !important;
+    border: 1.5px solid #cbd5e1 !important;
     cursor: pointer !important;
     transition: all 0.2s ease !important;
-    margin-right: 10px !important;
+    margin: 0 !important;
 }
 
 .metric-swal-btn-cancel:hover {
