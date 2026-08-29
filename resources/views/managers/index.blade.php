@@ -67,18 +67,18 @@
                         <tr>
                             <!-- 1. Número -->
                             <td style="font-family: 'Outfit', sans-serif; font-weight: 800; color: #94a3b8; font-size: 14px;">
-                                {{ $manager['num'] }}
+                                {{ $manager['num'] ?? '-' }}
                             </td>
 
                             <!-- 2. Responsable / Cargo -->
                             <td>
                                 <div class="client-pill-tag">
                                     <div class="client-initial-box {{ $manager['theme'] ?? 'cyan' }}">
-                                        {{ $manager['initial'] }}
+                                        {{ $manager['initial'] ?? substr($manager['name'] ?? 'R', 0, 1) }}
                                     </div>
                                     <div>
-                                        <div style="font-weight: 700; color: var(--ink);">{{ $manager['name'] }}</div>
-                                        <div style="font-size: 11.5px; color: #64748b;">{{ $manager['position'] }}</div>
+                                        <div style="font-weight: 700; color: var(--ink);">{{ $manager['name'] ?? 'Responsable' }}</div>
+                                        <div style="font-size: 11.5px; color: #64748b;">{{ $manager['position'] ?? 'Cargo' }}</div>
                                     </div>
                                 </div>
                             </td>
@@ -87,40 +87,36 @@
                             <td>
                                 <div class="client-pill-tag">
                                     <div class="client-initial-box {{ $manager['company_theme'] ?? 'cyan' }}" style="width: 28px; height: 28px; font-size: 11px; border-radius: 8px;">
-                                        {{ $manager['company_initial'] }}
+                                        {{ $manager['company_initial'] ?? substr($manager['company'] ?? 'G', 0, 1) }}
                                     </div>
-                                    <span style="font-weight: 600; color: var(--ink); font-size: 12.5px;">{{ $manager['company'] }}</span>
+                                    <span style="font-weight: 600; color: var(--ink); font-size: 12.5px;">{{ $manager['company'] ?? 'General' }}</span>
                                 </div>
                             </td>
 
                             <!-- 4. Regional Asignada -->
                             <td>
                                 <span class="status-pill-badge in_progress" style="font-size: 11.5px;">
-                                    {{ $manager['region'] }}
+                                    {{ $manager['region'] ?? 'Central' }}
                                 </span>
                             </td>
 
                             <!-- 5. Proyectos a Cargo -->
                             <td>
                                 <span class="status-pill-badge done">
-                                    {{ $manager['projects_count'] }}
+                                    {{ $manager['projects_count'] ?? '0 Proyectos' }}
                                 </span>
                             </td>
 
                             <!-- 6. Contacto Directo -->
                             <td>
-                                <div style="font-family: monospace; font-size: 12px; color: #334155; font-weight: 600;">
-                                    {{ $manager['phone'] }}
-                                </div>
-                                <div style="font-size: 11px; color: #64748b;">
-                                    {{ $manager['email'] }}
-                                </div>
+                                <div style="font-weight: 600; color: var(--ink-secondary); font-size: 12.5px;">{{ $manager['email'] ?? '—' }}</div>
+                                <div style="font-size: 11px; color: #64748b; font-family: monospace;">{{ $manager['phone'] ?? '—' }}</div>
                             </td>
 
                             <!-- 7. Estado -->
                             <td>
                                 <span class="status-pill-badge {{ $manager['status_type'] ?? 'done' }}">
-                                    {{ $manager['status'] }}
+                                    {{ $manager['status'] ?? 'Activo' }}
                                 </span>
                             </td>
 
@@ -128,7 +124,7 @@
                             <td>
                                 <div class="admin-actions-cell">
                                     <!-- Ver Perfil -->
-                                    <button type="button" class="btn-admin-icon-action theme-cyan" onclick="triggerToast('Ver perfil de {{ $manager['name'] }}', '👔')" title="Ver Perfil" aria-label="Ver Perfil">
+                                    <button type="button" class="btn-admin-icon-action theme-cyan" onclick="triggerToast('Ver perfil de {{ $manager['name'] ?? 'Responsable' }}', '👔')" title="Ver Perfil" aria-label="Ver Perfil">
                                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                                             <circle cx="12" cy="12" r="3"/>

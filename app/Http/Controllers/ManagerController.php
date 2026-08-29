@@ -17,18 +17,23 @@ class ManagerController extends Controller
 
         $companies = Company::all();
 
-        $managers = Manager::with('company')->get()->map(function ($m, $index) {
+        $managers = Manager::with('company')->withCount('projects')->get()->map(function ($m, $index) {
+            $companyName = $m->company ? $m->company->name : 'General';
             return [
                 'id' => $m->id,
                 'num' => str_pad($index + 1, 2, '0', STR_PAD_LEFT),
                 'name' => $m->name,
                 'email' => $m->email,
-                'phone' => $m->phone,
+                'phone' => $m->phone ?? '—',
                 'initial' => strtoupper(substr($m->name, 0, 1)),
-                'company' => $m->company ? $m->company->name : 'General',
+                'theme' => 'cyan',
+                'company' => $companyName,
+                'company_initial' => strtoupper(substr($companyName, 0, 1)),
                 'company_theme' => $m->company ? ($m->company->theme ?? 'cyan') : 'cyan',
-                'position' => $m->position,
-                'status' => $m->status,
+                'region' => $m->company ? ($m->company->code ?? 'Central') : 'Central',
+                'projects_count' => ($m->projects_count ?? 0) . ' Proyectos',
+                'position' => $m->position ?? 'Gerente de Operaciones',
+                'status' => $m->status ?? 'Activo',
                 'status_type' => ($m->status === 'Activo') ? 'done' : 'in_progress',
             ];
         })->toArray();

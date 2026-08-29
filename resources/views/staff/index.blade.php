@@ -73,37 +73,37 @@
                             <td>
                                 <div class="client-pill-tag">
                                     <div class="client-initial-box {{ $member['role_theme'] ?? 'cyan' }}">
-                                        {{ $member['initial'] }}
+                                        {{ $member['initial'] ?? substr($member['name'] ?? 'P', 0, 1) }}
                                     </div>
                                     <div>
-                                        <div style="font-weight: 700; color: var(--ink);">{{ $member['name'] }}</div>
-                                        <div style="font-size: 11.5px; color: #64748b;">{{ $member['email'] }}</div>
+                                        <div style="font-weight: 700; color: var(--ink);">{{ $member['name'] ?? 'Especialista' }}</div>
+                                        <div style="font-size: 11.5px; color: #64748b;">{{ $member['email'] ?? '—' }}</div>
                                     </div>
                                 </div>
                             </td>
 
                             <!-- 3. Departamento & Cargo -->
                             <td>
-                                <div style="font-weight: 600; color: var(--ink-secondary);">{{ $member['position'] }}</div>
-                                <div style="font-size: 11px; color: #64748b;">{{ $member['department'] }}</div>
+                                <div style="font-weight: 600; color: var(--ink-secondary);">{{ $member['position'] ?? 'Técnico de Campo' }}</div>
+                                <div style="font-size: 11px; color: #64748b;">{{ $member['department'] ?? 'Operaciones' }}</div>
                             </td>
 
                             <!-- 4. Regional Asignada -->
                             <td>
-                                <span class="status-pill-badge in_progress">{{ $member['region'] }}</span>
+                                <span class="status-pill-badge in_progress">{{ $member['region'] ?? 'Central' }}</span>
                             </td>
 
                             <!-- 5. Teléfono -->
                             <td style="font-family: monospace; font-size: 12px; color: #475569; font-weight: 600;">
-                                {{ $member['phone'] }}
+                                {{ $member['phone'] ?? '—' }}
                             </td>
 
                             <!-- 6. Estado -->
                             <td>
-                                @if($member['status'] === 'online')
-                                    <span class="status-pill-badge done">{{ $member['status_label'] }}</span>
+                                @if(($member['status'] ?? 'online') === 'online')
+                                    <span class="status-pill-badge done">{{ $member['status_label'] ?? 'En Planta' }}</span>
                                 @else
-                                    <span class="status-pill-badge pending">{{ $member['status_label'] }}</span>
+                                    <span class="status-pill-badge pending">{{ $member['status_label'] ?? 'Inactivo' }}</span>
                                 @endif
                             </td>
 
