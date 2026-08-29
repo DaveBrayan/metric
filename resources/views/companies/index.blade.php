@@ -73,39 +73,39 @@
                             <td>
                                 <div class="client-pill-tag">
                                     <div class="client-initial-box {{ $company['theme'] ?? 'cyan' }}">
-                                        {{ $company['initial'] }}
+                                        {{ $company['initial'] ?? substr($company['name'] ?? 'E', 0, 1) }}
                                     </div>
                                     <div>
-                                        <div style="font-weight: 700; color: var(--ink);">{{ $company['name'] }}</div>
-                                        <div style="font-size: 11.5px; color: #64748b;">{{ $company['city'] }}</div>
+                                        <div style="font-weight: 700; color: var(--ink);">{{ $company['name'] ?? 'Empresa' }}</div>
+                                        <div style="font-size: 11.5px; color: #64748b;">{{ $company['city'] ?? $company['code'] ?? 'Nacional' }}</div>
                                     </div>
                                 </div>
                             </td>
 
                             <!-- 3. Sector Industrial -->
                             <td>
-                                <span class="status-pill-badge in_progress">{{ $company['industry'] }}</span>
+                                <span class="status-pill-badge in_progress">{{ $company['industry'] ?? 'Industrial' }}</span>
                             </td>
 
                             <!-- 4. NIT -->
                             <td style="font-family: monospace; font-size: 12.5px; color: #334155; font-weight: 600;">
-                                {{ $company['nit'] }}
+                                {{ $company['nit'] ?? '—' }}
                             </td>
 
                             <!-- 5. Contacto Principal -->
                             <td>
-                                <div style="font-weight: 600; color: var(--ink-secondary);">{{ $company['contact_name'] }}</div>
-                                <div style="font-size: 11px; color: #64748b;">{{ $company['contact_email'] }}</div>
+                                <div style="font-weight: 600; color: var(--ink-secondary);">{{ $company['contact_name'] ?? $company['contact_person'] ?? '—' }}</div>
+                                <div style="font-size: 11px; color: #64748b;">{{ $company['contact_email'] ?? $company['email'] ?? '—' }}</div>
                             </td>
 
                             <!-- 6. Proyectos -->
                             <td>
-                                <span class="status-pill-badge done">{{ $company['projects_count'] }}</span>
+                                <span class="status-pill-badge done">{{ $company['projects_count'] ?? $company['active_projects'] ?? '0 Proyectos' }}</span>
                             </td>
 
                             <!-- 7. Estado -->
                             <td>
-                                <span class="status-pill-badge done">{{ $company['status'] }}</span>
+                                <span class="status-pill-badge done">{{ $company['status'] ?? 'Activo' }}</span>
                             </td>
 
                             <!-- 8. Acciones Estandarizadas a Colores -->
