@@ -145,6 +145,17 @@ try {
                 <?= strpos($dbStatus, 'Conectado') !== false ? 'EN LÍNEA ✓' : 'DESCONECTADO ✕' ?>
             </span>
         </div>
+        
+        <?php
+            $manifestPath = $baseDir . '/public/build/manifest.json';
+            $viteStatus = file_exists($manifestPath) ? 'Compilado & Listo (manifest.json detectado)' : 'No compilado (falta manifest.json)';
+        ?>
+        <div class="db-status-bar" style="margin-top: 8px;">
+            <span>Estilos & JS (Vite): <b><?= htmlspecialchars($viteStatus) ?></b></span>
+            <span class="db-badge <?= file_exists($manifestPath) ? 'ok' : 'err' ?>">
+                <?= file_exists($manifestPath) ? 'ACTIVO ✓' : 'FALTANTE ✕' ?>
+            </span>
+        </div>
     </div>
 
     <?php if ($action && $outputLog): ?>

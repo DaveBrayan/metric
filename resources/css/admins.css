@@ -379,6 +379,91 @@
     background: #f8fafc;
 }
 
+/* Modal Form Fields Styling */
+.form-row-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+@media (max-width: 600px) {
+    .form-row-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.form-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.form-field-label {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #334155;
+}
+
+.custom-form-input {
+    width: 100%;
+    height: 42px;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0 14px;
+    font-size: 13.5px;
+    color: var(--ink);
+    outline: none;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.custom-form-input:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3.5px rgba(16, 185, 223, 0.18);
+}
+
+.custom-form-select {
+    width: 100%;
+    height: 42px;
+    background: #ffffff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0 38px 0 14px;
+    font-size: 13.5px;
+    color: var(--ink);
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.custom-form-select:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3.5px rgba(16, 185, 223, 0.18);
+}
+
+.btn-subtle-link {
+    background: transparent;
+    border: 0;
+    color: #64748b;
+    font-weight: 700;
+    font-size: 13.5px;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-subtle-link:hover {
+    color: #0f172a;
+    background: #e2e8f0;
+}
+
 .checkbox-permissions-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
