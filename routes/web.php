@@ -43,6 +43,10 @@ Route::middleware(['auth'])->group(function () {
     // Sistema: Administradores y Configuración
     Route::get('/administradores', [AdminController::class, 'index'])->name('admins.index');
     Route::post('/administradores', [AdminController::class, 'store'])->name('admins.store');
+    Route::put('/administradores/{id}', [AdminController::class, 'update'])->name('admins.update');
+    Route::delete('/administradores/{id}', [AdminController::class, 'destroy'])->name('admins.destroy');
+    Route::post('/administradores/{id}/reset-password', [AdminController::class, 'resetPassword'])->name('admins.reset-password');
+    Route::post('/administradores/{id}/permissions', [AdminController::class, 'updatePermissions'])->name('admins.permissions');
 
     Route::get('/configuracion', [SettingsController::class, 'index'])->name('settings.index');
     Route::post('/configuracion', [SettingsController::class, 'update'])->name('settings.update');

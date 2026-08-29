@@ -401,3 +401,234 @@
     width: 16px;
     height: 16px;
 }
+
+/* ==========================================================================
+   WhatsApp Credentials Card Preview
+   ========================================================================== */
+.whatsapp-credential-card {
+    background: #0b141a;
+    border: 1px solid #1f2c34;
+    border-radius: 14px;
+    padding: 16px;
+    margin-top: 14px;
+    position: relative;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+}
+
+.whatsapp-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #202c33;
+    padding-bottom: 8px;
+}
+
+.whatsapp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #25d366;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.whatsapp-message-box {
+    background: #111b21;
+    border: 1px solid #222e35;
+    border-radius: 10px;
+    padding: 14px;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #e9edef;
+    white-space: pre-wrap;
+    word-break: break-all;
+    user-select: all;
+}
+
+.btn-copy-credential {
+    width: 100%;
+    margin-top: 14px;
+    height: 44px;
+    background: #00a884;
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 13.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(0, 168, 132, 0.35);
+}
+
+.btn-copy-credential:hover {
+    background: #029070;
+    transform: translateY(-1px);
+}
+
+.btn-copy-credential:active {
+    transform: translateY(0);
+}
+
+.btn-generate-pass {
+    padding: 0 14px;
+    height: 42px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-generate-pass:hover {
+    background: #e2e8f0;
+    color: var(--ink);
+}
+
+/* ==========================================================================
+   Permissions Granular Matrix Modal Styles
+   ========================================================================== */
+.perms-quick-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.btn-perm-pill {
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-perm-pill:hover {
+    background: #e2e8f0;
+    color: var(--ink);
+}
+
+.btn-perm-pill.primary {
+    background: var(--cyan-light);
+    border-color: rgba(16, 185, 223, 0.3);
+    color: var(--cyan-dark);
+}
+
+.btn-perm-pill.primary:hover {
+    background: var(--cyan);
+    color: #ffffff;
+}
+
+.perms-section-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+}
+
+.perms-section-card:hover {
+    border-color: #cbd5e1;
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(15, 28, 46, 0.04);
+}
+
+.perms-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.perms-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 13.5px;
+    color: var(--ink);
+}
+
+.perms-section-title svg {
+    color: var(--cyan);
+}
+
+.perms-grid-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 8px;
+}
+
+.perm-toggle-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.perm-toggle-box:hover {
+    border-color: var(--cyan);
+}
+
+.perm-toggle-box input[type="checkbox"] {
+    accent-color: var(--cyan);
+    width: 15px;
+    height: 15px;
+}
+
+.perm-toggle-box.checked {
+    background: var(--cyan-light);
+    border-color: rgba(16, 185, 223, 0.4);
+    color: var(--cyan-dark);
+}
+
+/* User Identity Banner in Modals */
+.user-identity-modal-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    margin-bottom: 18px;
+}
+
+.user-identity-modal-info h4 {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--ink);
+    margin: 0;
+}
+
+.user-identity-modal-info p {
+    font-size: 12px;
+    color: #64748b;
+    margin: 2px 0 0;
+}
