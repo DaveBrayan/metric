@@ -35,17 +35,24 @@ function runArtisan($command, $params = []) {
 if ($action) {
     switch ($action) {
         case 'all_in_one':
-            $actionTitle = 'Optimización Integral & Migraciones (1-Clic)';
+            $actionTitle = 'Optimización Integral, Migraciones & Datos Iniciales (1-Clic)';
             $outputLog .= "=== 1. Ejecutando Migraciones ===\n" . runArtisan('migrate', ['--force' => true]) . "\n";
-            $outputLog .= "=== 2. Creando Storage Link ===\n" . runArtisan('storage:link') . "\n";
-            $outputLog .= "=== 3. Limpiando Cachés Previas ===\n" . runArtisan('optimize:clear') . "\n";
-            $outputLog .= "=== 4. Optimizando Rutas & Configuración ===\n" . runArtisan('optimize') . "\n";
+            $outputLog .= "=== 2. Sembrando Administrador & Datos Iniciales ===\n" . runArtisan('db:seed', ['--force' => true]) . "\n";
+            $outputLog .= "=== 3. Creando Storage Link ===\n" . runArtisan('storage:link') . "\n";
+            $outputLog .= "=== 4. Limpiando Cachés Previas ===\n" . runArtisan('optimize:clear') . "\n";
+            $outputLog .= "=== 5. Optimizando Rutas & Configuración ===\n" . runArtisan('optimize') . "\n";
             $statusClass = 'success';
             break;
 
         case 'migrate':
             $actionTitle = 'Migraciones de Base de Datos';
             $outputLog = runArtisan('migrate', ['--force' => true]);
+            $statusClass = 'success';
+            break;
+
+        case 'seed':
+            $actionTitle = 'Sembrar Administrador & Datos Iniciales (db:seed)';
+            $outputLog = runArtisan('db:seed', ['--force' => true]);
             $statusClass = 'success';
             break;
 
@@ -168,7 +175,18 @@ try {
                 <span class="icon-tag">📦</span>
             </div>
             <div class="btn-card-desc">
-                Crea y actualiza todas las tablas en la base de datos MySQL (<code>php artisan migrate --force</code>).
+                Crea y actualiza todas las tablas relacionales en MySQL (<code>php artisan migrate --force</code>).
+            </div>
+        </a>
+
+        <!-- Sembrar Administrador y Datos -->
+        <a href="?action=seed" class="btn-card">
+            <div class="btn-card-title">
+                <span>👤 Sembrar Administrador & Datos</span>
+                <span class="icon-tag">🌱</span>
+            </div>
+            <div class="btn-card-desc">
+                Registra a <b>admin@metric.com</b> y los datos iniciales de empresas, proyectos y módulos (<code>db:seed</code>).
             </div>
         </a>
 
