@@ -115,7 +115,7 @@ window.metricConfirm = function({ title, text, icon = 'warning', confirmText = '
             cancelButton: 'metric-swal-btn-cancel'
         },
         buttonsStyling: false,
-        background: '#111c2e',
+        background: '#ffffff',
         iconColor: isDanger ? '#ef4444' : '#10b9df',
         showClass: {
             popup: 'animate__animated animate__fadeInDown'
@@ -144,7 +144,7 @@ window.metricAlert = function({ title, text, icon = 'success', timer = 2500 }) {
         customClass: {
             popup: 'metric-swal-popup'
         },
-        background: '#111c2e',
+        background: '#ffffff',
         iconColor: icon === 'error' ? '#ef4444' : (icon === 'warning' ? '#f59e0b' : '#10b9df')
     });
 };

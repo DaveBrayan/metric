@@ -1490,15 +1490,15 @@ table.modern-table tr:last-child td {
 }
 
 /* ==========================================================================
-   SweetAlert2 METRIC V2 Modern Dark Glass Theme
+   SweetAlert2 METRIC V2 Modern White Light Theme
    ========================================================================== */
 .swal2-popup.metric-swal-popup {
-    background: #111c2e !important;
-    border: 1px solid rgba(16, 185, 223, 0.25) !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(226, 232, 240, 0.95) !important;
     border-radius: 20px !important;
-    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6) !important;
-    color: #f8fafc !important;
-    padding: 24px 28px !important;
+    box-shadow: 0 25px 60px -15px rgba(15, 28, 46, 0.2) !important;
+    color: #0f172a !important;
+    padding: 26px 30px !important;
     font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
 
@@ -1506,12 +1506,12 @@ table.modern-table tr:last-child td {
     font-family: 'Outfit', sans-serif !important;
     font-size: 20px !important;
     font-weight: 800 !important;
-    color: #ffffff !important;
+    color: #0f172a !important;
     letter-spacing: -0.4px !important;
 }
 
 .metric-swal-popup .swal2-html-container {
-    color: #94a3b8 !important;
+    color: #475569 !important;
     font-size: 13.5px !important;
     line-height: 1.6 !important;
 }
@@ -1525,11 +1525,13 @@ table.modern-table tr:last-child td {
     border-radius: 10px !important;
     border: none !important;
     box-shadow: 0 4px 14px rgba(16, 185, 223, 0.35) !important;
+    cursor: pointer !important;
     transition: all 0.2s ease !important;
 }
 
 .metric-swal-btn-confirm:hover {
     transform: translateY(-1px) !important;
+    box-shadow: 0 6px 18px rgba(16, 185, 223, 0.45) !important;
 }
 
 .metric-swal-btn-danger {
@@ -1541,26 +1543,30 @@ table.modern-table tr:last-child td {
     border-radius: 10px !important;
     border: none !important;
     box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35) !important;
+    cursor: pointer !important;
     transition: all 0.2s ease !important;
 }
 
 .metric-swal-btn-danger:hover {
     transform: translateY(-1px) !important;
+    box-shadow: 0 6px 18px rgba(220, 38, 38, 0.45) !important;
 }
 
 .metric-swal-btn-cancel {
-    background: #1e293b !important;
-    color: #94a3b8 !important;
+    background: #f1f5f9 !important;
+    color: #475569 !important;
     font-weight: 700 !important;
     font-size: 13.5px !important;
     padding: 10px 20px !important;
     border-radius: 10px !important;
-    border: 1px solid #334155 !important;
+    border: 1px solid #cbd5e1 !important;
+    cursor: pointer !important;
     transition: all 0.2s ease !important;
+    margin-right: 10px !important;
 }
 
 .metric-swal-btn-cancel:hover {
-    background: #334155 !important;
-    color: #ffffff !important;
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
 }
 

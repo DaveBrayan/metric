@@ -146,11 +146,12 @@ class StaffController extends Controller
 
     public function destroy(Request $request, $id)
     {
-        $staff = Staff::findOrFail($id);
+        $staff = Staff::find($id);
         
-        // Eliminar también acceso de usuario si existe
-        User::where('email', $staff->email)->delete();
-        $staff->delete();
+        if ($staff) {
+            User::where('email', $staff->email)->delete();
+            $staff->delete();
+        }
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'message' => 'Colaborador eliminado exitosamente.']);

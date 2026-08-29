@@ -157,7 +157,11 @@ class AdminController extends Controller
 
     public function destroy(Request $request, $id)
     {
-        $user = User::findOrFail($id);
+        $user = User::find($id);
+
+        if (!$user) {
+            return redirect()->route('admins.index')->with('info', 'El usuario ya ha sido eliminado.');
+        }
 
         // Prevenir auto-eliminación del usuario en sesión
         if (Auth::id() == $user->id) {

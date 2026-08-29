@@ -31,13 +31,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/responsables', [ManagerController::class, 'index'])->name('managers.index');
     Route::post('/responsables', [ManagerController::class, 'store'])->name('managers.store');
     Route::put('/responsables/{id}', [ManagerController::class, 'update'])->name('managers.update');
-    Route::delete('/responsables/{id}', [ManagerController::class, 'destroy'])->name('managers.destroy');
+    Route::match(['delete', 'post'], '/responsables/{id}/delete', [ManagerController::class, 'destroy'])->name('managers.destroy.post');
+    Route::match(['delete', 'post'], '/responsables/{id}', [ManagerController::class, 'destroy'])->name('managers.destroy');
     Route::post('/responsables/{id}/reset-password', [ManagerController::class, 'resetPassword'])->name('managers.reset-password');
 
     Route::get('/personal', [StaffController::class, 'index'])->name('staff.index');
     Route::post('/personal', [StaffController::class, 'store'])->name('staff.store');
     Route::put('/personal/{id}', [StaffController::class, 'update'])->name('staff.update');
-    Route::delete('/personal/{id}', [StaffController::class, 'destroy'])->name('staff.destroy');
+    Route::match(['delete', 'post'], '/personal/{id}/delete', [StaffController::class, 'destroy'])->name('staff.destroy.post');
+    Route::match(['delete', 'post'], '/personal/{id}', [StaffController::class, 'destroy'])->name('staff.destroy');
     Route::post('/personal/{id}/reset-password', [StaffController::class, 'resetPassword'])->name('staff.reset-password');
 
     // Proyectos: Proyectos Activos & Submódulo de Módulos de Monitoreo
@@ -50,7 +52,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/administradores', [AdminController::class, 'index'])->name('admins.index');
     Route::post('/administradores', [AdminController::class, 'store'])->name('admins.store');
     Route::put('/administradores/{id}', [AdminController::class, 'update'])->name('admins.update');
-    Route::delete('/administradores/{id}', [AdminController::class, 'destroy'])->name('admins.destroy');
+    Route::match(['delete', 'post'], '/administradores/{id}/delete', [AdminController::class, 'destroy'])->name('admins.destroy.post');
+    Route::match(['delete', 'post'], '/administradores/{id}', [AdminController::class, 'destroy'])->name('admins.destroy');
     Route::post('/administradores/{id}/reset-password', [AdminController::class, 'resetPassword'])->name('admins.reset-password');
     Route::post('/administradores/{id}/permissions', [AdminController::class, 'updatePermissions'])->name('admins.permissions');
 

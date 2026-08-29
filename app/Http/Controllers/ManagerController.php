@@ -136,11 +136,12 @@ class ManagerController extends Controller
 
     public function destroy(Request $request, $id)
     {
-        $manager = Manager::findOrFail($id);
+        $manager = Manager::find($id);
         
-        // Eliminar también acceso de usuario si existe
-        User::where('email', $manager->email)->delete();
-        $manager->delete();
+        if ($manager) {
+            User::where('email', $manager->email)->delete();
+            $manager->delete();
+        }
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'message' => 'Responsable eliminado exitosamente.']);
