@@ -1,0 +1,57 @@
+{
+  "resources/css/admins.css": {
+    "file": "assets/admins-U8irY4Tr.css",
+    "src": "resources/css/admins.css",
+    "isEntry": true
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-CzB-v77y.css",
+    "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/css/dashboard.css": {
+    "file": "assets/dashboard-BFrWCkzb.css",
+    "src": "resources/css/dashboard.css",
+    "isEntry": true
+  },
+  "resources/css/login.css": {
+    "file": "assets/login-BbpBtBpW.css",
+    "src": "resources/css/login.css",
+    "isEntry": true
+  },
+  "resources/css/settings.css": {
+    "file": "assets/settings-h9v-mCyX.css",
+    "src": "resources/css/settings.css",
+    "isEntry": true
+  },
+  "resources/js/admins.js": {
+    "file": "assets/admins-evAJ0i6_.js",
+    "name": "admins",
+    "src": "resources/js/admins.js",
+    "isEntry": true
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-CWIGk7Zb.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true
+  },
+  "resources/js/dashboard.js": {
+    "file": "assets/dashboard-Cm_jyQyG.js",
+    "name": "dashboard",
+    "src": "resources/js/dashboard.js",
+    "isEntry": true
+  },
+  "resources/js/login.js": {
+    "file": "assets/login-CxfuGo_i.js",
+    "name": "login",
+    "src": "resources/js/login.js",
+    "isEntry": true
+  },
+  "resources/js/settings.js": {
+    "file": "assets/settings-BB0VjIMM.js",
+    "name": "settings",
+    "src": "resources/js/settings.js",
+    "isEntry": true
+  }
+}

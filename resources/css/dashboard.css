@@ -1,0 +1,531 @@
+/**
+ * METRIC_V2 — Executive Multi-Enterprise Dashboard Stylesheet (Rendered by Vite)
+ * UI/UX Pro Max Standard: High Contrast, 8px Grid, Vector Icons, Zero Clutter & Spring Animations
+ */
+
+/* ==========================================================================
+   0. Staggered Entrance Animations & Physics
+   ========================================================================== */
+
+@keyframes wowFadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(22px) scale(0.98);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes signalBlink {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.35;
+        transform: scale(1.4);
+    }
+}
+
+@keyframes glowPulseCyan {
+    0%, 100% { box-shadow: 0 0 12px rgba(16, 185, 223, 0.2); }
+    50% { box-shadow: 0 0 24px rgba(16, 185, 223, 0.5); }
+}
+
+.wow-entrance {
+    animation: wowFadeInUp 0.6s var(--spring-ease) both;
+}
+
+.stagger-1 { animation-delay: 0.03s; }
+.stagger-2 { animation-delay: 0.08s; }
+.stagger-3 { animation-delay: 0.14s; }
+.stagger-4 { animation-delay: 0.20s; }
+.stagger-5 { animation-delay: 0.26s; }
+
+/* ==========================================================================
+   1. Executive Health Hero & Global Command Bar
+   ========================================================================== */
+
+.executive-hero-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.executive-hero-left {
+    max-width: 650px;
+}
+
+.executive-health-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 14px;
+    background: #ffffff;
+    border: 1px solid rgba(145, 197, 27, 0.35);
+    border-radius: var(--radius-full);
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #4d7008;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 8px rgba(145, 197, 27, 0.12);
+}
+
+.health-dot-pulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--lime);
+    box-shadow: 0 0 8px var(--lime);
+    animation: signalBlink 2s infinite ease-in-out;
+}
+
+.executive-hero-left h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--ink);
+    letter-spacing: -0.6px;
+    margin-bottom: 4px;
+    line-height: 1.15;
+}
+
+.executive-hero-left p {
+    color: #475569;
+    font-size: 13.5px;
+    font-weight: 500;
+    line-height: 1.45;
+}
+
+.executive-hero-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* Company Dropdown Filter */
+.dashboard-filter-select-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.filter-select-icon {
+    position: absolute;
+    left: 14px;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.dashboard-filter-select {
+    height: 42px;
+    padding: 0 38px 0 38px;
+    background: #ffffff;
+    border: 1.5px solid rgba(16, 185, 223, 0.4);
+    border-radius: var(--radius-full);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(16, 185, 223, 0.12);
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: all 0.25s var(--spring-ease);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+}
+
+.dashboard-filter-select:hover {
+    border-color: var(--cyan);
+    box-shadow: 0 6px 20px rgba(16, 185, 223, 0.22);
+    transform: translateY(-1px);
+}
+
+.dashboard-filter-select:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3.5px rgba(16, 185, 223, 0.22);
+}
+
+.date-capsule {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    background: #ffffff;
+    border: 1px solid rgba(203, 213, 225, 0.9);
+    border-radius: var(--radius-full);
+    color: var(--ink-secondary);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.25s var(--smooth-ease);
+}
+
+.date-capsule:hover {
+    border-color: var(--cyan);
+    color: var(--cyan-dark);
+    box-shadow: var(--shadow-glow-cyan);
+    transform: translateY(-1px);
+}
+
+.btn-primary-hero-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 20px;
+    background: var(--cyan-gradient);
+    color: #ffffff;
+    border: 0;
+    border-radius: var(--radius-full);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 20px -3px rgba(16, 185, 223, 0.4);
+    transition: all 0.25s var(--spring-ease);
+}
+
+.btn-primary-hero-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px -3px rgba(16, 185, 223, 0.6);
+}
+
+/* ==========================================================================
+   2. 5-Column Environmental Module Strip Grid
+   ========================================================================== */
+
+.env-modules-strip-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.env-module-card {
+    padding: 18px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 12px;
+    position: relative;
+    transition: all 0.28s var(--spring-ease);
+}
+
+.env-module-card:hover {
+    transform: translateY(-3px);
+}
+
+.env-module-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.env-module-title {
+    font-size: 12.5px;
+    font-weight: 800;
+    color: var(--ink);
+    line-height: 1.25;
+}
+
+.env-module-icon-wrap {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+}
+
+.env-module-card.theme-cyan .env-module-icon-wrap {
+    background: var(--cyan-light);
+    color: var(--cyan-dark);
+    border: 1px solid rgba(16, 185, 223, 0.25);
+}
+
+.env-module-card.theme-lime .env-module-icon-wrap {
+    background: var(--lime-light);
+    color: #5c840c;
+    border: 1px solid rgba(145, 197, 27, 0.25);
+}
+
+.env-module-card:hover .env-module-icon-wrap {
+    transform: scale(1.1);
+}
+
+.env-metric-display {
+    margin: 2px 0;
+}
+
+.env-metric-val {
+    font-family: 'Outfit', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--ink);
+    line-height: 1;
+    letter-spacing: -0.5px;
+}
+
+.env-metric-unit {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #64748b;
+    margin-top: 3px;
+}
+
+.env-module-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.env-limit-tag {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+}
+
+.env-equipment-tag {
+    font-size: 10.5px;
+    color: #64748b;
+    font-family: monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   3. Dual Mid-Grid: Telemetry Curve + Certified Readiness
+   ========================================================================== */
+
+.executive-mid-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.75fr) minmax(320px, 1.25fr);
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.panel-title-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.panel-title-bar h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 16.5px;
+    font-weight: 800;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    letter-spacing: -0.3px;
+}
+
+.chart-time-pills-group {
+    display: inline-flex;
+    background: #f1f5f9;
+    border-radius: var(--radius-full);
+    padding: 3px;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.time-pill {
+    border: 0;
+    background: transparent;
+    color: #64748b;
+    padding: 5px 12px;
+    font-size: 11.5px;
+    font-weight: 700;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.time-pill:hover { color: var(--ink); }
+
+.time-pill.active {
+    background: #ffffff;
+    color: var(--cyan-dark);
+    box-shadow: 0 2px 6px rgba(15, 28, 46, 0.08);
+}
+
+.svg-chart-container {
+    height: 255px;
+    width: 100%;
+    position: relative;
+}
+
+.interactive-svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.chart-glow-legend {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-top: 14px;
+    padding-left: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    flex-wrap: wrap;
+}
+
+.legend-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dot-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.dot-indicator.cyan {
+    background: var(--cyan);
+    box-shadow: 0 0 10px var(--cyan);
+}
+
+.dot-indicator.lime {
+    background: var(--lime);
+    box-shadow: 0 0 10px var(--lime);
+}
+
+/* Equipment Certified Inventory List */
+.equipment-readiness-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.equipment-readiness-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: #f8fafc;
+    border-radius: var(--radius-md);
+    border: 1px solid #e2e8f0;
+    transition: all 0.25s var(--spring-ease);
+}
+
+.equipment-readiness-row:hover {
+    background: #ffffff;
+    border-color: var(--cyan);
+    box-shadow: 0 4px 14px rgba(16, 185, 223, 0.14);
+    transform: translateX(3px);
+}
+
+.equipment-name-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.equipment-name-title {
+    font-weight: 800;
+    color: var(--ink);
+    font-size: 12.5px;
+}
+
+.equipment-validity-text {
+    font-size: 11px;
+    color: #0896b5;
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   4. Master Matrix Table Box
+   ========================================================================== */
+
+.table-responsive-box {
+    overflow-x: auto;
+    width: 100%;
+}
+
+table.modern-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+}
+
+table.modern-table th {
+    padding: 13px 16px;
+    color: #64748b;
+    font-weight: 700;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    border-bottom: 1.5px solid rgba(226, 232, 240, 0.95);
+    text-align: left;
+}
+
+table.modern-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(241, 245, 249, 0.9);
+    vertical-align: middle;
+    transition: var(--transition-fast);
+}
+
+table.modern-table tr:hover td {
+    background: rgba(248, 250, 252, 0.95);
+}
+
+table.modern-table tr:last-child td {
+    border-bottom: 0;
+}
+
+/* ==========================================================================
+   5. Responsive Breakpoints
+   ========================================================================== */
+
+@media(max-width: 1300px) {
+    .env-modules-strip-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .executive-mid-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media(max-width: 860px) {
+    .env-modules-strip-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    .executive-hero-banner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .executive-hero-right {
+        width: 100%;
+    }
+}
+
+@media(max-width: 560px) {
+    .env-modules-strip-grid {
+        grid-template-columns: 1fr;
+    }
+}

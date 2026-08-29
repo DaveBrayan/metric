@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — Mi Empresa</title>
+    <style>
+        :root {
+            --cyan: #10b9df;
+            --cyan2: #0aa6ca;
+            --teal: #0799a7;
+            --lime: #91c51b;
+            --ink: #18283f;
+            --muted: #73839a;
+            --line: #e8eef4;
+            --bg: #f7fafc;
+            --white: #fff;
+            --shadow: 0 10px 30px rgba(26, 55, 85, .07);
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: var(--ink);
+            background: var(--bg)
+        }
+
+        button,
+        input {
+            font: inherit
+        }
+
+        .app {
+            min-height: 100vh;
+            display: flex
+        }
+
+        .sidebar {
+            width: 235px;
+            background: #fff;
+            border-right: 1px solid var(--line);
+            padding: 26px 16px 18px;
+            position: fixed;
+            inset: 0 auto 0 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 5
+        }
+
+        .logo {
+            height: 98px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 17px
+        }
+
+        .logo svg {
+            width: 88px;
+            height: 88px
+        }
+
+        .nav {
+            display: flex;
+            flex-direction: column;
+            gap: 5px
+        }
+
+        .nav button {
+            border: 0;
+            background: transparent;
+            color: #26364c;
+            text-align: left;
+            padding: 13px 13px;
+            border-radius: 11px;
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: .2s
+        }
+
+        .nav button:hover {
+            background: #f1fbfd;
+            color: #079ebd
+        }
+
+        .nav button.active {
+            background: linear-gradient(100deg, #0eafd1, #079db7);
+            color: #fff;
+            box-shadow: 0 8px 18px rgba(10, 169, 201, .2)
+        }
+
+        .icon {
+            width: 20px;
+            height: 20px;
+            display: grid;
+            place-items: center;
+            font-size: 17px
+        }
+
+        .upgrade {
+            margin-top: auto;
+            border: 1px solid var(--line);
+            border-radius: 15px;
+            padding: 18px 15px;
+            text-align: center;
+            background: linear-gradient(180deg, #fff, #fbfef8)
+        }
+
+        .crown {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #eff8db;
+            color: #82b51b;
+            display: grid;
+            place-items: center;
+            margin: 0 auto 10px
+        }
+
+        .upgrade h4 {
+            margin: 0 0 7px;
+            font-size: 14px
+        }
+
+        .upgrade p {
+            margin: 0 0 14px;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.55
+        }
+
+        .upgrade button {
+            width: 100%;
+            border: 0;
+            border-radius: 9px;
+            background: #0ba8ca;
+            color: #fff;
+            padding: 10px;
+            font-weight: 700;
+            cursor: pointer
+        }
+
+        .copy {
+            font-size: 11px;
+            color: #8a98aa;
+            margin: 19px 3px 0
+        }
+
+        .main {
+            margin-left: 235px;
+            min-width: 0;
+            flex: 1
+        }
+
+        .topbar {
+            height: 72px;
+            background: #fff;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            position: sticky;
+            top: 0;
+            z-index: 4
+        }
+
+        .lefttop {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            flex: 1
+        }
+
+        .menu {
+            display: none;
+            border: 0;
+            background: none;
+            font-size: 22px;
+            cursor: pointer
+        }
+
+        .search {
+            width: min(390px, 50vw);
+            height: 42px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 13px;
+            color: #91a0b2
+        }
+
+        .search input {
+            border: 0;
+            outline: 0;
+            width: 100%;
+            color: var(--ink);
+            background: transparent
+        }
+
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 18px
+        }
+
+        .circle-btn {
+            width: 36px;
+            height: 36px;
+            border: 0;
+            background: #f5f8fb;
+            border-radius: 50%;
+            cursor: pointer;
+            position: relative;
+            color: #516278
+        }
+
+        .dot {
+            position: absolute;
+            right: 5px;
+            top: 5px;
+            width: 7px;
+            height: 7px;
+            background: #09a9cc;
+            border-radius: 50%;
+            border: 2px solid #fff
+        }
+
+        .profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer
+        }
+
+        .avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #dceef4, #9fc2cf);
+            display: grid;
+            place-items: center;
+            color: #fff;
+            font-weight: 800
+        }
+
+        .content {
+            padding: 27px 30px 38px;
+            max-width: 1500px;
+            margin: auto
+        }
+
+        .heading {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 23px
+        }
+
+        .heading h1 {
+            font-size: 25px;
+            margin: 0 0 5px;
+            letter-spacing: -.5px
+        }
+
+        .heading p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px
+        }
+
+        .date {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 11px 14px;
+            color: #52647a;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer
+        }
+
+        .kpis {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-bottom: 20px
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            box-shadow: var(--shadow)
+        }
+
+        .kpi {
+            padding: 19px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px
+        }
+
+        .kpi-top {
+            display: flex;
+            align-items: center;
+            gap: 13px
+        }
+
+        .kpi-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            font-size: 20px;
+            background: #e8f9fd;
+            color: #05a5ca
+        }
+
+        .kpi:nth-child(2) .kpi-icon,
+        .kpi:nth-child(4) .kpi-icon {
+            background: #f0f8df;
+            color: #84b91b
+        }
+
+        .kpi-label {
+            font-size: 12px;
+            color: #73839a
+        }
+
+        .value {
+            font-size: 27px;
+            font-weight: 800;
+            letter-spacing: -.7px;
+            margin-top: 3px
+        }
+
+        .growth {
+            font-size: 11px;
+            color: #86bb20;
+            font-weight: 700
+        }
+
+        .grid-main {
+            display: grid;
+            grid-template-columns: minmax(0, 1.55fr) minmax(280px, .85fr) 280px;
+            gap: 18px;
+            align-items: stretch
+        }
+
+        .panel {
+            padding: 20px;
+            min-width: 0
+        }
+
+        .panel-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px
+        }
+
+        .panel h3 {
+            font-size: 15px;
+            margin: 0
+        }
+
+        .select {
+            border: 1px solid var(--line);
+            background: #fff;
+            border-radius: 8px;
+            padding: 7px 9px;
+            color: #63748a;
+            font-size: 11px
+        }
+
+        .chart-wrap {
+            height: 250px;
+            position: relative
+        }
+
+        .chart-svg {
+            width: 100%;
+            height: 100%
+        }
+
+        .legend {
+            display: flex;
+            gap: 18px;
+            font-size: 11px;
+            color: #728198;
+            margin: 3px 0 0 42px
+        }
+
+        .legend span:before {
+            content: "";
+            display: inline-block;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            margin-right: 7px;
+            background: var(--cyan)
+        }
+
+        .legend .green:before {
+            background: var(--lime)
+        }
+
+        .donutbox {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            height: 250px
+        }
+
+        .donut {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: conic-gradient(#0ca6c1 0 45%, #8ec51e 45% 75%, #9fdbf0 75% 90%, #d2d9e1 90% 100%);
+            position: relative;
+            flex: none
+        }
+
+        .donut:after {
+            content: "";
+            position: absolute;
+            inset: 34px;
+            background: #fff;
+            border-radius: 50%
+        }
+
+        .donut-center {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            z-index: 1;
+            text-align: center;
+            font-weight: 800;
+            font-size: 22px
+        }
+
+        .donut-center small {
+            display: block;
+            font-size: 10px;
+            color: #7c899a;
+            font-weight: 600
+        }
+
+        .legend-list {
+            display: flex;
+            flex-direction: column;
+            gap: 13px;
+            font-size: 11px
+        }
+
+        .legend-item {
+            display: grid;
+            grid-template-columns: 10px 1fr auto;
+            gap: 7px;
+            align-items: center
+        }
+
+        .bullet {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%
+        }
+
+        .legend-item b {
+            font-size: 11px;
+            color: #33455b
+        }
+
+        .legend-item small {
+            color: #8b98a8
+        }
+
+        .activity {
+            padding: 20px
+        }
+
+        .activity h3 {
+            margin: 0 0 17px;
+            font-size: 15px
+        }
+
+        .feed {
+            display: flex;
+            flex-direction: column;
+            gap: 17px
+        }
+
+        .feed-item {
+            display: grid;
+            grid-template-columns: 36px 1fr;
+            gap: 10px
+        }
+
+        .mini-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e5f2f5, #c4d5df);
+            display: grid;
+            place-items: center;
+            font-size: 12px;
+            font-weight: 800;
+            color: #496278
+        }
+
+        .feed-item p {
+            margin: 0;
+            font-size: 11px;
+            line-height: 1.45
+        }
+
+        .feed-item strong {
+            font-size: 11px
+        }
+
+        .feed-item span {
+            display: block;
+            color: #8b98a8;
+            font-size: 10px;
+            margin-top: 2px
+        }
+
+        .feed-report {
+            color: #00a4c8;
+            font-weight: 700
+        }
+
+        .lower {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 280px;
+            gap: 18px;
+            margin-top: 18px
+        }
+
+        .table-panel {
+            padding: 20px
+        }
+
+        .table-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px
+        }
+
+        .table-head h3 {
+            margin: 0;
+            font-size: 15px
+        }
+
+        .outline {
+            border: 1px solid var(--line);
+            background: #fff;
+            border-radius: 8px;
+            padding: 7px 12px;
+            color: #5f7187;
+            font-size: 11px;
+            cursor: pointer
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px
+        }
+
+        th {
+            text-align: left;
+            color: #8290a2;
+            font-weight: 700;
+            padding: 10px 7px;
+            border-bottom: 1px solid var(--line)
+        }
+
+        td {
+            padding: 13px 7px;
+            border-bottom: 1px solid #f0f3f6
+        }
+
+        tr:last-child td {
+            border-bottom: 0
+        }
+
+        .client {
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .client i {
+            width: 30px;
+            height: 30px;
+            border-radius: 9px;
+            background: #e8f7fb;
+            display: grid;
+            place-items: center;
+            font-style: normal;
+            font-weight: 800;
+            color: #05a4c5
+        }
+
+        .client i.green {
+            background: #f0f8df;
+            color: #83b71c
+        }
+
+        .status {
+            padding: 5px 8px;
+            border-radius: 20px;
+            background: #e8f9fd;
+            color: #0b9fbd;
+            font-weight: 700
+        }
+
+        .status.done {
+            background: #f0f8df;
+            color: #7eae1c
+        }
+
+        .status.pending {
+            background: #f4f5f7;
+            color: #8490a0
+        }
+
+        .progress {
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .bar {
+            width: 100px;
+            height: 5px;
+            background: #e5f3f7;
+            border-radius: 9px;
+            overflow: hidden
+        }
+
+        .bar i {
+            display: block;
+            height: 100%;
+            background: #0daaca;
+            border-radius: 9px
+        }
+
+        .bar.green {
+            background: #eef5dd
+        }
+
+        .bar.green i {
+            background: #8bc21c
+        }
+
+        .quick {
+            padding: 20px
+        }
+
+        .quick h3 {
+            font-size: 15px;
+            margin: 0 0 18px
+        }
+
+        .quick-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 13px
+        }
+
+        .quick-btn {
+            border: 1px solid var(--line);
+            background: #fff;
+            border-radius: 11px;
+            padding: 14px 8px;
+            text-align: center;
+            cursor: pointer
+        }
+
+        .quick-btn:hover {
+            border-color: #bdeaf2;
+            box-shadow: 0 5px 14px rgba(20, 130, 160, .08)
+        }
+
+        .qicon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: #e8f9fd;
+            color: #05a5ca;
+            display: grid;
+            place-items: center;
+            margin: 0 auto 8px;
+            font-size: 18px
+        }
+
+        .quick-btn:nth-child(2) .qicon,
+        .quick-btn:nth-child(4) .qicon {
+            background: #f0f8df;
+            color: #83b61c
+        }
+
+        .quick-btn b {
+            font-size: 10px
+        }
+
+        .toast {
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            background: #18283f;
+            color: #fff;
+            padding: 12px 16px;
+            border-radius: 10px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, .18);
+            font-size: 12px;
+            opacity: 0;
+            transform: translateY(15px);
+            transition: .25s;
+            z-index: 20
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: none
+        }
+
+        @media(max-width:1180px) {
+            .grid-main {
+                grid-template-columns: 1fr 1fr
+            }
+
+            .activity {
+                grid-column: 1/-1
+            }
+
+            .lower {
+                grid-template-columns: 1fr
+            }
+
+            .quick-grid {
+                grid-template-columns: repeat(4, 1fr)
+            }
+        }
+
+        @media(max-width:900px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: .25s
+            }
+
+            .sidebar.open {
+                transform: none
+            }
+
+            .main {
+                margin-left: 0
+            }
+
+            .menu {
+                display: block
+            }
+
+            .kpis {
+                grid-template-columns: 1fr 1fr
+            }
+
+            .grid-main {
+                grid-template-columns: 1fr
+            }
+
+            .activity {
+                grid-column: auto
+            }
+
+            .quick-grid {
+                grid-template-columns: 1fr 1fr
+            }
+        }
+
+        @media(max-width:620px) {
+            .content {
+                padding: 20px 15px
+            }
+
+            .topbar {
+                padding: 0 15px
+            }
+
+            .search {
+                display: none
+            }
+
+            .profile span {
+                display: none
+            }
+
+            .heading {
+                display: block
+            }
+
+            .date {
+                margin-top: 15px
+            }
+
+            .kpis {
+                grid-template-columns: 1fr
+            }
+
+            .grid-main {
+                grid-template-columns: 1fr
+            }
+
+            .donutbox {
+                justify-content: center;
+                flex-wrap: wrap;
+                height: auto;
+                padding: 8px 0 15px
+            }
+
+            .lower {
+                grid-template-columns: 1fr
+            }
+
+            .table-panel {
+                overflow: auto
+            }
+
+            table {
+                min-width: 650px
+            }
+
+            .quick-grid {
+                grid-template-columns: 1fr 1fr
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <aside class="sidebar" id="sidebar">
+            <div class="logo" aria-label="Logo">
+                <svg viewBox="0 0 120 120" role="img">
+                    <path
+                        d="M18 18 Q18 12 24 15 L62 44 L100 15 Q106 12 106 20 L106 95 Q106 103 98 103 L91 103 Q84 103 84 96 L84 45 L65 59 Q61 62 57 59 L18 30Z"
+                        fill="url(#g1)" />
+                    <path d="M18 47 L57 76 L84 56 L84 96 Q84 103 77 103 L69 103 Q63 103 63 97 L63 72 L18 39Z"
+                        fill="url(#g2)" opacity=".0" />
+                    <path d="M18 47 L57 76 L84 56 L84 96 Q84 103 77 103 L69 103 Q63 103 63 97 L63 72 L18 39Z"
+                        fill="none" />
+                    <path d="M18 64 L52 87 L18 110Z" fill="#91c51b" />
+                    <defs>
+                        <linearGradient id="g1" x1="0" x2="1">
+                            <stop stop-color="#12bde2" />
+                            <stop offset="1" stop-color="#0799a7" />
+                        </linearGradient>
+                        <linearGradient id="g2" x1="0" x2="1">
+                            <stop stop-color="#12bde2" />
+                            <stop offset="1" stop-color="#0799a7" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            <nav class="nav">
+                <button class="active" onclick="setActive(this)"><span class="icon">⌂</span>Dashboard</button>
+                <button onclick="setActive(this)"><span class="icon">♙</span>Usuarios</button>
+                <button onclick="setActive(this)"><span class="icon">▣</span>Proyectos</button>
+                <button onclick="setActive(this)"><span class="icon">☑</span>Tareas</button>
+                <button onclick="setActive(this)"><span class="icon">▥</span>Reportes</button>
+                <button onclick="setActive(this)"><span class="icon">▣</span>Calendario</button>
+                <button onclick="setActive(this)"><span class="icon">▱</span>Mensajes</button>
+                <button onclick="setActive(this)"><span class="icon">⚙</span>Ajustes</button>
+            </nav>
+            <div class="upgrade">
+                <div class="crown">♛</div>
+                <h4>Obtén más con Pro</h4>
+                <p>Accede a funciones avanzadas y lleva tu productividad al siguiente nivel.</p><button
+                    onclick="toast('Función Pro seleccionada')">Actualizar ahora</button>
+            </div>
+            <div class="copy">© 2024 • Mi Empresa</div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <div class="lefttop"><button class="menu" onclick="toggleMenu()">☰</button>
+                    <div class="search">⌕<input id="search" placeholder="Buscar en la plataforma..."
+                            oninput="filterTable()"></div>
+                </div>
+                <div class="top-actions"><button class="circle-btn"
+                        onclick="toast('No tienes notificaciones nuevas')">♧<i class="dot"></i></button><button
+                        class="circle-btn" onclick="toast('Centro de ayuda abierto')">?</button>
+                    <div class="profile">
+                        <div class="avatar">A</div><span>Hola, Andrés</span>⌄
+                    </div>
+                </div>
+            </header>
+
+            <section class="content">
+                <div class="heading">
+                    <div>
+                        <h1>¡Bienvenido, Andrés! 👋</h1>
+                        <p>Aquí tienes un resumen de lo que está pasando hoy.</p>
+                    </div><button class="date" onclick="toast('Selector de fecha')">▣ &nbsp; 24 de mayo, 2024
+                        &nbsp;⌄</button>
+                </div>
+
+                <div class="kpis">
+                    <div class="card kpi">
+                        <div class="kpi-top">
+                            <div class="kpi-icon">♙</div>
+                            <div>
+                                <div class="kpi-label">Usuarios activos</div>
+                                <div class="value">1,248</div>
+                            </div>
+                        </div>
+                        <div class="growth">↑ 12.5% <span style="color:#9aa5b3;font-weight:500">vs semana pasada</span>
+                        </div>
+                    </div>
+                    <div class="card kpi">
+                        <div class="kpi-top">
+                            <div class="kpi-icon">▣</div>
+                            <div>
+                                <div class="kpi-label">Proyectos activos</div>
+                                <div class="value">36</div>
+                            </div>
+                        </div>
+                        <div class="growth">↑ 8.3% <span style="color:#9aa5b3;font-weight:500">vs semana pasada</span>
+                        </div>
+                    </div>
+                    <div class="card kpi">
+                        <div class="kpi-top">
+                            <div class="kpi-icon">✓</div>
+                            <div>
+                                <div class="kpi-label">Tareas completadas</div>
+                                <div class="value">842</div>
+                            </div>
+                        </div>
+                        <div class="growth">↑ 15.7% <span style="color:#9aa5b3;font-weight:500">vs semana pasada</span>
+                        </div>
+                    </div>
+                    <div class="card kpi">
+                        <div class="kpi-top">
+                            <div class="kpi-icon">⌁</div>
+                            <div>
+                                <div class="kpi-label">Ingresos este mes</div>
+                                <div class="value">$24,980</div>
+                            </div>
+                        </div>
+                        <div class="growth">↑ 18.6% <span style="color:#9aa5b3;font-weight:500">vs mes pasado</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-main">
+                    <div class="card panel">
+                        <div class="panel-head">
+                            <h3>Resumen de actividad</h3><button class="select"
+                                onclick="toast('Filtro: últimos 7 días')">Últimos 7 días　⌄</button>
+                        </div>
+                        <div class="chart-wrap">
+                            <svg class="chart-svg" viewBox="0 0 680 270" preserveAspectRatio="none">
+                                <g stroke="#edf1f5" stroke-width="1">
+                                    <line x1="48" y1="25" x2="650" y2="25" />
+                                    <line x1="48" y1="75" x2="650" y2="75" />
+                                    <line x1="48" y1="125" x2="650" y2="125" />
+                                    <line x1="48" y1="175" x2="650" y2="175" />
+                                    <line x1="48" y1="225" x2="650" y2="225" />
+                                </g>
+                                <g fill="#8492a4" font-size="10"><text x="7" y="28">1,000</text><text x="18"
+                                        y="78">800</text><text x="18" y="128">600</text><text x="18"
+                                        y="178">400</text><text x="18" y="228">200</text></g>
+                                <polyline points="48,125 145,160 242,125 339,115 436,65 533,78 630,88" fill="none"
+                                    stroke="#10afd0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+                                <polyline points="48,190 145,212 242,175 339,158 436,130 533,157 630,142" fill="none"
+                                    stroke="#8fc321" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+                                <g fill="#10afd0">
+                                    <circle cx="48" cy="125" r="5" />
+                                    <circle cx="145" cy="160" r="5" />
+                                    <circle cx="242" cy="125" r="5" />
+                                    <circle cx="339" cy="115" r="5" />
+                                    <circle cx="436" cy="65" r="5" />
+                                    <circle cx="533" cy="78" r="5" />
+                                    <circle cx="630" cy="88" r="5" />
+                                </g>
+                                <g fill="#8fc321">
+                                    <circle cx="48" cy="190" r="5" />
+                                    <circle cx="145" cy="212" r="5" />
+                                    <circle cx="242" cy="175" r="5" />
+                                    <circle cx="339" cy="158" r="5" />
+                                    <circle cx="436" cy="130" r="5" />
+                                    <circle cx="533" cy="157" r="5" />
+                                    <circle cx="630" cy="142" r="5" />
+                                </g>
+                                <g fill="#8290a2" font-size="10" text-anchor="middle"><text x="48" y="252">18
+                                        May</text><text x="145" y="252">19 May</text><text x="242" y="252">20
+                                        May</text><text x="339" y="252">21 May</text><text x="436" y="252">22
+                                        May</text><text x="533" y="252">23 May</text><text x="630" y="252">24 May</text>
+                                </g>
+                            </svg>
+                        </div>
+                        <div class="legend"><span>Visitas</span><span class="green">Interacciones</span></div>
+                    </div>
+
+                    <div class="card panel">
+                        <div class="panel-head">
+                            <h3>Distribución de proyectos</h3>
+                        </div>
+                        <div class="donutbox">
+                            <div class="donut">
+                                <div class="donut-center">36<small>Proyectos</small></div>
+                            </div>
+                            <div class="legend-list">
+                                <div class="legend-item"><i class="bullet" style="background:#0ca6c1"></i><b>En
+                                        progreso</b><small>45% (16)</small></div>
+                                <div class="legend-item"><i class="bullet"
+                                        style="background:#8ec51e"></i><b>Completados</b><small>30% (11)</small></div>
+                                <div class="legend-item"><i class="bullet"
+                                        style="background:#9fdbf0"></i><b>Pendientes</b><small>15% (5)</small></div>
+                                <div class="legend-item"><i class="bullet" style="background:#d2d9e1"></i><b>En
+                                        espera</b><small>10% (4)</small></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card activity">
+                        <h3>Actividad reciente</h3>
+                        <div class="feed">
+                            <div class="feed-item">
+                                <div class="mini-avatar">M</div>
+                                <div>
+                                    <p><strong>María</strong> completó la tarea<br>Diseño de landing page</p><span>Hace
+                                        10 min</span>
+                                </div>
+                            </div>
+                            <div class="feed-item">
+                                <div class="mini-avatar">J</div>
+                                <div>
+                                    <p><strong>Juan</strong> agregó un nuevo proyecto<br>App Móvil</p><span>Hace 1
+                                        hora</span>
+                                </div>
+                            </div>
+                            <div class="feed-item">
+                                <div class="mini-avatar">L</div>
+                                <div>
+                                    <p><strong>Lucía</strong> comentó en<br>Reunión de planificación</p><span>Hace 2
+                                        horas</span>
+                                </div>
+                            </div>
+                            <div class="feed-item">
+                                <div class="mini-avatar">P</div>
+                                <div>
+                                    <p><strong>Pedro</strong> completó el proyecto<br>Dashboard Analytics</p><span>Hace
+                                        3 horas</span>
+                                </div>
+                            </div>
+                            <div class="feed-item">
+                                <div class="mini-avatar" style="color:#05a5ca">⌁</div>
+                                <div>
+                                    <p>Se generó un nuevo reporte<br><span class="feed-report">Reporte mensual -
+                                            Mayo</span></p><span>Hace 4 horas</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lower">
+                    <div class="card table-panel">
+                        <div class="table-head">
+                            <h3>Proyectos recientes</h3><button class="outline"
+                                onclick="toast('Mostrando todos los proyectos')">Ver todos</button>
+                        </div>
+                        <table id="projects">
+                            <thead>
+                                <tr>
+                                    <th>Proyecto</th>
+                                    <th>Cliente</th>
+                                    <th>Estado</th>
+                                    <th>Progreso</th>
+                                    <th>Fecha límite</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Rediseño Web</td>
+                                    <td>
+                                        <div class="client"><i>T</i>TechNova</div>
+                                    </td>
+                                    <td><span class="status">En progreso</span></td>
+                                    <td>
+                                        <div class="progress">75% <div class="bar"><i style="width:75%"></i></div>
+                                        </div>
+                                    </td>
+                                    <td>30 May 2024</td>
+                                    <td>⋮</td>
+                                </tr>
+                                <tr>
+                                    <td>App Móvil</td>
+                                    <td>
+                                        <div class="client"><i class="green">S</i>StartUp Labs</div>
+                                    </td>
+                                    <td><span class="status">En progreso</span></td>
+                                    <td>
+                                        <div class="progress">60% <div class="bar"><i style="width:60%"></i></div>
+                                        </div>
+                                    </td>
+                                    <td>15 Jun 2024</td>
+                                    <td>⋮</td>
+                                </tr>
+                                <tr>
+                                    <td>Dashboard Analytics</td>
+                                    <td>
+                                        <div class="client"><i>D</i>DataCorp</div>
+                                    </td>
+                                    <td><span class="status done">Completado</span></td>
+                                    <td>
+                                        <div class="progress">100% <div class="bar green"><i style="width:100%"></i>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>10 May 2024</td>
+                                    <td>⋮</td>
+                                </tr>
+                                <tr>
+                                    <td>Campaña Marketing</td>
+                                    <td>
+                                        <div class="client"><i class="green">B</i>Brandify</div>
+                                    </td>
+                                    <td><span class="status pending">Pendiente</span></td>
+                                    <td>
+                                        <div class="progress">20% <div class="bar"><i style="width:20%"></i></div>
+                                        </div>
+                                    </td>
+                                    <td>05 Jun 2024</td>
+                                    <td>⋮</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card quick">
+                        <h3>Accesos rápidos</h3>
+                        <div class="quick-grid">
+                            <button class="quick-btn" onclick="toast('Nuevo proyecto')">
+                                <div class="qicon">＋</div><b>Nuevo proyecto</b>
+                            </button>
+                            <button class="quick-btn" onclick="toast('Invitar usuario')">
+                                <div class="qicon">♙+</div><b>Invitar usuario</b>
+                            </button>
+                            <button class="quick-btn" onclick="toast('Nueva tarea')">
+                                <div class="qicon">☑</div><b>Nueva tarea</b>
+                            </button>
+                            <button class="quick-btn" onclick="toast('Generando reporte…')">
+                                <div class="qicon">▤</div><b>Generar reporte</b>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <div class="toast" id="toast"></div>
+    <script>
+        function setActive(btn) { document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active')); btn.classList.add('active'); toast('Sección: ' + btn.textContent.trim()) }
+        function toggleMenu() { document.getElementById('sidebar').classList.toggle('open') }
+        let timer; function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(timer); timer = setTimeout(() => t.classList.remove('show'), 2200) }
+        function filterTable() { const q = document.getElementById('search').value.toLowerCase(); document.querySelectorAll('#projects tbody tr').forEach(r => r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none') }
+    </script>
+</body>
+
+</html>
+
+dashboard_mi_empresa.html
+HTML
+
+Improve accuracy for technical work
+Upgrade to Plus and use increased reasoning to debug code, work through systems, and solve math or science problems.
+
+Get Plus
