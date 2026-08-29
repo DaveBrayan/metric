@@ -22,7 +22,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Handle a login request.
+     * Handle a login request with Active / Inactive check.
      */
     public function login(Request $request)
     {
@@ -33,19 +33,30 @@ class AuthController extends Controller
 
         $remember = $request->boolean('remember');
 
-        // Intento de autenticación estándar con la base de datos
-        if (Auth::attempt($credentials, $remember)) {
-            $request->session()->regenerate();
+        // 1. Verificar si el usuario existe para validar su estado de actividad
+        $user = User::where('email', $credentials['email'])->first();
 
-            return redirect()->intended(route('dashboard'))
-                ->with('success', '¡Bienvenido al Centro de Mando METRIC V2!');
+        if ($user) {
+            // Verificar si el usuario está inactivo
+            if (in_array(strtolower($user->status), ['offline', 'inactivo', 'suspendido'])) {
+                return back()->withErrors([
+                    'email' => 'Esta cuenta se encuentra inactiva o suspendida. Comuníquese con el administrador.',
+                ])->onlyInput('email');
+            }
+
+            // Verificar contraseña
+            if (Hash::check($credentials['password'], $user->password)) {
+                Auth::login($user, $remember);
+                $request->session()->regenerate();
+
+                return redirect()->intended(route('dashboard'))
+                    ->with('success', '¡Bienvenido al Centro de Mando METRIC V2!');
+            }
         }
 
-        // Acceso administrativo directo si la base de datos aún no estuviera migrada
+        // 2. Acceso administrativo de contingencia
         if ($request->input('email') === 'admin@metric.com' && $request->input('password') === '9210292Dc#PB') {
-            $user = User::where('email', 'admin@metric.com')->first();
             if (!$user) {
-                // Crear usuario en memoria o DB si fuera necesario
                 try {
                     $user = User::create([
                         'name' => 'Reynaldo Sirpa',

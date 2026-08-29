@@ -93,3 +93,58 @@ window.triggerToast = function(text, icon = '✓', duration = 2500) {
         }, duration);
     }
 };
+
+/**
+ * Modern SweetAlert2 Confirmation Dialog
+ */
+window.metricConfirm = function({ title, text, icon = 'warning', confirmText = 'Sí, continuar', cancelText = 'Cancelar', isDanger = false }) {
+    if (typeof Swal === 'undefined') {
+        return Promise.resolve({ isConfirmed: confirm(text || title) });
+    }
+
+    return Swal.fire({
+        title: title,
+        text: text,
+        icon: icon,
+        showCancelButton: true,
+        confirmButtonText: confirmText,
+        cancelButtonText: cancelText,
+        customClass: {
+            popup: 'metric-swal-popup',
+            confirmButton: isDanger ? 'metric-swal-btn-danger' : 'metric-swal-btn-confirm',
+            cancelButton: 'metric-swal-btn-cancel'
+        },
+        buttonsStyling: false,
+        background: '#111c2e',
+        iconColor: isDanger ? '#ef4444' : '#10b9df',
+        showClass: {
+            popup: 'animate__animated animate__fadeInDown'
+        },
+        hideClass: {
+            popup: 'animate__animated animate__fadeOutUp'
+        }
+    });
+};
+
+/**
+ * Modern SweetAlert2 Alert Message
+ */
+window.metricAlert = function({ title, text, icon = 'success', timer = 2500 }) {
+    if (typeof Swal === 'undefined') {
+        alert(text || title);
+        return;
+    }
+
+    return Swal.fire({
+        title: title,
+        text: text,
+        icon: icon,
+        timer: timer,
+        showConfirmButton: false,
+        customClass: {
+            popup: 'metric-swal-popup'
+        },
+        background: '#111c2e',
+        iconColor: icon === 'error' ? '#ef4444' : (icon === 'warning' ? '#f59e0b' : '#10b9df')
+    });
+};

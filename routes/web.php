@@ -30,9 +30,15 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/responsables', [ManagerController::class, 'index'])->name('managers.index');
     Route::post('/responsables', [ManagerController::class, 'store'])->name('managers.store');
+    Route::put('/responsables/{id}', [ManagerController::class, 'update'])->name('managers.update');
+    Route::delete('/responsables/{id}', [ManagerController::class, 'destroy'])->name('managers.destroy');
+    Route::post('/responsables/{id}/reset-password', [ManagerController::class, 'resetPassword'])->name('managers.reset-password');
 
     Route::get('/personal', [StaffController::class, 'index'])->name('staff.index');
     Route::post('/personal', [StaffController::class, 'store'])->name('staff.store');
+    Route::put('/personal/{id}', [StaffController::class, 'update'])->name('staff.update');
+    Route::delete('/personal/{id}', [StaffController::class, 'destroy'])->name('staff.destroy');
+    Route::post('/personal/{id}/reset-password', [StaffController::class, 'resetPassword'])->name('staff.reset-password');
 
     // Proyectos: Proyectos Activos & Submódulo de Módulos de Monitoreo
     Route::get('/proyectos', [ProjectController::class, 'index'])->name('projects.index');

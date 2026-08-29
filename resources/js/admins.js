@@ -223,18 +223,37 @@ document.addEventListener('change', (e) => {
 });
 
 /**
- * Open Delete Modal
+ * Open Delete Modal with SweetAlert2
  */
 window.openDeleteAdminModal = function(id, name) {
-    const modal = document.getElementById('adminDeleteModal');
-    const form = document.getElementById('deleteAdminForm');
-    if (!modal || !form) return;
+    if (typeof window.metricConfirm === 'function') {
+        window.metricConfirm({
+            title: '¿Eliminar Administrador?',
+            text: `¿Estás seguro de revocar el acceso y eliminar permanentemente al administrador ${name}?`,
+            icon: 'warning',
+            confirmText: 'Sí, eliminar',
+            cancelText: 'Cancelar',
+            isDanger: true
+        }).then(result => {
+            if (result.isConfirmed) {
+                const form = document.getElementById('deleteAdminForm');
+                if (form) {
+                    form.action = `/administradores/${id}`;
+                    form.submit();
+                }
+            }
+        });
+    } else {
+        const modal = document.getElementById('adminDeleteModal');
+        const form = document.getElementById('deleteAdminForm');
+        if (!modal || !form) return;
 
-    form.action = `/administradores/${id}`;
-    document.getElementById('deleteAdminName').textContent = name;
+        form.action = `/administradores/${id}`;
+        document.getElementById('deleteAdminName').textContent = name;
 
-    modal.classList.add('open');
-    document.body.style.overflow = 'hidden';
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
 };
 
 /**

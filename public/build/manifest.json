@@ -5,7 +5,7 @@
     "isEntry": true
   },
   "resources/css/app.css": {
-    "file": "assets/app-CzB-v77y.css",
+    "file": "assets/app-CgRzZG_k.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
@@ -19,19 +19,29 @@
     "src": "resources/css/login.css",
     "isEntry": true
   },
+  "resources/css/managers.css": {
+    "file": "assets/managers-DF65FRau.css",
+    "src": "resources/css/managers.css",
+    "isEntry": true
+  },
   "resources/css/settings.css": {
     "file": "assets/settings-h9v-mCyX.css",
     "src": "resources/css/settings.css",
     "isEntry": true
   },
+  "resources/css/staff.css": {
+    "file": "assets/staff-hr8R0P3t.css",
+    "src": "resources/css/staff.css",
+    "isEntry": true
+  },
   "resources/js/admins.js": {
-    "file": "assets/admins-D0QsMirB.js",
+    "file": "assets/admins-CJ4N-aZm.js",
     "name": "admins",
     "src": "resources/js/admins.js",
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-CWIGk7Zb.js",
+    "file": "assets/app-5Wk4vlO_.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true
@@ -48,10 +58,22 @@
     "src": "resources/js/login.js",
     "isEntry": true
   },
+  "resources/js/managers.js": {
+    "file": "assets/managers-D0Pplg-e.js",
+    "name": "managers",
+    "src": "resources/js/managers.js",
+    "isEntry": true
+  },
   "resources/js/settings.js": {
     "file": "assets/settings-BB0VjIMM.js",
     "name": "settings",
     "src": "resources/js/settings.js",
+    "isEntry": true
+  },
+  "resources/js/staff.js": {
+    "file": "assets/staff-CTXJw4xT.js",
+    "name": "staff",
+    "src": "resources/js/staff.js",
     "isEntry": true
   }
 }
