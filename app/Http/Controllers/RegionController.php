@@ -2,93 +2,58 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Region;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class RegionController extends Controller
 {
     public function index()
     {
-        $userName = 'Reynaldo';
-        $userRole = 'Administrador';
+        $currentUser = Auth::user();
+        $userName = $currentUser ? $currentUser->name : 'Reynaldo';
+        $userRole = $currentUser ? $currentUser->role : 'Superadministrador';
 
-        $regions = [
-            [
-                'id' => 1,
-                'num' => '01',
-                'name' => 'Regional La Paz (Sede Central)',
-                'code' => 'LPZ-01',
-                'initial' => 'LP',
-                'theme' => 'cyan',
-                'manager' => 'Ing. Reynaldo Sirpa',
-                'address' => 'Av. 6 de Agosto #2450, Sopocachi',
-                'assigned_projects' => '12 Proyectos Activos',
-                'staff_count' => '18 Especialistas',
-                'status' => 'Operativo',
-                'status_type' => 'done',
-            ],
-            [
-                'id' => 2,
-                'num' => '02',
-                'name' => 'Regional Santa Cruz',
-                'code' => 'SCZ-02',
-                'initial' => 'SC',
-                'theme' => 'lime',
-                'manager' => 'Ing. Carlos Mendoza',
-                'address' => 'Parque Industrial PI-22, 4to Anillo',
-                'assigned_projects' => '10 Proyectos Activos',
-                'staff_count' => '14 Especialistas',
-                'status' => 'Operativo',
-                'status_type' => 'done',
-            ],
-            [
-                'id' => 3,
-                'num' => '03',
-                'name' => 'Regional Cochabamba',
-                'code' => 'CBB-03',
-                'initial' => 'CB',
-                'theme' => 'cyan',
-                'manager' => 'Ing. Valeria Gutiérrez',
-                'address' => 'Av. América Este #1020',
-                'assigned_projects' => '6 Proyectos Activos',
-                'staff_count' => '10 Especialistas',
-                'status' => 'Operativo',
-                'status_type' => 'done',
-            ],
-            [
-                'id' => 4,
-                'num' => '04',
-                'name' => 'Regional Potosí (Distrito Minero)',
-                'code' => 'PTS-04',
-                'initial' => 'PT',
-                'theme' => 'lime',
-                'manager' => 'Ing. Diego Fernández',
-                'address' => 'Zona San Cristóbal, Km 42',
-                'assigned_projects' => '5 Proyectos Activos',
-                'staff_count' => '4 Especialistas',
-                'status' => 'Operativo',
-                'status_type' => 'done',
-            ],
-            [
-                'id' => 5,
-                'num' => '05',
-                'name' => 'Regional Oruro',
-                'code' => 'ORU-05',
-                'initial' => 'OR',
-                'theme' => 'cyan',
-                'manager' => 'Ing. Fernando Choque',
-                'address' => 'Av. 24 de Junio, Zona Industrial',
-                'assigned_projects' => '3 Proyectos Activos',
-                'staff_count' => '2 Especialistas',
-                'status' => 'Operativo',
-                'status_type' => 'done',
-            ],
-        ];
+        $regions = Region::withCount(['projects', 'staff'])->get()->map(function ($reg, $index) {
+            return [
+                'id' => $reg->id,
+                'num' => str_pad($index + 1, 2, '0', STR_PAD_LEFT),
+                'name' => $reg->name,
+                'code' => $reg->code,
+                'initial' => strtoupper(substr($reg->code, 0, 2)),
+                'theme' => $reg->theme ?? 'cyan',
+                'manager' => $reg->manager_name ?? 'Ing. Reynaldo Sirpa',
+                'address' => $reg->address,
+                'assigned_projects' => $reg->projects_count . ' Proyectos Asignados',
+                'staff_count' => $reg->staff_count . ' Especialistas',
+                'status' => $reg->status,
+                'status_type' => ($reg->status === 'Operativo') ? 'done' : 'in_progress',
+            ];
+        })->toArray();
 
         return view('regions.index', compact('userName', 'userRole', 'regions'));
     }
 
     public function store(Request $request)
     {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|unique:regions,code',
+            'department' => 'required|string',
+            'address' => 'nullable|string',
+            'manager_name' => 'nullable|string',
+        ]);
+
+        Region::create([
+            'name' => $validated['name'],
+            'code' => strtoupper($validated['code']),
+            'department' => $validated['department'],
+            'address' => $validated['address'] ?? null,
+            'manager_name' => $validated['manager_name'] ?? 'Ing. Reynaldo Sirpa',
+            'theme' => 'cyan',
+            'status' => 'Operativo',
+        ]);
+
         return redirect()->route('regions.index')->with('success', 'Regional registrada exitosamente.');
     }
 }
