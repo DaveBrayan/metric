@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Staff;
-use App\Models\Region;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,9 +16,7 @@ class StaffController extends Controller
         $userName = $currentUser ? $currentUser->name : 'Reynaldo';
         $userRole = $currentUser ? $currentUser->role : 'Superadministrador';
 
-        $regions = Region::all();
-
-        $staff = Staff::with(['region', 'modules.project'])->get()->map(function ($s, $index) {
+        $staff = Staff::with(['modules.project'])->get()->map(function ($s, $index) {
             $isActive = in_array(strtolower($s->status), ['online', 'activo']);
             $firstModule = $s->modules->first();
             $assignedProject = $firstModule && $firstModule->project ? $firstModule->project->name : 'PRJ-METRIC-General';
@@ -33,18 +30,16 @@ class StaffController extends Controller
                 'phone' => $s->phone ?? '—',
                 'linked_device' => $linkedDevice,
                 'assigned_project' => $assignedProject,
-                'region_id' => $s->region_id,
                 'initial' => strtoupper(substr($s->name, 0, 1)),
                 'department' => $s->department ?? 'Ingeniería de Automatización',
                 'position' => $s->position ?? 'Especialista en Sensores',
-                'region' => $s->region ? $s->region->name : 'Sede Central',
                 'role_theme' => $s->role_theme ?? 'cyan',
                 'status' => $isActive ? 'online' : 'offline',
                 'status_label' => $isActive ? ($s->status_label ?? 'En Planta') : 'Inactivo',
             ];
         })->toArray();
 
-        return view('staff.index', compact('userName', 'userRole', 'staff', 'regions'));
+        return view('staff.index', compact('userName', 'userRole', 'staff'));
     }
 
     public function store(Request $request)
@@ -55,7 +50,6 @@ class StaffController extends Controller
             'phone' => 'nullable|string',
             'department' => 'required|string',
             'position' => 'required|string',
-            'region_id' => 'nullable|exists:regions,id',
             'status' => 'nullable|in:online,offline',
         ]);
 
@@ -65,7 +59,6 @@ class StaffController extends Controller
             'phone' => $validated['phone'] ?? null,
             'department' => $validated['department'],
             'position' => $validated['position'],
-            'region_id' => $validated['region_id'] ?? null,
             'role_theme' => 'cyan',
             'status' => $validated['status'] ?? 'online',
             'status_label' => ($validated['status'] ?? 'online') === 'online' ? 'En Planta' : 'Inactivo',
@@ -84,7 +77,6 @@ class StaffController extends Controller
             'phone' => 'nullable|string',
             'department' => 'required|string',
             'position' => 'required|string',
-            'region_id' => 'nullable|exists:regions,id',
             'status' => 'required|in:online,offline',
         ]);
 
@@ -94,7 +86,6 @@ class StaffController extends Controller
             'phone' => $validated['phone'] ?? null,
             'department' => $validated['department'],
             'position' => $validated['position'],
-            'region_id' => $validated['region_id'] ?? null,
             'status' => $validated['status'],
             'status_label' => ($validated['status'] === 'online') ? 'En Planta' : 'Inactivo',
         ]);
@@ -166,3 +157,4 @@ class StaffController extends Controller
         return redirect()->route('staff.index')->with('success', 'Colaborador eliminado exitosamente.');
     }
 }
+

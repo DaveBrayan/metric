@@ -11,7 +11,7 @@ window.openCreateCompanyModal = function() {
     }
 };
 
-window.openEditCompanyModal = function(id, name, code, industry, contactPerson, email, phone, status) {
+window.openEditCompanyModal = function(id, name, code, nit, contactPerson, email, phone, status) {
     const modal = document.getElementById('editCompanyModal');
     const form = document.getElementById('editCompanyForm');
     if (!modal || !form) return;
@@ -19,7 +19,7 @@ window.openEditCompanyModal = function(id, name, code, industry, contactPerson, 
     form.action = `/empresas/${id}`;
     document.getElementById('editCompanyName').value = name;
     document.getElementById('editCompanyCode').value = code;
-    document.getElementById('editCompanyIndustry').value = industry;
+    document.getElementById('editCompanyNit').value = (nit === '—' || nit === null || nit === undefined) ? '' : nit;
     document.getElementById('editCompanyContact').value = contactPerson === '—' ? '' : contactPerson;
     document.getElementById('editCompanyEmail').value = email === '—' ? '' : email;
     document.getElementById('editCompanyPhone').value = phone === '—' ? '' : phone;
@@ -81,3 +81,4 @@ window.filterCompaniesLive = function() {
         row.style.display = text.includes(query) ? '' : 'none';
     });
 };
+

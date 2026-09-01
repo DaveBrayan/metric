@@ -299,7 +299,7 @@
                         type="text" 
                         id="dashboardProjectsSearchInput" 
                         class="table-search-input" 
-                        placeholder="Buscar por proyecto, cliente o regional..." 
+                        placeholder="Buscar por proyecto o cliente..." 
                         onkeyup="searchLiveTableGeneric('dashboardProjectsSearchInput', 'dashboardMasterMatrixTable')"
                         aria-label="Buscar proyectos"
                     >
@@ -322,7 +322,6 @@
                         <th style="width: 45px;">#</th>
                         <th>Proyecto Industrial</th>
                         <th>Empresa / Cliente</th>
-                        <th>Regional</th>
                         <th>Módulos Vinculados</th>
                         <th>Puntos Muestreados</th>
                         <th>Cumplimiento LMP</th>
@@ -358,14 +357,7 @@
                                 </div>
                             </td>
 
-                            <!-- 4. Regional -->
-                            <td>
-                                <span class="status-pill-badge in_progress" style="font-size: 11.5px;">
-                                    {{ $project['region'] }}
-                                </span>
-                            </td>
-
-                            <!-- 5. Módulos Vinculados -->
+                            <!-- 4. Módulos Vinculados -->
                             <td>
                                 <div style="display: flex; gap: 5px; flex-wrap: wrap;">
                                     @foreach($project['modules_list'] as $modBadge)
@@ -376,7 +368,7 @@
                                 </div>
                             </td>
 
-                            <!-- 6. Puntos Muestreados -->
+                            <!-- 5. Puntos Muestreados -->
                             <td>
                                 <div class="points-ratio-box">
                                     <div class="points-ratio-text">
@@ -384,30 +376,30 @@
                                         <span>{{ $project['points_pct'] }}%</span>
                                     </div>
                                     <div class="points-ratio-track">
-                                        <div class="points-ratio-fill {{ $project['points_pct'] == 100 ? 'lime' : 'cyan' }}" style="width: {{ $project['points_pct'] }}%;"></div>
+                                        <div class="points-ratio-fill {{ $project['points_pct'] >= 80 ? 'lime' : 'cyan' }}" style="width: {{ $project['points_pct'] }}%;"></div>
                                     </div>
                                 </div>
                             </td>
 
-                            <!-- 7. Cumplimiento LMP -->
+                            <!-- 6. Cumplimiento LMP -->
                             <td>
-                                <span class="status-pill-badge done" style="font-size: 11.5px;">
+                                <span class="status-pill-badge done" style="font-weight: 700;">
                                     {{ $project['compliance_pct'] }}
                                 </span>
                             </td>
 
-                            <!-- 8. Estado -->
+                            <!-- 7. Estado -->
                             <td>
-                                <span class="status-pill-badge {{ $project['status_type'] ?? 'in_progress' }}">
+                                <span class="status-pill-badge {{ $project['status_type'] }}">
                                     {{ $project['status'] }}
                                 </span>
                             </td>
 
-                            <!-- 9. Acciones Estandarizadas a Colores -->
+                            <!-- 8. Acciones -->
                             <td>
                                 <div class="admin-actions-cell">
-                                    <!-- Ver Telemetría / Módulos -->
-                                    <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.index') }}'" title="Ver Módulos">
+                                    <!-- Ver Módulos del Proyecto -->
+                                    <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.index') }}'" title="Ver Módulos de Medición">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                             <polygon points="12 2 2 7 12 12 22 7 12 2"/>
                                             <polyline points="2 17 12 22 22 17"/>
@@ -415,7 +407,7 @@
                                         </svg>
                                     </button>
 
-                                    <!-- Telemetría en Vivo -->
+                                    <!-- Ver Telemetría en Vivo -->
                                     <button type="button" class="btn-admin-icon-action theme-lime" onclick="triggerToast('Telemetría en vivo: {{ $project['name'] }}', '⚡')" title="Telemetría">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>

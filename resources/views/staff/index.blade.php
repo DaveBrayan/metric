@@ -35,7 +35,7 @@
                     type="text" 
                     id="staffSearchInput" 
                     class="staff-search-input" 
-                    placeholder="Buscar por especialista, especialidad o regional..."
+                    placeholder="Buscar por especialista, especialidad o departamento..."
                     onkeyup="filterStaffLive()"
                 >
             </div>
@@ -48,7 +48,7 @@
                     <tr>
                         <th style="width: 50px;">#</th>
                         <th>Colaborador</th>
-                        <th>Departamento & Regional</th>
+                        <th>Departamento & Cargo</th>
                         <th>Proyecto Asignado</th>
                         <th>Dispositivo Vinculado</th>
                         <th>Estado</th>
@@ -76,15 +76,11 @@
                                 </div>
                             </td>
 
-                            <!-- 3. Departamento & Regional -->
+                            <!-- 3. Departamento & Cargo -->
                             <td>
                                 <div style="font-weight: 700; color: var(--ink);">{{ $member['department'] ?? 'Operaciones' }}</div>
-                                <div style="font-size: 11.5px; color: var(--cyan); font-weight: 600; display: inline-flex; align-items: center; gap: 4px; margin-top: 2px;">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-                                        <circle cx="12" cy="10" r="3"/>
-                                    </svg>
-                                    <span>{{ $member['region'] ?? 'Sede Central' }}</span>
+                                <div style="font-size: 11.5px; color: var(--cyan); font-weight: 600; margin-top: 2px;">
+                                    <span>{{ $member['position'] ?? 'Técnico' }}</span>
                                 </div>
                             </td>
 
@@ -130,7 +126,7 @@
 
                                     <!-- 2. Editar Colaborador -->
                                     <button type="button" class="btn-admin-icon-action theme-lime" 
-                                            onclick="openEditStaffModal('{{ $member['id'] }}', '{{ addslashes($member['name']) }}', '{{ $member['email'] }}', '{{ $member['phone'] ?? '' }}', '{{ addslashes($member['department']) }}', '{{ addslashes($member['position']) }}', '{{ $member['region_id'] ?? '' }}', '{{ $member['status'] ?? 'online' }}')" 
+                                            onclick="openEditStaffModal('{{ $member['id'] }}', '{{ addslashes($member['name']) }}', '{{ $member['email'] }}', '{{ $member['phone'] ?? '' }}', '{{ addslashes($member['department']) }}', '{{ addslashes($member['position']) }}', '{{ $member['status'] ?? 'online' }}')" 
                                             title="Editar Colaborador" aria-label="Editar">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
@@ -176,7 +172,7 @@
     <div class="modal-backdrop-custom" id="createStaffModal" onclick="if(event.target === this) closeModal('createStaffModal')">
         <div class="modal-dialog-custom">
             <div class="modal-header-custom">
-                <h3>Alta de Personal & Especialista</h3>
+                <h3>Alta de Colaborador Técnico</h3>
                 <button type="button" class="btn-close-modal" onclick="closeModal('createStaffModal')" aria-label="Cerrar modal">✕</button>
             </div>
 
@@ -189,24 +185,8 @@
                             <input type="text" name="name" class="custom-form-input" placeholder="Ej: Ing. Gonzalo Arnez" required>
                         </div>
                         <div class="form-field-group">
-                            <label class="form-field-label">Sede Regional</label>
-                            <select name="region_id" class="custom-form-select">
-                                <option value="">Seleccionar regional...</option>
-                                @foreach($regions as $reg)
-                                    <option value="{{ $reg->id }}">{{ $reg->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row-grid">
-                        <div class="form-field-group">
                             <label class="form-field-label">Correo Electrónico</label>
                             <input type="email" name="email" class="custom-form-input" placeholder="gonzalo.a@pachabol.com" required>
-                        </div>
-                        <div class="form-field-group">
-                            <label class="form-field-label">Teléfono / WhatsApp</label>
-                            <input type="text" name="phone" class="custom-form-input" placeholder="+591 715-00000">
                         </div>
                     </div>
 
@@ -221,12 +201,18 @@
                         </div>
                     </div>
 
-                    <div class="form-field-group">
-                        <label class="form-field-label">Estado de Acceso</label>
-                        <select name="status" class="custom-form-select" required>
-                            <option value="online" selected>Activo (Permitir Acceso)</option>
-                            <option value="offline">Inactivo (Bloquear Acceso)</option>
-                        </select>
+                    <div class="form-row-grid">
+                        <div class="form-field-group">
+                            <label class="form-field-label">Teléfono / WhatsApp</label>
+                            <input type="text" name="phone" class="custom-form-input" placeholder="+591 715-00000">
+                        </div>
+                        <div class="form-field-group">
+                            <label class="form-field-label">Estado de Acceso</label>
+                            <select name="status" class="custom-form-select" required>
+                                <option value="online" selected>Activo (Permitir Acceso)</option>
+                                <option value="offline">Inactivo (Bloquear Acceso)</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -258,24 +244,8 @@
                             <input type="text" id="editStaffName" name="name" class="custom-form-input" required>
                         </div>
                         <div class="form-field-group">
-                            <label class="form-field-label">Sede Regional</label>
-                            <select id="editStaffRegion" name="region_id" class="custom-form-select">
-                                <option value="">Sin sede específica</option>
-                                @foreach($regions as $reg)
-                                    <option value="{{ $reg->id }}">{{ $reg->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row-grid">
-                        <div class="form-field-group">
                             <label class="form-field-label">Correo Electrónico</label>
                             <input type="email" id="editStaffEmail" name="email" class="custom-form-input" required>
-                        </div>
-                        <div class="form-field-group">
-                            <label class="form-field-label">Teléfono / WhatsApp</label>
-                            <input type="text" id="editStaffPhone" name="phone" class="custom-form-input">
                         </div>
                     </div>
 
@@ -290,12 +260,18 @@
                         </div>
                     </div>
 
-                    <div class="form-field-group">
-                        <label class="form-field-label">Estado de la Cuenta</label>
-                        <select id="editStaffStatus" name="status" class="custom-form-select" required>
-                            <option value="online">Activo (En Planta)</option>
-                            <option value="offline">Inactivo (Acceso Bloqueado)</option>
-                        </select>
+                    <div class="form-row-grid">
+                        <div class="form-field-group">
+                            <label class="form-field-label">Teléfono / WhatsApp</label>
+                            <input type="text" id="editStaffPhone" name="phone" class="custom-form-input">
+                        </div>
+                        <div class="form-field-group">
+                            <label class="form-field-label">Estado de Acceso</label>
+                            <select id="editStaffStatus" name="status" class="custom-form-select" required>
+                                <option value="online">Activo (Permitir Acceso)</option>
+                                <option value="offline">Inactivo (Bloquear Acceso)</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 

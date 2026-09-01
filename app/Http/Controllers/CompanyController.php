@@ -21,21 +21,15 @@ class CompanyController extends Controller
                 'num' => str_pad($index + 1, 2, '0', STR_PAD_LEFT),
                 'name' => $comp->name,
                 'code' => $comp->code,
-                'city' => $comp->code ?? 'Nacional',
                 'nit' => $comp->nit ?? '—',
                 'initial' => strtoupper(substr($comp->name, 0, 1)),
-                'industry' => $comp->industry ?? 'Minería & Energía',
                 'theme' => $comp->theme ?? 'cyan',
-                'contact_name' => $comp->contact_person ?? '—',
                 'contact_person' => $comp->contact_person ?? '—',
-                'contact_email' => $comp->email ?? '—',
                 'email' => $comp->email ?? '—',
                 'phone' => $comp->phone ?? '—',
                 'status' => $isActive ? 'Activo' : 'Inactivo',
                 'status_type' => $isActive ? 'done' : 'pending',
                 'projects_count' => ($comp->projects_count ?? 0) . ' Proyectos',
-                'active_projects' => ($comp->projects_count ?? 0) . ' Proyectos',
-                'total_plants' => ($comp->managers_count ?? 0) . ' Plantas',
             ];
         })->toArray();
 
@@ -47,7 +41,7 @@ class CompanyController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'required|string|unique:companies,code',
-            'industry' => 'required|string',
+            'nit' => 'nullable|string|max:50',
             'contact_person' => 'nullable|string',
             'email' => 'nullable|email',
             'phone' => 'nullable|string',
@@ -57,7 +51,8 @@ class CompanyController extends Controller
         Company::create([
             'name' => $validated['name'],
             'code' => strtoupper($validated['code']),
-            'industry' => $validated['industry'],
+            'nit' => $validated['nit'] ?? null,
+            'industry' => 'Industrial',
             'contact_person' => $validated['contact_person'] ?? null,
             'email' => $validated['email'] ?? null,
             'phone' => $validated['phone'] ?? null,
@@ -75,7 +70,7 @@ class CompanyController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'required|string|unique:companies,code,' . $company->id,
-            'industry' => 'required|string',
+            'nit' => 'nullable|string|max:50',
             'contact_person' => 'nullable|string',
             'email' => 'nullable|email',
             'phone' => 'nullable|string',
@@ -85,7 +80,7 @@ class CompanyController extends Controller
         $company->update([
             'name' => $validated['name'],
             'code' => strtoupper($validated['code']),
-            'industry' => $validated['industry'],
+            'nit' => $validated['nit'] ?? null,
             'contact_person' => $validated['contact_person'] ?? null,
             'email' => $validated['email'] ?? null,
             'phone' => $validated['phone'] ?? null,
@@ -114,3 +109,4 @@ class CompanyController extends Controller
         return redirect()->route('companies.index')->with('success', 'Empresa eliminada exitosamente.');
     }
 }
+

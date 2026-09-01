@@ -48,7 +48,7 @@
                         type="text" 
                         id="projectsListSearchInput" 
                         class="table-search-input" 
-                        placeholder="Buscar por proyecto, cliente o regional..." 
+                        placeholder="Buscar por proyecto o cliente..." 
                         onkeyup="searchLiveTableGeneric('projectsListSearchInput', 'projectsFullMasterTable')"
                     >
                 </div>
@@ -62,7 +62,6 @@
                         <th style="width: 50px;">#</th>
                         <th>Nombre del Proyecto</th>
                         <th>Cliente / Empresa</th>
-                        <th>Regional</th>
                         <th>Módulos Completados</th>
                         <th>Estado</th>
                         <th style="text-align: right;">Acciones</th>
@@ -96,14 +95,7 @@
                                 </div>
                             </td>
 
-                            <!-- 4. Regional -->
-                            <td>
-                                <span class="status-pill-badge in_progress" style="font-size: 11.5px;">
-                                    {{ $project['region'] }}
-                                </span>
-                            </td>
-
-                            <!-- 5. Módulos Completados -->
+                            <!-- 4. Módulos Completados -->
                             <td>
                                 <div class="points-ratio-box">
                                     <div class="points-ratio-text">
@@ -116,14 +108,14 @@
                                 </div>
                             </td>
 
-                            <!-- 6. Estado -->
+                            <!-- 5. Estado -->
                             <td>
                                 <span class="status-pill-badge {{ $project['status_type'] ?? 'in_progress' }}">
                                     {{ $project['status'] }}
                                 </span>
                             </td>
 
-                            <!-- 8. Acciones -->
+                            <!-- 6. Acciones -->
                             <td>
                                 <div class="admin-actions-cell">
                                     <!-- Ver Módulos del Proyecto -->
@@ -164,7 +156,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" style="text-align: center; color: #64748b; padding: 30px;">
+                            <td colspan="6" style="text-align: center; color: #64748b; padding: 30px;">
                                 No se encontraron proyectos registrados.
                             </td>
                         </tr>

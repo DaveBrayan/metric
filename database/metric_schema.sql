@@ -45,23 +45,7 @@ CREATE TABLE `companies` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 3. Tabla de Sedes Regionales
-DROP TABLE IF EXISTS `regions`;
-CREATE TABLE `regions` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `code` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL UNIQUE,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `department` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `address` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `manager_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT 'Ing. Reynaldo Sirpa',
-  `theme` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'cyan',
-  `status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Operativo',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- 4. Tabla de Responsables de Planta
+-- 3. Tabla de Responsables de Planta
 DROP TABLE IF EXISTS `managers`;
 CREATE TABLE `managers` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -78,11 +62,10 @@ CREATE TABLE `managers` (
   CONSTRAINT `managers_company_id_foreign` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 5. Tabla de Personal Técnico
+-- 4. Tabla de Personal Técnico
 DROP TABLE IF EXISTS `staff`;
 CREATE TABLE `staff` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `region_id` bigint(20) unsigned DEFAULT NULL,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL UNIQUE,
   `phone` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -93,19 +76,16 @@ CREATE TABLE `staff` (
   `status_label` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'En Planta',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `staff_region_id_foreign` (`region_id`),
-  CONSTRAINT `staff_region_id_foreign` FOREIGN KEY (`region_id`) REFERENCES `regions` (`id`) ON DELETE SET NULL
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 6. Tabla de Proyectos Industriales
+-- 5. Tabla de Proyectos Industriales
 DROP TABLE IF EXISTS `projects`;
 CREATE TABLE `projects` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `code` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL UNIQUE,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `company_id` bigint(20) unsigned NOT NULL,
-  `region_id` bigint(20) unsigned NOT NULL,
   `manager_id` bigint(20) unsigned DEFAULT NULL,
   `compliance_pct` decimal(5,2) NOT NULL DEFAULT '98.50',
   `points_total` int(11) NOT NULL DEFAULT '20',
@@ -118,14 +98,12 @@ CREATE TABLE `projects` (
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `projects_company_id_foreign` (`company_id`),
-  KEY `projects_region_id_foreign` (`region_id`),
   KEY `projects_manager_id_foreign` (`manager_id`),
   CONSTRAINT `projects_company_id_foreign` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `projects_region_id_foreign` FOREIGN KEY (`region_id`) REFERENCES `regions` (`id`) ON DELETE CASCADE,
   CONSTRAINT `projects_manager_id_foreign` FOREIGN KEY (`manager_id`) REFERENCES `managers` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 7. Tabla de Módulos de Medición Ambiental
+-- 6. Tabla de Módulos de Medición Ambiental
 DROP TABLE IF EXISTS `modules`;
 CREATE TABLE `modules` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -151,7 +129,7 @@ CREATE TABLE `modules` (
   CONSTRAINT `modules_field_staff_id_foreign` FOREIGN KEY (`field_staff_id`) REFERENCES `staff` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 8. Tabla de Lecturas de Telemetría
+-- 7. Tabla de Lecturas de Telemetría
 DROP TABLE IF EXISTS `telemetry_readings`;
 CREATE TABLE `telemetry_readings` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -169,7 +147,7 @@ CREATE TABLE `telemetry_readings` (
   CONSTRAINT `telemetry_readings_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 9. Tablas del Sistema de Sesiones y Caché de Laravel
+-- 8. Tablas del Sistema de Sesiones y Caché de Laravel
 DROP TABLE IF EXISTS `sessions`;
 CREATE TABLE `sessions` (
   `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,

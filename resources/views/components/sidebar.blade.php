@@ -45,7 +45,7 @@
             </a>
         </div>
 
-        <!-- Section 2: Organización (1. Empresas, 2. Regionales, 3. Responsables, 4. Personal) -->
+        <!-- Section 2: Organización (1. Empresas, 2. Responsables, 3. Personal) -->
         <div class="nav-group-section">
             <div class="nav-section-title">Organización</div>
             <a href="{{ route('companies.index') }}" class="nav-item-btn {{ request()->routeIs('companies.*') ? 'active' : '' }}" data-tooltip="Empresas & Clientes">
@@ -55,14 +55,6 @@
                     <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
                 </svg>
                 <span class="nav-item-text">Empresas</span>
-            </a>
-
-            <a href="{{ route('regions.index') }}" class="nav-item-btn {{ request()->routeIs('regions.*') ? 'active' : '' }}" data-tooltip="Sedes Regionales & Plantas">
-                <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-                    <circle cx="12" cy="10" r="3"/>
-                </svg>
-                <span class="nav-item-text">Regionales</span>
             </a>
 
             <a href="{{ route('managers.index') }}" class="nav-item-btn {{ request()->routeIs('managers.*') ? 'active' : '' }}" data-tooltip="Responsables Técnicos & de Planta">

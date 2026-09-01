@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Project;
 use App\Models\MeasurementModule;
 use App\Models\Company;
-use App\Models\Region;
 use App\Models\Manager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,10 +18,9 @@ class ProjectController extends Controller
         $userRole = $currentUser ? $currentUser->role : 'Superadministrador';
 
         $companies = Company::all();
-        $regions = Region::all();
         $managers = Manager::all();
 
-        $projects = Project::with(['company', 'region', 'modules'])->get()->map(function ($prj, $index) {
+        $projects = Project::with(['company', 'modules'])->get()->map(function ($prj, $index) {
             $totalMods = $prj->modules->count();
             $completedMods = $prj->modules->where('status', 'Completado')->count();
             $ratio = $totalMods > 0 ? round(($completedMods / $totalMods) * 100) : 0;
@@ -35,7 +33,6 @@ class ProjectController extends Controller
                 'client' => $prj->company ? $prj->company->name : 'General',
                 'client_initial' => $prj->company ? strtoupper(substr($prj->company->name, 0, 1)) : 'G',
                 'client_theme' => $prj->company ? ($prj->company->theme ?? 'cyan') : 'cyan',
-                'region' => $prj->region ? $prj->region->name : 'Central',
                 'modules_completed_text' => "$completedMods de $totalMods Módulos",
                 'modules_ratio_pct' => $ratio,
                 'progress' => round($prj->compliance_pct),
@@ -45,7 +42,7 @@ class ProjectController extends Controller
             ];
         })->toArray();
 
-        return view('projects.index', compact('userName', 'userRole', 'projects', 'companies', 'regions', 'managers'));
+        return view('projects.index', compact('userName', 'userRole', 'projects', 'companies', 'managers'));
     }
 
     /**
@@ -96,7 +93,6 @@ class ProjectController extends Controller
             'name' => 'required|string|max:255',
             'code' => 'required|string|unique:projects,code',
             'company_id' => 'required|exists:companies,id',
-            'region_id' => 'required|exists:regions,id',
             'manager_id' => 'nullable|exists:managers,id',
         ]);
 
@@ -104,7 +100,6 @@ class ProjectController extends Controller
             'name' => $validated['name'],
             'code' => strtoupper($validated['code']),
             'company_id' => $validated['company_id'],
-            'region_id' => $validated['region_id'],
             'manager_id' => $validated['manager_id'] ?? null,
             'compliance_pct' => 100.00,
             'points_total' => 10,
@@ -116,3 +111,4 @@ class ProjectController extends Controller
         return redirect()->route('projects.index')->with('success', 'Proyecto registrado exitosamente.');
     }
 }
+

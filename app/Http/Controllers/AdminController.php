@@ -33,7 +33,7 @@ class AdminController extends Controller
                     'role_theme' => 'cyan',
                     'status' => 'online',
                     'status_label' => 'En línea',
-                    'permissions' => ['Control Total', 'Empresas', 'Regionales', 'Responsables', 'Personal', 'Proyectos', 'Módulos', 'Telemetría', 'Configuración'],
+                    'permissions' => ['Control Total', 'Empresas', 'Responsables', 'Personal', 'Proyectos', 'Módulos', 'Telemetría', 'Configuración'],
                 ]
             ];
         } else {

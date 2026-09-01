@@ -43,7 +43,6 @@
                     <th style="width: 45px;">#</th>
                     <th>Nombre del Proyecto</th>
                     <th>Cliente / Empresa</th>
-                    <th>Regional</th>
                     <th>Módulos Completados</th>
                     <th>Estado</th>
                     <th style="text-align: right;">Acciones</th>
@@ -77,14 +76,7 @@
                             </div>
                         </td>
 
-                        <!-- 4. Regional -->
-                        <td>
-                            <span class="status-pill-badge in_progress" style="font-size: 11.5px;">
-                                {{ $project['region'] ?? 'La Paz' }}
-                            </span>
-                        </td>
-
-                        <!-- 5. Módulos Completados -->
+                        <!-- 4. Módulos Completados -->
                         <td>
                             <div class="points-ratio-box">
                                 <div class="points-ratio-text">
@@ -97,14 +89,14 @@
                             </div>
                         </td>
 
-                        <!-- 6. Estado -->
+                        <!-- 5. Estado -->
                         <td>
                             <span class="status-pill-badge {{ $project['status_type'] ?? 'in_progress' }}">
                                 {{ $project['status'] }}
                             </span>
                         </td>
 
-                        <!-- 7. Acciones Estandarizadas a Colores -->
+                        <!-- 6. Acciones Estandarizadas a Colores -->
                         <td>
                             <div class="admin-actions-cell">
                                 <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.index') }}'" title="Ver Módulos">
@@ -124,7 +116,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" style="text-align: center; color: var(--muted); padding: 30px;">
+                        <td colspan="6" style="text-align: center; color: var(--muted); padding: 30px;">
                             No se encontraron proyectos activos.
                         </td>
                     </tr>

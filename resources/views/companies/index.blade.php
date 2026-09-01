@@ -11,7 +11,7 @@
     <div class="companies-header-banner">
         <div>
             <h1>Directorio de Empresas & Clientes</h1>
-            <p>Monitoreo de convenios corporativos, sectores industriales y plantas vinculadas.</p>
+            <p>Gestión corporativa, identificación tributaria y contactos autorizados.</p>
         </div>
         <button type="button" class="btn-primary-hero-action" onclick="openCreateCompanyModal()">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
@@ -35,7 +35,7 @@
                     type="text" 
                     id="companiesSearchInput" 
                     class="companies-search-input" 
-                    placeholder="Buscar por empresa, código o sector..." 
+                    placeholder="Buscar por empresa, código o NIT..." 
                     onkeyup="filterCompaniesLive()"
                 >
             </div>
@@ -47,10 +47,10 @@
                     <tr>
                         <th style="width: 50px;">#</th>
                         <th>Empresa / Razón Social</th>
-                        <th>Sector Industrial</th>
-                        <th>NIT / Identificador</th>
+                        <th>NIT</th>
                         <th>Contacto Principal</th>
-                        <th>Proyectos</th>
+                        <th>Correo Electrónico</th>
+                        <th>Teléfono Corporativo</th>
                         <th>Estado</th>
                         <th style="text-align: right;">Acciones</th>
                     </tr>
@@ -63,7 +63,7 @@
                                 {{ $company['num'] }}
                             </td>
 
-                            <!-- 2. Empresa / Razón Social -->
+                            <!-- 2. Empresa / Razón Social & Sigla -->
                             <td>
                                 <div class="client-pill-tag">
                                     <div class="client-initial-box {{ $company['theme'] ?? 'cyan' }}">
@@ -76,25 +76,24 @@
                                 </div>
                             </td>
 
-                            <!-- 3. Sector Industrial -->
-                            <td>
-                                <span class="status-pill-badge in_progress">{{ $company['industry'] ?? 'Industrial' }}</span>
-                            </td>
-
-                            <!-- 4. NIT -->
+                            <!-- 3. NIT -->
                             <td style="font-family: monospace; font-size: 12.5px; color: #334155; font-weight: 600;">
-                                {{ $company['nit'] ?? '—' }}
+                                <span class="status-pill-badge in_progress">{{ $company['nit'] ?? '—' }}</span>
                             </td>
 
-                            <!-- 5. Contacto Principal -->
+                            <!-- 4. Contacto Principal -->
                             <td>
                                 <div style="font-weight: 600; color: var(--ink-secondary);">{{ $company['contact_person'] ?? '—' }}</div>
-                                <div style="font-size: 11px; color: #64748b;">{{ $company['email'] ?? '—' }}</div>
                             </td>
 
-                            <!-- 6. Proyectos -->
+                            <!-- 5. Correo Electrónico -->
                             <td>
-                                <span class="status-pill-badge done">{{ $company['projects_count'] ?? '0 Proyectos' }}</span>
+                                <div style="font-size: 12px; color: #64748b;">{{ $company['email'] ?? '—' }}</div>
+                            </td>
+
+                            <!-- 6. Teléfono Corporativo -->
+                            <td>
+                                <div style="font-size: 12px; color: #334155; font-family: monospace;">{{ $company['phone'] ?? '—' }}</div>
                             </td>
 
                             <!-- 7. Estado -->
@@ -111,7 +110,7 @@
                                 <div class="admin-actions-cell">
                                     <!-- Editar Empresa -->
                                     <button type="button" class="btn-admin-icon-action theme-lime" 
-                                            onclick="openEditCompanyModal('{{ $company['id'] }}', '{{ addslashes($company['name']) }}', '{{ addslashes($company['code']) }}', '{{ addslashes($company['industry']) }}', '{{ addslashes($company['contact_person'] ?? '') }}', '{{ $company['email'] ?? '' }}', '{{ $company['phone'] ?? '' }}', '{{ $company['status'] ?? 'Activo' }}')" 
+                                            onclick="openEditCompanyModal('{{ $company['id'] }}', '{{ addslashes($company['name']) }}', '{{ addslashes($company['code']) }}', '{{ addslashes($company['nit'] ?? '') }}', '{{ addslashes($company['contact_person'] ?? '') }}', '{{ $company['email'] ?? '' }}', '{{ $company['phone'] ?? '' }}', '{{ $company['status'] ?? 'Activo' }}')" 
                                             title="Editar Empresa" aria-label="Editar">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
@@ -177,8 +176,8 @@
 
                     <div class="form-row-grid">
                         <div class="form-field-group">
-                            <label class="form-field-label">Sector Industrial</label>
-                            <input type="text" name="industry" class="custom-form-input" placeholder="Minería & Metalurgia" required>
+                            <label class="form-field-label">NIT</label>
+                            <input type="text" name="nit" class="custom-form-input" placeholder="Ej: 1028475029">
                         </div>
                         <div class="form-field-group">
                             <label class="form-field-label">Contacto Principal</label>
@@ -241,8 +240,8 @@
 
                     <div class="form-row-grid">
                         <div class="form-field-group">
-                            <label class="form-field-label">Sector Industrial</label>
-                            <input type="text" id="editCompanyIndustry" name="industry" class="custom-form-input" required>
+                            <label class="form-field-label">NIT</label>
+                            <input type="text" id="editCompanyNit" name="nit" class="custom-form-input">
                         </div>
                         <div class="form-field-group">
                             <label class="form-field-label">Contacto Principal</label>
@@ -282,3 +281,4 @@
 @push('scripts')
     @vite(['resources/js/companies.js'])
 @endpush
+

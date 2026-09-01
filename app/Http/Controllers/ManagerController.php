@@ -34,7 +34,6 @@ class ManagerController extends Controller
                 'company' => $companyName,
                 'company_initial' => strtoupper(substr($companyName, 0, 1)),
                 'company_theme' => $m->company ? ($m->company->theme ?? 'cyan') : 'cyan',
-                'region' => $m->company ? ($m->company->code ?? 'Central') : 'Central',
                 'projects_count' => ($m->projects_count ?? 0) . ' Proyectos',
                 'position' => $m->position ?? 'Gerente de Operaciones',
                 'status' => $isActive ? 'Activo' : 'Inactivo',

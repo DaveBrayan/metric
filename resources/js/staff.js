@@ -24,7 +24,7 @@ window.openCreateStaffModal = function() {
 /**
  * Open Edit Staff Modal
  */
-window.openEditStaffModal = function(id, name, email, phone, department, position, regionId, status) {
+window.openEditStaffModal = function(id, name, email, phone, department, position, status) {
     const modal = document.getElementById('editStaffModal');
     const form = document.getElementById('editStaffForm');
     if (!modal || !form) return;
@@ -35,11 +35,6 @@ window.openEditStaffModal = function(id, name, email, phone, department, positio
     document.getElementById('editStaffPhone').value = phone === '—' ? '' : phone;
     document.getElementById('editStaffDepartment').value = department;
     document.getElementById('editStaffPosition').value = position;
-
-    const regionSelect = document.getElementById('editStaffRegion');
-    if (regionSelect && regionId) {
-        regionSelect.value = regionId;
-    }
 
     const statusSelect = document.getElementById('editStaffStatus');
     if (statusSelect) {

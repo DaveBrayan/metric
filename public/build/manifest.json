@@ -29,11 +29,6 @@
     "src": "resources/css/managers.css",
     "isEntry": true
   },
-  "resources/css/regions.css": {
-    "file": "assets/regions--nUzRfKI.css",
-    "src": "resources/css/regions.css",
-    "isEntry": true
-  },
   "resources/css/settings.css": {
     "file": "assets/settings-h9v-mCyX.css",
     "src": "resources/css/settings.css",
@@ -57,13 +52,13 @@
     "isEntry": true
   },
   "resources/js/companies.js": {
-    "file": "assets/companies-DGWKIT1z.js",
+    "file": "assets/companies-BgoHN_Bz.js",
     "name": "companies",
     "src": "resources/js/companies.js",
     "isEntry": true
   },
   "resources/js/dashboard.js": {
-    "file": "assets/dashboard-Cm_jyQyG.js",
+    "file": "assets/dashboard-BE4n3Crm.js",
     "name": "dashboard",
     "src": "resources/js/dashboard.js",
     "isEntry": true
@@ -80,12 +75,6 @@
     "src": "resources/js/managers.js",
     "isEntry": true
   },
-  "resources/js/regions.js": {
-    "file": "assets/regions-DEC1acF2.js",
-    "name": "regions",
-    "src": "resources/js/regions.js",
-    "isEntry": true
-  },
   "resources/js/settings.js": {
     "file": "assets/settings-BB0VjIMM.js",
     "name": "settings",
@@ -93,7 +82,7 @@
     "isEntry": true
   },
   "resources/js/staff.js": {
-    "file": "assets/staff-CTXJw4xT.js",
+    "file": "assets/staff-D0_VTReL.js",
     "name": "staff",
     "src": "resources/js/staff.js",
     "isEntry": true

@@ -13,7 +13,6 @@ return new class extends Migration
             $table->string('code')->unique(); // PRJ-MSC-01, PRJ-CBN-02, etc.
             $table->string('name');
             $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
-            $table->foreignId('region_id')->constrained('regions')->onDelete('cascade');
             $table->foreignId('manager_id')->nullable()->constrained('managers')->onDelete('set null');
             $table->decimal('compliance_pct', 5, 2)->default(98.50);
             $table->integer('points_total')->default(20);

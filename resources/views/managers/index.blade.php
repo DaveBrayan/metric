@@ -49,7 +49,6 @@
                         <th style="width: 50px;">#</th>
                         <th>Responsable / Cargo</th>
                         <th>Empresa / Cliente</th>
-                        <th>Regional</th>
                         <th>Proyectos</th>
                         <th>Contacto</th>
                         <th>Estado</th>
@@ -87,27 +86,20 @@
                                 </div>
                             </td>
 
-                            <!-- 4. Regional Asignada -->
-                            <td>
-                                <span class="status-pill-badge in_progress" style="font-size: 11.5px;">
-                                    {{ $manager['region'] ?? 'Central' }}
-                                </span>
-                            </td>
-
-                            <!-- 5. Proyectos a Cargo -->
+                            <!-- 4. Proyectos a Cargo -->
                             <td>
                                 <span class="status-pill-badge done">
                                     {{ $manager['projects_count'] ?? '0 Proyectos' }}
                                 </span>
                             </td>
 
-                            <!-- 6. Contacto Directo -->
+                            <!-- 5. Contacto Directo -->
                             <td>
                                 <div style="font-weight: 600; color: var(--ink-secondary); font-size: 12.5px;">{{ $manager['email'] ?? '—' }}</div>
                                 <div style="font-size: 11px; color: #64748b; font-family: monospace;">{{ $manager['phone'] ?? '—' }}</div>
                             </td>
 
-                            <!-- 7. Estado -->
+                            <!-- 6. Estado -->
                             <td>
                                 @if(($manager['status'] ?? 'Activo') === 'Activo')
                                     <span class="status-pill-badge done">Activo</span>
@@ -116,7 +108,7 @@
                                 @endif
                             </td>
 
-                            <!-- 8. Acciones -->
+                            <!-- 7. Acciones -->
                             <td>
                                 <div class="admin-actions-cell">
                                     <!-- 1. Reset Contraseña WhatsApp -->
@@ -131,7 +123,7 @@
 
                                     <!-- 2. Editar Responsable -->
                                     <button type="button" class="btn-admin-icon-action theme-lime" 
-                                            onclick="openEditManagerModal('{{ $manager['id'] }}', '{{ addslashes($manager['name']) }}', '{{ $manager['email'] }}', '{{ $manager['phone'] ?? '' }}', '{{ addslashes($manager['position']) }}', '{{ $manager['company_id'] ?? '' }}', '{{ $manager['status'] ?? 'Activo' }}')" 
+                                            onclick="openEditManagerModal('{{ $manager['id'] }}', '{{ addslashes($manager['name']) }}', '{{ $manager['company_id'] }}', '{{ $manager['email'] }}', '{{ $manager['phone'] ?? '' }}', '{{ addslashes($manager['position']) }}', '{{ $manager['status'] ?? 'Activo' }}')" 
                                             title="Editar Responsable" aria-label="Editar">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
@@ -155,7 +147,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" style="text-align: center; color: #64748b; padding: 30px;">
+                            <td colspan="7" style="text-align: center; color: #64748b; padding: 30px;">
                                 No se encontraron responsables registrados.
                             </td>
                         </tr>

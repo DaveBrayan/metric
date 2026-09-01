@@ -8,7 +8,7 @@ const COMPANY_TELEMETRY_DATA = {
     all: {
         badge: 'ESTADO AMBIENTAL ÓPTIMO: 98.6% CONFORMIDAD LMP (LEY 1333)',
         title: 'Centro de Mando & Telemetría Ambiental Multi-Empresa',
-        desc: 'Supervisión centralizada de 24 empresas clientes, 5 sedes regionales y 142 estaciones de muestreo.',
+        desc: 'Supervisión centralizada de 24 empresas clientes y 142 estaciones de muestreo.',
         dosimetria: '78.4',
         ruido_ambiental: '58.2',
         agua: '7.35',

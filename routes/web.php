@@ -6,7 +6,6 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\CompanyController;
-use App\Http\Controllers\RegionController;
 use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\ProjectController;
@@ -21,18 +20,12 @@ Route::middleware(['auth'])->group(function () {
     // Main Dashboard
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Organización: 1. Empresas, 2. Regionales, 3. Responsables, 4. Personal
+    // Organización: 1. Empresas, 2. Responsables, 3. Personal
     Route::get('/empresas', [CompanyController::class, 'index'])->name('companies.index');
     Route::post('/empresas', [CompanyController::class, 'store'])->name('companies.store');
     Route::put('/empresas/{id}', [CompanyController::class, 'update'])->name('companies.update');
     Route::match(['delete', 'post'], '/empresas/{id}/delete', [CompanyController::class, 'destroy'])->name('companies.destroy.post');
     Route::match(['delete', 'post'], '/empresas/{id}', [CompanyController::class, 'destroy'])->name('companies.destroy');
-
-    Route::get('/regionales', [RegionController::class, 'index'])->name('regions.index');
-    Route::post('/regionales', [RegionController::class, 'store'])->name('regions.store');
-    Route::put('/regionales/{id}', [RegionController::class, 'update'])->name('regions.update');
-    Route::match(['delete', 'post'], '/regionales/{id}/delete', [RegionController::class, 'destroy'])->name('regions.destroy.post');
-    Route::match(['delete', 'post'], '/regionales/{id}', [RegionController::class, 'destroy'])->name('regions.destroy');
 
     Route::get('/responsables', [ManagerController::class, 'index'])->name('managers.index');
     Route::post('/responsables', [ManagerController::class, 'store'])->name('managers.store');

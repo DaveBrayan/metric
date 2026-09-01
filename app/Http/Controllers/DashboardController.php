@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use App\Models\Project;
 use App\Models\MeasurementModule;
-use App\Models\Region;
 use App\Models\Staff;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -34,7 +33,6 @@ class DashboardController extends Controller
         $totalProjects = Project::count();
         $avgCompliance = $totalProjects > 0 ? round(Project::avg('compliance_pct'), 1) : 98.6;
         $totalSensors = MeasurementModule::sum('points_total');
-        $activeRegionsCount = Region::count();
 
         $systemHealth = [
             'overall_compliance' => $avgCompliance,
@@ -42,7 +40,6 @@ class DashboardController extends Controller
             'critical_alerts' => 0,
             'active_sensors' => $totalSensors,
             'calibrated_instruments' => 18,
-            'active_regions' => $activeRegionsCount,
         ];
 
         // 3. Tarjetas de las 5 Líneas Ambientales
@@ -124,7 +121,7 @@ class DashboardController extends Controller
         ];
 
         // 5. Proyectos Industriales desde BD
-        $projects = Project::with(['company', 'region', 'modules'])->get()->map(function ($prj, $index) {
+        $projects = Project::with(['company', 'modules'])->get()->map(function ($prj, $index) {
             $totalPoints = $prj->points_total > 0 ? $prj->points_total : 20;
             $completedPoints = $prj->points_completed;
             $pct = round(($completedPoints / $totalPoints) * 100);
@@ -138,7 +135,6 @@ class DashboardController extends Controller
                 'client' => $prj->company ? $prj->company->name : 'General',
                 'client_initial' => $prj->company ? strtoupper(substr($prj->company->name, 0, 1)) : 'G',
                 'client_theme' => $prj->company ? ($prj->company->theme ?? 'cyan') : 'cyan',
-                'region' => $prj->region ? $prj->region->name : 'Central',
                 'modules_list' => $prj->modules->pluck('name')->toArray(),
                 'points_text' => "$completedPoints de $totalPoints pts",
                 'points_pct' => $pct,
@@ -159,3 +155,4 @@ class DashboardController extends Controller
         ));
     }
 }
+

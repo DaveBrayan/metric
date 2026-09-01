@@ -14,7 +14,6 @@ class Staff extends Model
     protected $table = 'staff';
 
     protected $fillable = [
-        'region_id',
         'name',
         'email',
         'phone',
@@ -24,11 +23,6 @@ class Staff extends Model
         'status',
         'status_label',
     ];
-
-    public function region(): BelongsTo
-    {
-        return $this->belongsTo(Region::class);
-    }
 
     public function modules(): HasMany
     {

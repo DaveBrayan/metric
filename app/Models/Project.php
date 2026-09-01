@@ -15,7 +15,6 @@ class Project extends Model
         'code',
         'name',
         'company_id',
-        'region_id',
         'manager_id',
         'compliance_pct',
         'points_total',
@@ -29,11 +28,6 @@ class Project extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
-    }
-
-    public function region(): BelongsTo
-    {
-        return $this->belongsTo(Region::class);
     }
 
     public function manager(): BelongsTo
