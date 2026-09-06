@@ -1,3 +1,10 @@
+@php
+    $sidebarUser = Auth::user();
+    $sidebarUserName = $sidebarUser ? $sidebarUser->name : ($userName ?? 'Reynaldo');
+    $sidebarUserRole = $sidebarUser ? $sidebarUser->role : ($userRole ?? 'Superadministrador');
+    $isSuperOrAdmin = in_array(strtolower($sidebarUserRole), ['superadministrador', 'administrador', 'admin']);
+@endphp
+
 <!-- Modern Animated & Optimized Sidebar (METRIC_V2) -->
 <aside class="sidebar" id="sidebarDrawer" aria-label="Navegación principal">
     <!-- Brand Header -->
@@ -45,27 +52,29 @@
             </a>
         </div>
 
-        <!-- Section 2: Organización (1. Empresas, 2. Responsables, 3. Personal) -->
+        <!-- Section 2: Organización (Empresas y Responsables para Administradores; Personal para ambos) -->
         <div class="nav-group-section">
             <div class="nav-section-title">Organización</div>
-            <a href="{{ route('companies.index') }}" class="nav-item-btn {{ request()->routeIs('companies.*') ? 'active' : '' }}" data-tooltip="Empresas & Clientes">
-                <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>
-                    <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
-                    <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
-                </svg>
-                <span class="nav-item-text">Empresas</span>
-            </a>
+            @if($isSuperOrAdmin)
+                <a href="{{ route('companies.index') }}" class="nav-item-btn {{ request()->routeIs('companies.*') ? 'active' : '' }}" data-tooltip="Empresas & Clientes">
+                    <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>
+                        <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
+                        <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
+                    </svg>
+                    <span class="nav-item-text">Empresas</span>
+                </a>
 
-            <a href="{{ route('managers.index') }}" class="nav-item-btn {{ request()->routeIs('managers.*') ? 'active' : '' }}" data-tooltip="Responsables Técnicos & de Planta">
-                <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                    <circle cx="9" cy="7" r="4"/>
-                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-                <span class="nav-item-text">Responsables</span>
-            </a>
+                <a href="{{ route('managers.index') }}" class="nav-item-btn {{ request()->routeIs('managers.*') ? 'active' : '' }}" data-tooltip="Responsables Técnicos & de Planta">
+                    <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span class="nav-item-text">Responsables</span>
+                </a>
+            @endif
 
             <a href="{{ route('staff.index') }}" class="nav-item-btn {{ request()->routeIs('staff.*') ? 'active' : '' }}" data-tooltip="Personal & Colaboradores">
                 <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -86,30 +95,51 @@
                     <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
                 </svg>
                 <span class="nav-item-text">Proyectos Activos</span>
-                <span class="nav-badge-pill pulse">36</span>
+                @if(request()->routeIs('projects.index'))
+                    <span class="nav-badge-pill" style="margin-left: auto; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 20px; background: #f2fadc; color: #5c840c; border: 1px solid rgba(145, 197, 27, 0.45); box-shadow: 0 0 8px rgba(145, 197, 27, 0.2);">36</span>
+                @else
+                    <span class="nav-badge-pill" style="margin-left: auto; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 20px; background: rgba(16, 185, 223, 0.18); color: #0896b5; border: 1px solid rgba(16, 185, 223, 0.35);">36</span>
+                @endif
             </a>
 
             <!-- Submenu Módulos -->
             <a href="{{ route('modules.index') }}" class="nav-item-btn nav-subitem-indent {{ request()->routeIs('modules.*') ? 'active' : '' }}" data-tooltip="Módulos: Ruido, Agua, Opacidad, Partículas">
                 <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 17px; height: 17px;">
-                    <polyline points="9 18 15 12 9 6"/>
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                    <polyline points="2 17 12 22 22 17"/>
+                    <polyline points="2 12 12 17 22 12"/>
                 </svg>
                 <span class="nav-item-text">Módulos</span>
+            </a>
+
+            <!-- Submenu Equipos -->
+            <a href="{{ route('equipment.index') }}" class="nav-item-btn nav-subitem-indent {{ request()->routeIs('equipment.*') ? 'active' : '' }}" data-tooltip="Equipos de Medición & Calibración">
+                <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 17px; height: 17px;">
+                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                </svg>
+                <span class="nav-item-text">Equipos</span>
+                @if(request()->routeIs('equipment.*'))
+                    <span class="nav-badge-pill" style="margin-left: auto; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 20px; background: #f2fadc; color: #5c840c; border: 1px solid rgba(145, 197, 27, 0.45); box-shadow: 0 0 8px rgba(145, 197, 27, 0.2);">18</span>
+                @else
+                    <span class="nav-badge-pill" style="margin-left: auto; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 20px; background: rgba(16, 185, 223, 0.18); color: #0896b5; border: 1px solid rgba(16, 185, 223, 0.35);">18</span>
+                @endif
             </a>
         </div>
 
         <!-- Section 4: Sistema -->
         <div class="nav-group-section">
             <div class="nav-section-title">Sistema</div>
-            <a href="{{ route('admins.index') }}" class="nav-item-btn {{ request()->routeIs('admins.*') ? 'active' : '' }}" data-tooltip="Administradores y Roles">
-                <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                    <circle cx="9" cy="7" r="4"/>
-                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-                <span class="nav-item-text">Administradores</span>
-            </a>
+            @if($isSuperOrAdmin)
+                <a href="{{ route('admins.index') }}" class="nav-item-btn {{ request()->routeIs('admins.*') ? 'active' : '' }}" data-tooltip="Administradores y Roles">
+                    <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span class="nav-item-text">Administradores</span>
+                </a>
+            @endif
 
             <a href="{{ route('settings.index') }}" class="nav-item-btn {{ request()->routeIs('settings.*') ? 'active' : '' }}" data-tooltip="Configuración General">
                 <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -125,12 +155,12 @@
     <div class="sidebar-user-footer">
         <div class="user-footer-card" onclick="window.location.href='{{ route('settings.index') }}'" title="Ver Perfil y Configuración">
             <div class="user-footer-avatar">
-                <span>{{ substr($userName ?? 'Reynaldo', 0, 1) }}</span>
+                <span>{{ substr($sidebarUserName, 0, 1) }}</span>
                 <span class="online-dot"></span>
             </div>
             <div class="user-footer-meta">
-                <div class="user-footer-name">{{ $userName ?? 'Reynaldo' }}</div>
-                <div class="user-footer-role">Administrador</div>
+                <div class="user-footer-name">{{ $sidebarUserName }}</div>
+                <div class="user-footer-role">{{ $sidebarUserRole }}</div>
             </div>
             <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
                 @csrf

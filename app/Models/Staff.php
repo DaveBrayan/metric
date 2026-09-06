@@ -14,6 +14,7 @@ class Staff extends Model
     protected $table = 'staff';
 
     protected $fillable = [
+        'manager_id',
         'name',
         'email',
         'phone',
@@ -23,6 +24,11 @@ class Staff extends Model
         'status',
         'status_label',
     ];
+
+    public function manager(): BelongsTo
+    {
+        return $this->belongsTo(Manager::class);
+    }
 
     public function modules(): HasMany
     {

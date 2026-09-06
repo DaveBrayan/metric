@@ -9,6 +9,7 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\EquipmentController;
 
 // 1. Rutas Públicas de Autenticación
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -44,8 +45,22 @@ Route::middleware(['auth'])->group(function () {
     // Proyectos: Proyectos Activos & Submódulo de Módulos de Monitoreo
     Route::get('/proyectos', [ProjectController::class, 'index'])->name('projects.index');
     Route::post('/proyectos', [ProjectController::class, 'store'])->name('projects.store');
+    Route::put('/proyectos/{id}', [ProjectController::class, 'update'])->name('projects.update');
+    Route::match(['delete', 'post'], '/proyectos/{id}/delete', [ProjectController::class, 'destroy'])->name('projects.destroy.post');
+    Route::match(['delete', 'post'], '/proyectos/{id}', [ProjectController::class, 'destroy'])->name('projects.destroy');
 
     Route::get('/modulos', [ProjectController::class, 'modules'])->name('modules.index');
+    Route::post('/modulos', [ProjectController::class, 'storeModule'])->name('modules.store');
+    Route::put('/modulos/{id}', [ProjectController::class, 'updateModule'])->name('modules.update');
+    Route::match(['delete', 'post'], '/modulos/{id}/delete', [ProjectController::class, 'destroyModule'])->name('modules.destroy.post');
+    Route::match(['delete', 'post'], '/modulos/{id}', [ProjectController::class, 'destroyModule'])->name('modules.destroy');
+
+    // Equipos: Inventario, altas, edición y eliminación con soporte de fotos
+    Route::get('/equipos', [EquipmentController::class, 'index'])->name('equipment.index');
+    Route::post('/equipos', [EquipmentController::class, 'store'])->name('equipment.store');
+    Route::put('/equipos/{id}', [EquipmentController::class, 'update'])->name('equipment.update');
+    Route::match(['delete', 'post'], '/equipos/{id}/delete', [EquipmentController::class, 'destroy'])->name('equipment.destroy.post');
+    Route::match(['delete', 'post'], '/equipos/{id}', [EquipmentController::class, 'destroy'])->name('equipment.destroy');
 
     // Sistema: Administradores y Configuración
     Route::get('/administradores', [AdminController::class, 'index'])->name('admins.index');

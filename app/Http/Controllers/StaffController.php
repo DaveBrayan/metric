@@ -53,7 +53,11 @@ class StaffController extends Controller
             'status' => 'nullable|in:online,offline',
         ]);
 
+        $currentUser = Auth::user();
+        $manager = $currentUser ? \App\Models\Manager::where('email', $currentUser->email)->first() : null;
+
         Staff::create([
+            'manager_id' => $manager ? $manager->id : null,
             'name' => $validated['name'],
             'email' => $validated['email'],
             'phone' => $validated['phone'] ?? null,

@@ -17,9 +17,12 @@ class MeasurementModule extends Model
         'project_id',
         'key',
         'name',
+        'description',
         'calibration_equipment',
+        'equipment_id',
         'calibration_certificate',
         'field_staff_id',
+        'field_staff_ids',
         'points_total',
         'points_completed',
         'current_reading',
@@ -27,6 +30,10 @@ class MeasurementModule extends Model
         'lmp_limit',
         'status',
         'status_theme',
+    ];
+
+    protected $casts = [
+        'field_staff_ids' => 'array',
     ];
 
     public function project(): BelongsTo
@@ -39,8 +46,25 @@ class MeasurementModule extends Model
         return $this->belongsTo(Staff::class, 'field_staff_id');
     }
 
+    public function equipment(): BelongsTo
+    {
+        return $this->belongsTo(Equipment::class, 'equipment_id');
+    }
+
     public function readings(): HasMany
     {
         return $this->hasMany(TelemetryReading::class, 'module_id');
     }
+
+    public function getAssignedStaffAttribute()
+    {
+        if (!empty($this->field_staff_ids) && is_array($this->field_staff_ids)) {
+            return Staff::whereIn('id', $this->field_staff_ids)->get();
+        }
+        if ($this->fieldStaff) {
+            return collect([$this->fieldStaff]);
+        }
+        return collect();
+    }
 }
+

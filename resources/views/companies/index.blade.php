@@ -169,8 +169,9 @@
                             <input type="text" name="name" class="custom-form-input" placeholder="Ej: Minera San Cristóbal S.A." required>
                         </div>
                         <div class="form-field-group">
-                            <label class="form-field-label">Código / Sigla</label>
-                            <input type="text" name="code" class="custom-form-input" placeholder="MSC" required>
+                            <label class="form-field-label">Sigla de la Empresa (Máx. 3 caracteres) *</label>
+                            <input type="text" name="code" class="custom-form-input" placeholder="MSC" maxlength="3" style="text-transform: uppercase;" required>
+                            <small style="color: #64748b; font-size: 11px;">Identificador de 3 letras para codificación de proyectos (ej. MSC, CBN, PIL).</small>
                         </div>
                     </div>
 
@@ -233,8 +234,8 @@
                             <input type="text" id="editCompanyName" name="name" class="custom-form-input" required>
                         </div>
                         <div class="form-field-group">
-                            <label class="form-field-label">Código / Sigla</label>
-                            <input type="text" id="editCompanyCode" name="code" class="custom-form-input" required>
+                            <label class="form-field-label">Sigla de la Empresa (Máx. 3 caracteres) *</label>
+                            <input type="text" id="editCompanyCode" name="code" class="custom-form-input" maxlength="3" style="text-transform: uppercase;" required>
                         </div>
                     </div>
 
