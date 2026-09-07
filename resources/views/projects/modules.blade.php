@@ -862,11 +862,11 @@ table#modulesMasterTable td {
                 <thead>
                     <tr>
                         <th style="width: 50px; text-align: center;">#</th>
-                        <th style="width: 26%;">Tipo de Módulo & Proyecto</th>
+                        <th style="width: 25%;">Tipo de Módulo & Proyecto</th>
                         <th style="width: 22%;">Personal de Campo Asignado</th>
-                        <th style="width: 25%;">Equipos de Medición</th>
-                        <th style="width: 170px;">Puntos de Muestreo & Avance</th>
-                        <th style="width: 115px; text-align: right;">Acciones</th>
+                        <th style="width: 24%;">Equipos de Medición</th>
+                        <th style="width: 165px;">Puntos de Muestreo & Avance</th>
+                        <th style="width: 140px; text-align: right;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="modulesTableBody">
@@ -883,9 +883,18 @@ table#modulesMasterTable td {
 
                             <!-- 2. Tipo de Módulo & Proyecto Asignado -->
                             <td>
-                                <div style="font-weight: 800; color: var(--ink); font-size: 13.5px; margin-bottom: 4px;">
-                                    {{ $item['module_name'] }}
-                                </div>
+                                @if($item['module_key'] === 'iluminacion')
+                                    <a href="{{ route('modules.illumination', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Monitoreo de Iluminación">
+                                        <div style="font-weight: 800; color: #0284c7; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
+                                            <span>{{ $item['module_name'] }}</span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                        </div>
+                                    </a>
+                                @else
+                                    <div style="font-weight: 800; color: var(--ink); font-size: 13.5px; margin-bottom: 4px;">
+                                        {{ $item['module_name'] }}
+                                    </div>
+                                @endif
                                 <div class="module-project-pill" title="Proyecto Asignado">
                                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
@@ -973,6 +982,23 @@ table#modulesMasterTable td {
                             <!-- 6. Acciones -->
                             <td>
                                 <div class="admin-actions-cell" style="justify-content: flex-end; gap: 8px;">
+                                    @if($item['module_key'] === 'iluminacion')
+                                        <!-- Ver Mediciones de Iluminación -->
+                                        <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.illumination', $item['id']) }}'" title="Monitoreo de Iluminación (Ver Mediciones)" aria-label="Ver Mediciones de Iluminación">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="12" cy="12" r="4"/>
+                                                <path d="M12 2v2"/>
+                                                <path d="M12 20v2"/>
+                                                <path d="m4.93 4.93 1.41 1.41"/>
+                                                <path d="m17.66 17.66 1.41 1.41"/>
+                                                <path d="M2 12h2"/>
+                                                <path d="M20 12h2"/>
+                                                <path d="m6.34 17.66-1.41 1.41"/>
+                                                <path d="m19.07 4.93-1.41 1.41"/>
+                                            </svg>
+                                        </button>
+                                    @endif
+
                                     <!-- Editar Módulo -->
                                     <button type="button" class="btn-admin-icon-action theme-amber" onclick='openEditModuleModal(@json($item))' title="Editar Módulo" aria-label="Editar">
                                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">

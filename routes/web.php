@@ -10,6 +10,7 @@ use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\EquipmentController;
+use App\Http\Controllers\IlluminationController;
 
 // 1. Rutas Públicas de Autenticación
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -54,6 +55,14 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/modulos/{id}', [ProjectController::class, 'updateModule'])->name('modules.update');
     Route::match(['delete', 'post'], '/modulos/{id}/delete', [ProjectController::class, 'destroyModule'])->name('modules.destroy.post');
     Route::match(['delete', 'post'], '/modulos/{id}', [ProjectController::class, 'destroyModule'])->name('modules.destroy');
+
+    // Monitoreo de Iluminación Ocupacional
+    Route::get('/modulos/{id}/iluminacion', [IlluminationController::class, 'index'])->name('modules.illumination');
+    Route::post('/modulos/{id}/iluminacion/mediciones', [IlluminationController::class, 'storeMeasurement'])->name('modules.illumination.measurements.store');
+    Route::put('/modulos/{id}/iluminacion/mediciones/{measurementId}', [IlluminationController::class, 'updateMeasurement'])->name('modules.illumination.measurements.update');
+    Route::match(['delete', 'post'], '/modulos/{id}/iluminacion/mediciones/{measurementId}/delete', [IlluminationController::class, 'destroyMeasurement'])->name('modules.illumination.measurements.destroy.post');
+    Route::match(['delete', 'post'], '/modulos/{id}/iluminacion/mediciones/{measurementId}', [IlluminationController::class, 'destroyMeasurement'])->name('modules.illumination.measurements.destroy');
+    Route::post('/modulos/{id}/iluminacion/header', [IlluminationController::class, 'updateHeader'])->name('modules.illumination.header.update');
 
     // Equipos: Inventario, altas, edición y eliminación con soporte de fotos
     Route::get('/equipos', [EquipmentController::class, 'index'])->name('equipment.index');

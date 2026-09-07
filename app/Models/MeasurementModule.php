@@ -30,10 +30,16 @@ class MeasurementModule extends Model
         'lmp_limit',
         'status',
         'status_theme',
+        'start_date',
+        'end_date',
+        'monitoring_type',
+        'installation_name',
     ];
 
     protected $casts = [
         'field_staff_ids' => 'array',
+        'start_date' => 'date',
+        'end_date' => 'date',
     ];
 
     public function project(): BelongsTo
@@ -49,6 +55,11 @@ class MeasurementModule extends Model
     public function equipment(): BelongsTo
     {
         return $this->belongsTo(Equipment::class, 'equipment_id');
+    }
+
+    public function illuminationMeasurements(): HasMany
+    {
+        return $this->hasMany(IlluminationMeasurement::class, 'module_id')->orderBy('id', 'asc');
     }
 
     public function readings(): HasMany
