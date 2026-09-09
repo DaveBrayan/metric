@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Personal & Colaboradores — Metric v2 Pachabol')
+@section('title', 'Personal Técnico & Colaboradores — Metric v2')
 
 @push('styles')
     @vite(['resources/css/staff.css'])
@@ -10,15 +10,15 @@
     <!-- Header Banner -->
     <div class="staff-header-banner">
         <div>
-            <h1>Gestión de Personal & Especialistas</h1>
-            <p>Control de plantilla técnica, operadores de monitoreo industrial y especialistas en campo.</p>
+            <h1>Personal Técnico & Colaboradores</h1>
+            <p>Control de operadores de monitoreo industrial, dispositivos móviles y credenciales de acceso.</p>
         </div>
-        <button type="button" class="btn-primary-hero-action" onclick="openCreateStaffModal()">
+        <button type="button" class="btn-primary-hero-action" onclick="openCreateStaffModal()" aria-label="Registrar nuevo personal">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"/>
                 <line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
-            <span>Nuevo Colaborador</span>
+            <span>Nuevo Personal</span>
         </button>
     </div>
 
@@ -35,90 +35,101 @@
                     type="text" 
                     id="staffSearchInput" 
                     class="staff-search-input" 
-                    placeholder="Buscar por especialista, especialidad o departamento..."
+                    placeholder="Buscar por nombre, cargo o dispositivo..."
                     onkeyup="filterStaffLive()"
+                    aria-label="Buscar colaborador"
                 >
             </div>
         </div>
 
-        <!-- Master Table -->
+        <!-- Master Table: Solo Colaborador, Cargo, Dispositivo, Estado y Acciones -->
         <div class="table-responsive-box">
-            <table class="modern-table" id="staffMasterTable">
+            <table class="modern-table staff-table" id="staffMasterTable">
                 <thead>
                     <tr>
                         <th style="width: 50px;">#</th>
                         <th>Colaborador</th>
-                        <th>Departamento & Cargo</th>
-                        <th>Proyecto Asignado</th>
-                        <th>Dispositivo Vinculado</th>
+                        <th>Cargo</th>
+                        <th>Dispositivo</th>
                         <th>Estado</th>
                         <th style="text-align: right;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($staff as $member)
-                        <tr>
+                        <tr id="staff-row-{{ $member['id'] }}">
                             <!-- 1. Número -->
-                            <td style="font-family: 'Outfit', sans-serif; font-weight: 800; color: #94a3b8; font-size: 14px;">
+                            <td style="font-family: 'Outfit', sans-serif; font-weight: 800; color: #94a3b8; font-size: 13.5px;">
                                 {{ $member['num'] }}
                             </td>
 
-                            <!-- 2. Colaborador -->
+                            <!-- 2. Colaborador (Nombre y Apellido) -->
                             <td>
-                                <div class="client-pill-tag">
-                                    <div class="client-initial-box {{ $member['role_theme'] ?? 'cyan' }}">
-                                        {{ $member['initial'] ?? substr($member['name'] ?? 'P', 0, 1) }}
+                                <div class="staff-colaborador-cell">
+                                    <div class="staff-avatar-initial">
+                                        {{ $member['initial'] }}
                                     </div>
                                     <div>
-                                        <div style="font-weight: 700; color: var(--ink);">{{ $member['name'] ?? 'Especialista' }}</div>
-                                        <div style="font-size: 11.5px; color: #64748b;">{{ $member['email'] ?? '—' }}</div>
+                                        <div class="staff-name-title">{{ $member['name'] }}</div>
                                     </div>
                                 </div>
                             </td>
 
-                            <!-- 3. Departamento & Cargo -->
+                            <!-- 3. Cargo -->
                             <td>
-                                <div style="font-weight: 700; color: var(--ink);">{{ $member['department'] ?? 'Operaciones' }}</div>
-                                <div style="font-size: 11.5px; color: var(--cyan); font-weight: 600; margin-top: 2px;">
-                                    <span>{{ $member['position'] ?? 'Técnico' }}</span>
-                                </div>
-                            </td>
-
-                            <!-- 4. Proyecto Asignado -->
-                            <td>
-                                <span class="status-pill-badge in_progress" style="font-size: 11.5px; font-weight: 700;">
-                                    {{ $member['assigned_project'] ?? 'PRJ-General' }}
+                                <span class="staff-cargo-badge">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect width="20" height="14" x="2" y="7" rx="2" ry="2"/>
+                                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                                    </svg>
+                                    <span>{{ $member['position'] }}</span>
                                 </span>
                             </td>
 
-                            <!-- 5. Dispositivo Vinculado -->
+                            <!-- 4. Dispositivo -->
                             <td>
-                                <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 12px; font-weight: 600; color: #334155;">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b9df" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                        <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
-                                        <path d="M12 18h.01"/>
-                                    </svg>
-                                    <span>{{ $member['linked_device'] ?? $member['phone'] ?? 'Colector Móvil' }}</span>
-                                </div>
-                            </td>
-
-                            <!-- 6. Estado -->
-                            <td>
-                                @if(($member['status'] ?? 'online') === 'online')
-                                    <span class="status-pill-badge done">{{ $member['status_label'] ?? 'En Planta' }}</span>
+                                @if($member['has_device'])
+                                    <div class="device-badge-box" title="Dispositivo móvil vinculado">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00b5e2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
+                                            <path d="M12 18h.01"/>
+                                        </svg>
+                                        <span>{{ $member['device_name'] }}</span>
+                                    </div>
                                 @else
-                                    <span class="status-pill-badge pending">{{ $member['status_label'] ?? 'Inactivo' }}</span>
+                                    <span class="device-badge-empty" title="Sin dispositivo asignado">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
+                                            <line x1="5" y1="2" x2="19" y2="22"/>
+                                        </svg>
+                                        <span>Sin vincular</span>
+                                    </span>
                                 @endif
                             </td>
 
-                            <!-- 7. Acciones -->
+                            <!-- 5. Estado (Activo / Inactivo) -->
+                            <td>
+                                @if($member['status'] === 'activo')
+                                    <span class="status-pill-custom active">
+                                        <span class="status-pulse-dot"></span>
+                                        <span>Activo</span>
+                                    </span>
+                                @else
+                                    <span class="status-pill-custom inactive">
+                                        <span class="status-inactive-dot"></span>
+                                        <span>Inactivo</span>
+                                    </span>
+                                @endif
+                            </td>
+
+                            <!-- 6. Acciones -->
                             <td>
                                 <div class="admin-actions-cell">
-                                    <!-- 1. Reset Contraseña WhatsApp -->
+                                    <!-- 1. Restablecer Contraseña & WhatsApp (pregunta primero) -->
                                     <button type="button" class="btn-admin-icon-action theme-amber" 
-                                            onclick="openResetPasswordModal('{{ $member['id'] }}', '{{ addslashes($member['name']) }}', '{{ $member['email'] }}')" 
-                                            title="Generar Acceso & Enviar por WhatsApp" aria-label="Resetear Contraseña">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                            onclick="confirmResetPassword('{{ $member['id'] }}', '{{ addslashes($member['name']) }}')" 
+                                            title="Restablecer Contraseña & Generar Acceso WhatsApp" aria-label="Restablecer Contraseña">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                             <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
                                             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                                         </svg>
@@ -126,9 +137,9 @@
 
                                     <!-- 2. Editar Colaborador -->
                                     <button type="button" class="btn-admin-icon-action theme-lime" 
-                                            onclick="openEditStaffModal('{{ $member['id'] }}', '{{ addslashes($member['name']) }}', '{{ $member['email'] }}', '{{ $member['phone'] ?? '' }}', '{{ addslashes($member['department']) }}', '{{ addslashes($member['position']) }}', '{{ $member['status'] ?? 'online' }}')" 
+                                            onclick="openEditStaffModal('{{ $member['id'] }}', '{{ addslashes($member['first_name']) }}', '{{ addslashes($member['last_name']) }}', '{{ addslashes($member['position']) }}', '{{ $member['status'] }}')" 
                                             title="Editar Colaborador" aria-label="Editar">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
                                             <path d="m15 5 4 4"/>
                                         </svg>
@@ -138,7 +149,7 @@
                                     <button type="button" class="btn-admin-icon-action theme-danger" 
                                             onclick="deleteStaff('{{ $member['id'] }}', '{{ addslashes($member['name']) }}')" 
                                             title="Eliminar Colaborador" aria-label="Eliminar">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                             <polyline points="3 6 5 6 21 6"/>
                                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                                             <line x1="10" y1="11" x2="10" y2="17"/>
@@ -150,7 +161,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" style="text-align: center; color: #64748b; padding: 30px;">
+                            <td colspan="6" style="text-align: center; color: #64748b; padding: 36px;">
                                 No se encontraron colaboradores registrados.
                             </td>
                         </tr>
@@ -167,50 +178,74 @@
     </form>
 
     <!-- ==========================================================================
-         MODAL: ALTA DE NUEVO COLABORADOR
+         MODAL 1: ALTA DE NUEVO COLABORADOR
+         Únicamente 4 campos: Nombre, Apellido, Cargo y Estado.
+         Sin campo de dispositivo ni contraseña.
          ========================================================================== -->
     <div class="modal-backdrop-custom" id="createStaffModal" onclick="if(event.target === this) closeModal('createStaffModal')">
         <div class="modal-dialog-custom">
             <div class="modal-header-custom">
-                <h3>Alta de Colaborador Técnico</h3>
+                <h3>Alta de Personal Técnico</h3>
                 <button type="button" class="btn-close-modal" onclick="closeModal('createStaffModal')" aria-label="Cerrar modal">✕</button>
             </div>
 
-            <form action="{{ route('staff.store') }}" method="POST">
+            <form id="createStaffForm" action="{{ route('staff.store') }}" method="POST" onsubmit="handleCreateStaffSubmit(event)">
                 @csrf
                 <div class="modal-body-custom">
+                    <!-- Banner Informativo -->
+                    <div class="info-banner-subtle">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.2" style="flex-shrink: 0; margin-top: 1px;">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="16" x2="12" y2="12"/>
+                            <line x1="12" y1="8" x2="12.01" y2="8"/>
+                        </svg>
+                        <span>La contraseña y usuario de acceso se generarán automáticamente por el sistema y se mostrarán al guardar listos para WhatsApp.</span>
+                    </div>
+
+                    <!-- Fila 1: Nombre y Apellido -->
                     <div class="form-row-grid">
                         <div class="form-field-group">
-                            <label class="form-field-label">Nombre y Apellidos</label>
-                            <input type="text" name="name" class="custom-form-input" placeholder="Ej: Ing. Gonzalo Arnez" required>
+                            <label class="form-field-label" for="createStaffFirstName">Nombre *</label>
+                            <input 
+                                type="text" 
+                                id="createStaffFirstName" 
+                                name="first_name" 
+                                class="custom-form-input" 
+                                placeholder="Ej: Carlos" 
+                                required
+                            >
                         </div>
                         <div class="form-field-group">
-                            <label class="form-field-label">Correo Electrónico</label>
-                            <input type="email" name="email" class="custom-form-input" placeholder="gonzalo.a@pachabol.com" required>
+                            <label class="form-field-label" for="createStaffLastName">Apellido *</label>
+                            <input 
+                                type="text" 
+                                id="createStaffLastName" 
+                                name="last_name" 
+                                class="custom-form-input" 
+                                placeholder="Ej: Mamani Ramos" 
+                                required
+                            >
                         </div>
                     </div>
 
+                    <!-- Fila 2: Cargo y Estado -->
                     <div class="form-row-grid">
                         <div class="form-field-group">
-                            <label class="form-field-label">Departamento</label>
-                            <input type="text" name="department" class="custom-form-input" placeholder="Ingeniería de Automatización" required>
+                            <label class="form-field-label" for="createStaffPosition">Cargo *</label>
+                            <input 
+                                type="text" 
+                                id="createStaffPosition" 
+                                name="position" 
+                                class="custom-form-input" 
+                                placeholder="Ej: Especialista SCADA / Técnico de Campo" 
+                                required
+                            >
                         </div>
                         <div class="form-field-group">
-                            <label class="form-field-label">Cargo / Especialidad</label>
-                            <input type="text" name="position" class="custom-form-input" placeholder="Especialista Senior SCADA" required>
-                        </div>
-                    </div>
-
-                    <div class="form-row-grid">
-                        <div class="form-field-group">
-                            <label class="form-field-label">Teléfono / WhatsApp</label>
-                            <input type="text" name="phone" class="custom-form-input" placeholder="+591 715-00000">
-                        </div>
-                        <div class="form-field-group">
-                            <label class="form-field-label">Estado de Acceso</label>
-                            <select name="status" class="custom-form-select" required>
-                                <option value="online" selected>Activo (Permitir Acceso)</option>
-                                <option value="offline">Inactivo (Bloquear Acceso)</option>
+                            <label class="form-field-label" for="createStaffStatus">Estado *</label>
+                            <select id="createStaffStatus" name="status" class="custom-form-select" required>
+                                <option value="activo" selected>Activo</option>
+                                <option value="inactivo">Inactivo</option>
                             </select>
                         </div>
                     </div>
@@ -218,14 +253,16 @@
 
                 <div class="modal-footer-custom">
                     <button type="button" class="btn-subtle-link" onclick="closeModal('createStaffModal')">Cancelar</button>
-                    <button type="submit" class="btn-primary-hero-action">Guardar Colaborador</button>
+                    <button type="submit" id="btnSubmitCreateStaff" class="btn-primary-hero-action">Guardar Personal</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- ==========================================================================
-         MODAL: EDITAR COLABORADOR
+         MODAL 2: EDITAR COLABORADOR
+         Únicamente 4 campos: Nombre, Apellido, Cargo y Estado.
+         Sin campo de dispositivo ni contraseña.
          ========================================================================== -->
     <div class="modal-backdrop-custom" id="editStaffModal" onclick="if(event.target === this) closeModal('editStaffModal')">
         <div class="modal-dialog-custom">
@@ -234,42 +271,51 @@
                 <button type="button" class="btn-close-modal" onclick="closeModal('editStaffModal')" aria-label="Cerrar modal">✕</button>
             </div>
 
-            <form id="editStaffForm" method="POST">
+            <form id="editStaffForm" method="POST" onsubmit="handleEditStaffSubmit(event)">
                 @csrf
                 @method('PUT')
                 <div class="modal-body-custom">
+                    <!-- Fila 1: Nombre y Apellido -->
                     <div class="form-row-grid">
                         <div class="form-field-group">
-                            <label class="form-field-label">Nombre y Apellidos</label>
-                            <input type="text" id="editStaffName" name="name" class="custom-form-input" required>
+                            <label class="form-field-label" for="editStaffFirstName">Nombre *</label>
+                            <input 
+                                type="text" 
+                                id="editStaffFirstName" 
+                                name="first_name" 
+                                class="custom-form-input" 
+                                required
+                            >
                         </div>
                         <div class="form-field-group">
-                            <label class="form-field-label">Correo Electrónico</label>
-                            <input type="email" id="editStaffEmail" name="email" class="custom-form-input" required>
+                            <label class="form-field-label" for="editStaffLastName">Apellido *</label>
+                            <input 
+                                type="text" 
+                                id="editStaffLastName" 
+                                name="last_name" 
+                                class="custom-form-input" 
+                                required
+                            >
                         </div>
                     </div>
 
+                    <!-- Fila 2: Cargo y Estado -->
                     <div class="form-row-grid">
                         <div class="form-field-group">
-                            <label class="form-field-label">Departamento</label>
-                            <input type="text" id="editStaffDepartment" name="department" class="custom-form-input" required>
+                            <label class="form-field-label" for="editStaffPosition">Cargo *</label>
+                            <input 
+                                type="text" 
+                                id="editStaffPosition" 
+                                name="position" 
+                                class="custom-form-input" 
+                                required
+                            >
                         </div>
                         <div class="form-field-group">
-                            <label class="form-field-label">Cargo / Especialidad</label>
-                            <input type="text" id="editStaffPosition" name="position" class="custom-form-input" required>
-                        </div>
-                    </div>
-
-                    <div class="form-row-grid">
-                        <div class="form-field-group">
-                            <label class="form-field-label">Teléfono / WhatsApp</label>
-                            <input type="text" id="editStaffPhone" name="phone" class="custom-form-input">
-                        </div>
-                        <div class="form-field-group">
-                            <label class="form-field-label">Estado de Acceso</label>
+                            <label class="form-field-label" for="editStaffStatus">Estado *</label>
                             <select id="editStaffStatus" name="status" class="custom-form-select" required>
-                                <option value="online">Activo (Permitir Acceso)</option>
-                                <option value="offline">Inactivo (Bloquear Acceso)</option>
+                                <option value="activo">Activo</option>
+                                <option value="inactivo">Inactivo</option>
                             </select>
                         </div>
                     </div>
@@ -277,86 +323,123 @@
 
                 <div class="modal-footer-custom">
                     <button type="button" class="btn-subtle-link" onclick="closeModal('editStaffModal')">Cancelar</button>
-                    <button type="submit" class="btn-primary-hero-action">Guardar Cambios</button>
+                    <button type="submit" id="btnSubmitEditStaff" class="btn-primary-hero-action">Guardar Cambios</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- ==========================================================================
-         MODAL: RESETEAR CONTRASEÑA & GENERAR ACCESO WHATSAPP
+         MODAL 3: CREDENCIALES & WHATSAPP (DISEÑO EN BLANCO / CLARO)
+         Fondo blanco, diseño limpio, alto contraste, sin fondos oscuros.
+         Muestra correo, nueva contraseña generada y mensaje listo para WhatsApp.
          ========================================================================== -->
-    <div class="modal-backdrop-custom" id="resetPasswordModal" onclick="if(event.target === this) closeModal('resetPasswordModal')">
-        <div class="modal-dialog-custom">
-            <div class="modal-header-custom">
-                <h3>Restablecer Contraseña & Acceso WhatsApp</h3>
-                <button type="button" class="btn-close-modal" onclick="closeModal('resetPasswordModal')" aria-label="Cerrar modal">✕</button>
+    <div class="modal-backdrop-custom" id="credentialsWhatsAppModal" onclick="if(event.target === this) closeModal('credentialsWhatsAppModal')">
+        <div class="modal-dialog-custom modal-dialog-light" style="max-width: 520px;">
+            <div class="modal-header-custom modal-header-light">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div class="cred-header-icon-badge">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.3">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 style="font-size: 18px; color: #0f172a; margin: 0;">Credenciales de Acceso</h3>
+                        <p style="font-size: 12px; color: #64748b; margin: 2px 0 0;">Acceso generado listo para compartir por WhatsApp</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close-modal" onclick="closeModal('credentialsWhatsAppModal')" aria-label="Cerrar modal">✕</button>
             </div>
 
-            <form id="resetPasswordForm" method="POST">
-                @csrf
-                <div class="modal-body-custom">
-                    <div class="user-identity-modal-banner">
-                        <div class="admin-avatar-wrap cyan" style="width: 36px; height: 36px; font-size: 13px;">
-                            <span id="resetModalInitial">P</span>
-                        </div>
-                        <div class="user-identity-modal-info">
-                            <h4 id="resetModalName">Nombre del Colaborador</h4>
-                            <p id="resetModalEmail">colaborador@pachabol.com</p>
-                        </div>
+            <div class="modal-body-custom modal-body-light">
+                <!-- Identidad del Colaborador -->
+                <div class="cred-identity-card-light">
+                    <div class="staff-avatar-initial" id="credModalInitial" style="width: 44px; height: 44px; font-size: 16px;">
+                        C
                     </div>
+                    <div class="cred-identity-info">
+                        <h4 id="credModalName" style="color: #0f172a;">Carlos Mamani Ramos</h4>
+                        <p id="credModalPosition" style="color: #64748b;">Técnico de Campo</p>
+                    </div>
+                </div>
 
-                    <div class="form-field-group">
-                        <label class="form-field-label">Nueva Contraseña Generada</label>
-                        <div style="display: flex; gap: 8px;">
-                            <input type="text" id="resetNewPasswordInput" name="new_password" class="custom-form-input" required style="font-family: monospace; font-weight: 700; letter-spacing: 0.5px;">
-                            <button type="button" class="btn-generate-pass" onclick="generateRandomPassword()">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                <!-- Resumen de Datos: Usuario y Contraseña en Blanco / Claro -->
+                <div class="cred-summary-grid">
+                    <div class="cred-summary-box-light">
+                        <span class="cred-summary-label">Usuario / Correo</span>
+                        <div class="cred-summary-val-wrap">
+                            <span class="cred-summary-val" id="credModalEmail">carlos.mamani@metric.com</span>
+                            <button type="button" class="btn-copy-micro" onclick="copyToClipboard(document.getElementById('credModalEmail').textContent, 'Usuario copiado')" title="Copiar usuario" aria-label="Copiar usuario">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
                                 </svg>
-                                <span>Generar</span>
                             </button>
                         </div>
                     </div>
-
-                    <div class="whatsapp-credential-card">
-                        <div class="whatsapp-card-header">
-                            <div class="whatsapp-badge">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2z"/>
+                    <div class="cred-summary-box-light">
+                        <span class="cred-summary-label">Nueva Contraseña</span>
+                        <div class="cred-summary-val-wrap">
+                            <span class="cred-summary-val" id="credModalPassword" style="color: #0284c7;">Metric2026*</span>
+                            <button type="button" class="btn-copy-micro" onclick="copyToClipboard(document.getElementById('credModalPassword').textContent, 'Contraseña copiada')" title="Copiar contraseña" aria-label="Copiar contraseña">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
                                 </svg>
-                                <span>Mensaje Listo para WhatsApp</span>
-                            </div>
-                            <span style="font-size: 11px; color: #8696a0;">METRIC V2</span>
+                            </button>
                         </div>
-
-                        <div class="whatsapp-message-box" id="whatsappCredentialText">
-*🔐 Credenciales de Acceso — METRIC V2*
-━━━━━━━━━━━━━━━━━━━━━
-👤 *Usuario:* cargando...
-🔑 *Contraseña:* cargando...
-🌐 *Enlace:* {{ url('/login') }}
-━━━━━━━━━━━━━━━━━━━━━
-⚠️ _Recomendamos ingresar y actualizar su contraseña._
-                        </div>
-
-                        <button type="button" class="btn-copy-credential" onclick="copyWhatsAppCredentials()">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-                                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-                            </svg>
-                            <span id="copyCredentialBtnText">Copiar Acceso para WhatsApp</span>
-                        </button>
                     </div>
                 </div>
 
-                <div class="modal-footer-custom">
-                    <button type="button" class="btn-subtle-link" onclick="closeModal('resetPasswordModal')">Cancelar</button>
-                    <button type="submit" class="btn-primary-hero-action">Guardar Nueva Contraseña</button>
+                <!-- Tarjeta WhatsApp en Modo Claro (Blanco con acento verde WhatsApp) -->
+                <div class="whatsapp-message-card-light">
+                    <div class="whatsapp-card-head-light">
+                        <div class="whatsapp-head-title-light">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.2">
+                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                            </svg>
+                            <span>Mensaje Listo para WhatsApp</span>
+                        </div>
+                        <span class="whatsapp-metric-tag">METRIC V2</span>
+                    </div>
+
+                    <!-- Caja de texto en blanco puro de alto contraste: Usar textarea con auto-selección al clic -->
+                    <textarea 
+                        id="credWhatsAppText" 
+                        class="whatsapp-box-body-light" 
+                        rows="7" 
+                        readonly 
+                        onclick="this.focus(); this.select();"
+                        title="Haz clic para seleccionar todo el texto"
+                    >Cargando credenciales...</textarea>
+
+                    <!-- Botón de WhatsApp verde accesible con texto blanco -->
+                    <button type="button" id="btnCopyWhatsAppCred" class="btn-whatsapp-copy-light" onclick="copyWhatsAppMessage()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                        </svg>
+                        <span id="btnCopyWhatsAppText">Copiar Texto para WhatsApp</span>
+                    </button>
                 </div>
-            </form>
+            </div>
+
+            <div class="modal-footer-custom modal-footer-light">
+                <button type="button" class="btn-primary-hero-action" onclick="closeModal('credentialsWhatsAppModal')">Entendido / Cerrar</button>
+            </div>
         </div>
     </div>
+
+    @if(session('created_credentials'))
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                if (typeof window.openCredentialsModal === 'function') {
+                    window.openCredentialsModal(@json(session('created_credentials')));
+                }
+            });
+        </script>
+    @endif
 @endsection
 
 @push('scripts')
