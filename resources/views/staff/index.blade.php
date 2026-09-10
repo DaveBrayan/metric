@@ -49,7 +49,7 @@
                     <tr>
                         <th style="width: 50px;">#</th>
                         <th>Colaborador</th>
-                        <th>Cargo</th>
+                        <th>Correo Electrónico</th>
                         <th>Dispositivo</th>
                         <th>Estado</th>
                         <th style="text-align: right;">Acciones</th>
@@ -75,14 +75,14 @@
                                 </div>
                             </td>
 
-                            <!-- 3. Cargo -->
+                            <!-- 3. Correo Electrónico -->
                             <td>
-                                <span class="staff-cargo-badge">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                        <rect width="20" height="14" x="2" y="7" rx="2" ry="2"/>
-                                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                                <span class="staff-email-badge" style="font-family: 'Outfit', 'Inter', monospace; font-size: 13px; color: #334155; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00b5e2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect width="20" height="16" x="2" y="4" rx="2"/>
+                                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
                                     </svg>
-                                    <span>{{ $member['position'] }}</span>
+                                    <span>{{ $member['email'] }}</span>
                                 </span>
                             </td>
 
@@ -137,7 +137,7 @@
 
                                     <!-- 2. Editar Colaborador -->
                                     <button type="button" class="btn-admin-icon-action theme-lime" 
-                                            onclick="openEditStaffModal('{{ $member['id'] }}', '{{ addslashes($member['first_name']) }}', '{{ addslashes($member['last_name']) }}', '{{ addslashes($member['position']) }}', '{{ $member['status'] }}')" 
+                                            onclick="openEditStaffModal('{{ $member['id'] }}', '{{ addslashes($member['first_name']) }}', '{{ addslashes($member['last_name']) }}', '{{ addslashes($member['email']) }}', '{{ $member['status'] }}')" 
                                             title="Editar Colaborador" aria-label="Editar">
                                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
@@ -228,16 +228,16 @@
                         </div>
                     </div>
 
-                    <!-- Fila 2: Cargo y Estado -->
+                    <!-- Fila 2: Correo Electrónico y Estado -->
                     <div class="form-row-grid">
                         <div class="form-field-group">
-                            <label class="form-field-label" for="createStaffPosition">Cargo *</label>
+                            <label class="form-field-label" for="createStaffEmail">Correo Electrónico *</label>
                             <input 
-                                type="text" 
-                                id="createStaffPosition" 
-                                name="position" 
+                                type="email" 
+                                id="createStaffEmail" 
+                                name="email" 
                                 class="custom-form-input" 
-                                placeholder="Ej: Especialista SCADA / Técnico de Campo" 
+                                placeholder="Ej: carlos.mamani@metric.com" 
                                 required
                             >
                         </div>
@@ -261,8 +261,7 @@
 
     <!-- ==========================================================================
          MODAL 2: EDITAR COLABORADOR
-         Únicamente 4 campos: Nombre, Apellido, Cargo y Estado.
-         Sin campo de dispositivo ni contraseña.
+         Campos: Nombre, Apellido, Correo Electrónico y Estado.
          ========================================================================== -->
     <div class="modal-backdrop-custom" id="editStaffModal" onclick="if(event.target === this) closeModal('editStaffModal')">
         <div class="modal-dialog-custom">
@@ -299,15 +298,16 @@
                         </div>
                     </div>
 
-                    <!-- Fila 2: Cargo y Estado -->
+                    <!-- Fila 2: Correo Electrónico y Estado -->
                     <div class="form-row-grid">
                         <div class="form-field-group">
-                            <label class="form-field-label" for="editStaffPosition">Cargo *</label>
+                            <label class="form-field-label" for="editStaffEmail">Correo Electrónico *</label>
                             <input 
-                                type="text" 
-                                id="editStaffPosition" 
-                                name="position" 
+                                type="email" 
+                                id="editStaffEmail" 
+                                name="email" 
                                 class="custom-form-input" 
+                                placeholder="colaborador@metric.com" 
                                 required
                             >
                         </div>

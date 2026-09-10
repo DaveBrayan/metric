@@ -41,6 +41,7 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/personal/{id}', [StaffController::class, 'update'])->name('staff.update');
     Route::match(['delete', 'post'], '/personal/{id}/delete', [StaffController::class, 'destroy'])->name('staff.destroy.post');
     Route::match(['delete', 'post'], '/personal/{id}', [StaffController::class, 'destroy'])->name('staff.destroy');
+    Route::post('/personal/{id}/fcm-token', [StaffController::class, 'updateFcmToken'])->name('staff.fcm-token');
     Route::post('/personal/{id}/reset-password', [StaffController::class, 'resetPassword'])->name('staff.reset-password');
 
     // Proyectos: Proyectos Activos & Submódulo de Módulos de Monitoreo
@@ -63,6 +64,7 @@ Route::middleware(['auth'])->group(function () {
     Route::match(['delete', 'post'], '/modulos/{id}/iluminacion/mediciones/{measurementId}/delete', [IlluminationController::class, 'destroyMeasurement'])->name('modules.illumination.measurements.destroy.post');
     Route::match(['delete', 'post'], '/modulos/{id}/iluminacion/mediciones/{measurementId}', [IlluminationController::class, 'destroyMeasurement'])->name('modules.illumination.measurements.destroy');
     Route::post('/modulos/{id}/iluminacion/header', [IlluminationController::class, 'updateHeader'])->name('modules.illumination.header.update');
+    Route::post('/modulos/{id}/iluminacion/photo-report-settings', [IlluminationController::class, 'savePhotoReportSettings'])->name('modules.illumination.photo-report-settings.save');
 
     // Equipos: Inventario, altas, edición y eliminación con soporte de fotos
     Route::get('/equipos', [EquipmentController::class, 'index'])->name('equipment.index');

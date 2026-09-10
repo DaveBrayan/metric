@@ -19,6 +19,11 @@
     "src": "resources/css/dashboard.css",
     "isEntry": true
   },
+  "resources/css/iluminaciones.css": {
+    "file": "assets/iluminaciones-BItbxE1m.css",
+    "src": "resources/css/iluminaciones.css",
+    "isEntry": true
+  },
   "resources/css/login.css": {
     "file": "assets/login-BbpBtBpW.css",
     "src": "resources/css/login.css",
@@ -35,7 +40,7 @@
     "isEntry": true
   },
   "resources/css/staff.css": {
-    "file": "assets/staff-hr8R0P3t.css",
+    "file": "assets/staff-CsBNSjz2.css",
     "src": "resources/css/staff.css",
     "isEntry": true
   },
@@ -63,6 +68,12 @@
     "src": "resources/js/dashboard.js",
     "isEntry": true
   },
+  "resources/js/iluminaciones.js": {
+    "file": "assets/iluminaciones-CJArh3Ht.js",
+    "name": "iluminaciones",
+    "src": "resources/js/iluminaciones.js",
+    "isEntry": true
+  },
   "resources/js/login.js": {
     "file": "assets/login-CxfuGo_i.js",
     "name": "login",
@@ -82,7 +93,7 @@
     "isEntry": true
   },
   "resources/js/staff.js": {
-    "file": "assets/staff-D0_VTReL.js",
+    "file": "assets/staff-BsEPHQZP.js",
     "name": "staff",
     "src": "resources/js/staff.js",
     "isEntry": true

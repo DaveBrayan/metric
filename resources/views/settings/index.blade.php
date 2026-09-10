@@ -251,6 +251,80 @@
         <div class="settings-tab-pane" id="tab-api">
             <div class="settings-form-layout">
                 <div>
+                    <!-- Tarjeta: Enlace y Conexión para App Móvil -->
+                    <div class="glass-card settings-card" style="border: 1.5px solid rgba(0, 181, 226, 0.35); background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(240, 249, 255, 0.85) 100%); margin-bottom: 24px;">
+                        <div class="settings-section-head">
+                            <div class="kpi-icon-glow" style="background: var(--cyan-soft-gradient); color: var(--cyan); width: 44px; height: 44px;">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                                    <line x1="12" y1="18" x2="12.01" y2="18"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <h2 style="margin: 0;">Enlace para App Móvil (Flutter)</h2>
+                                    <span style="font-size: 11px; font-weight: 700; background: rgba(0, 181, 226, 0.15); color: #008aa8; padding: 2px 8px; border-radius: 999px;">ACTIVO</span>
+                                </div>
+                                <p style="margin: 2px 0 0 0;">Configura la URL base del servidor para que los técnicos de campo sincronicen mediciones y se autentiquen desde la app.</p>
+                            </div>
+                        </div>
+
+                        <div class="form-field-group" style="margin-top: 16px;">
+                            <label class="form-field-label" style="font-weight: 700; color: #0f172a;">URL Base de la API Móvil</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="url" id="appApiUrlInput" name="app_api_url" class="custom-form-input" 
+                                    style="font-family: monospace; font-size: 14px; font-weight: 600; color: #0369a1; background: #ffffff;"
+                                    value="{{ $settings['api']['app_api_url'] ?? $suggestedUrls['local_ip'] }}"
+                                    placeholder="http://192.168.1.X:8000/api o https://tudominio.com/api" required>
+                                <button type="button" class="btn-copy-code" style="height: 42px; border-radius: 10px; padding: 0 16px;" onclick="navigator.clipboard.writeText(document.getElementById('appApiUrlInput').value); triggerToast('URL de API copiada', '📋');">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect width="13" height="13" x="9" y="9" rx="2" ry="2"/>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                    </svg>
+                                    <span>Copiar</span>
+                                </button>
+                            </div>
+                            <div class="form-field-hint" style="margin-top: 6px;">
+                                💡 Puedes cambiar esta URL en cualquier momento sin recompilar la app móvil. Tanto en pruebas locales como en producción.
+                            </div>
+                        </div>
+
+                        <!-- Selector rápido de entornos -->
+                        <div style="margin-top: 16px;">
+                            <span style="font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Acceso Rápido a IPs Detectadas:</span>
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+                                <button type="button" class="badge-role" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; cursor: pointer; padding: 6px 12px; border-radius: 8px; font-size: 12px;"
+                                    onclick="document.getElementById('appApiUrlInput').value='{{ $suggestedUrls['local_ip'] }}'; updateQrCode('{{ $suggestedUrls['local_ip'] }}');">
+                                    📶 Red Local Wi-Fi: <b>{{ $suggestedUrls['local_ip'] }}</b>
+                                </button>
+                                <button type="button" class="badge-role" style="background: #f1f5f9; color: #334155; border: 1px solid #e2e8f0; cursor: pointer; padding: 6px 12px; border-radius: 8px; font-size: 12px;"
+                                    onclick="document.getElementById('appApiUrlInput').value='{{ $suggestedUrls['emulator'] }}'; updateQrCode('{{ $suggestedUrls['emulator'] }}');">
+                                    📱 Emulador Android: <b>{{ $suggestedUrls['emulator'] }}</b>
+                                </button>
+                                <button type="button" class="badge-role" style="background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; cursor: pointer; padding: 6px 12px; border-radius: 8px; font-size: 12px;"
+                                    onclick="document.getElementById('appApiUrlInput').value='{{ $suggestedUrls['localhost'] }}'; updateQrCode('{{ $suggestedUrls['localhost'] }}');">
+                                    💻 Localhost PC: <b>{{ $suggestedUrls['localhost'] }}</b>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Código QR para sincronización rápida -->
+                        <div style="display: flex; align-items: center; gap: 16px; margin-top: 20px; padding: 14px; background: rgba(255,255,255,0.85); border-radius: 12px; border: 1px solid #e2e8f0;">
+                            <img id="qrCodeImg" 
+                                src="https://api.qrserver.com/v1/create-qr-code/?size=110x110&margin=4&data={{ urlencode($settings['api']['app_api_url'] ?? $suggestedUrls['local_ip']) }}" 
+                                alt="QR Conexión App Móvil" 
+                                style="width: 100px; height: 100px; border-radius: 8px; border: 1px solid #cbd5e1; background: white;"
+                                onerror="this.style.display='none'">
+                            <div>
+                                <h3 style="font-size: 13.5px; font-weight: 700; margin: 0 0 4px 0; color: #0f172a;">Escaneo Directo con la App Móvil</h3>
+                                <p style="font-size: 12px; color: #64748b; margin: 0; line-height: 1.45;">
+                                    Abre la app <b>Metric</b> en tu teléfono, pulsa el icono de configuración <b>⚙️</b> en la pantalla de inicio de sesión y escanea este código o pega la URL para vincular el teléfono inmediatamente.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta: Llave de API y Webhook -->
                     <div class="glass-card settings-card">
                         <div class="settings-section-head">
                             <div class="kpi-icon-glow" style="background: var(--cyan-soft-gradient); color: var(--cyan); width: 40px; height: 40px;">
@@ -261,7 +335,7 @@
                             </div>
                             <div>
                                 <h2>Llave de API de Producción</h2>
-                                <p>Autenticación segura para integración con sistemas ERP, SCADA y aplicaciones móviles.</p>
+                                <p>Autenticación segura para integración con sistemas ERP, SCADA y servicios externos.</p>
                             </div>
                         </div>
 
@@ -277,21 +351,53 @@
                             </button>
                         </div>
 
-                        <div style="display: flex; gap: 12px; margin-top: 14px;">
-                            <button type="button" class="btn-subtle-link" onclick="regenerateApiKey()" style="color: #b91c1c; font-weight: 700;">
-                                🔄 Regenerar Llave API
-                            </button>
-                        </div>
-
                         <div class="form-field-group" style="margin-top: 24px;">
                             <label class="form-field-label">Webhook URL para Eventos en Vivo</label>
                             <input type="url" name="webhook_url" class="custom-form-input" value="{{ $settings['api']['webhook_url'] ?? 'https://api.pachabol.com/v1/telemetry/events' }}">
-                            <div class="form-field-hint">Enviaremos peticiones HTTP POST cifradas cuando ocurran alertas en planta.</div>
+                            <div class="form-field-hint">Enviaremos peticiones HTTP POST cifradas cuando ocurran alertas o sincronizaciones.</div>
                         </div>
                     </div>
                 </div>
 
                 <div>
+                    <!-- Tarjeta: Estado de la API Móvil -->
+                    <div class="glass-card settings-card" style="margin-bottom: 24px;">
+                        <div class="settings-section-head">
+                            <div class="kpi-icon-glow" style="background: #ecfdf5; color: #059669; width: 40px; height: 40px;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                    <polyline points="22 4 12 14.01 9 11.01"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h2>Servicios API Móvil</h2>
+                                <p>Endpoints disponibles</p>
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #64748b;">Login de Personal:</span>
+                                <span style="font-family: monospace; font-size: 11.5px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #0f172a;">/api/login</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #64748b;">Proyectos Asignados:</span>
+                                <span style="font-family: monospace; font-size: 11.5px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #0f172a;">/api/projects</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #64748b;">Módulos de Monitoreo:</span>
+                                <span style="font-family: monospace; font-size: 11.5px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #0f172a;">/api/projects/{id}/modules</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #64748b;">Medición Iluminación:</span>
+                                <span style="font-family: monospace; font-size: 11.5px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #0f172a;">/api/modules/{id}/illumination</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #e2e8f0; padding-top: 8px;">
+                                <span style="color: #64748b;">Estado del Servidor:</span>
+                                <b style="color: #16a34a;">● En línea (Activo)</b>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="glass-card settings-card">
                         <div class="settings-section-head">
                             <div class="kpi-icon-glow" style="background: var(--lime-soft-gradient); color: var(--lime); width: 40px; height: 40px;">
@@ -311,7 +417,7 @@
                             </div>
                             <div style="display: flex; justify-content: space-between;">
                                 <span style="color: #64748b;">Última sincronización:</span>
-                                <b>Hace 4 min</b>
+                                <b>En tiempo real</b>
                             </div>
                         </div>
                     </div>
@@ -319,6 +425,23 @@
             </div>
         </div>
     </form>
+
+    <script>
+        function updateQrCode(url) {
+            const qrImg = document.getElementById('qrCodeImg');
+            if (qrImg) {
+                qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=110x110&margin=4&data=' + encodeURIComponent(url);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.getElementById('appApiUrlInput');
+            if (input) {
+                input.addEventListener('input', function() {
+                    updateQrCode(this.value);
+                });
+            }
+        });
+    </script>
 @endsection
 
 @push('scripts')

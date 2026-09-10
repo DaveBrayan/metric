@@ -57,7 +57,7 @@ class IlluminationController extends Controller
         }
 
         // Mediciones registradas
-        $measurements = $module->illuminationMeasurements()->with('staff')->get()->map(function ($item, $index) {
+        $measurements = $module->illuminationMeasurements()->with('staff')->get()->map(function ($item, $index) use ($assignedStaff, $currentUser) {
             $dateFormatted = $item->measurement_date ? $item->measurement_date->format('d/m/Y') : '—';
             $measuredLux = (float) $item->measured_lux;
             $requiredLux = (float) $item->required_lux;
@@ -102,15 +102,24 @@ class IlluminationController extends Controller
                 'longitude' => $lng,
                 'observations' => $item->observations ?: 'Sin observaciones',
                 'raw_observations' => $item->observations,
-                'registered_by' => $item->registered_by ?: ($item->staff ? $item->staff->name : 'Técnico de Campo'),
+                'registered_by' => $item->registered_by ?: ($item->staff ? $item->staff->name : (($assignedStaff && $assignedStaff->isNotEmpty()) ? $assignedStaff->first()->name : ($currentUser ? $currentUser->name : 'Ing. Carlos Mamani Ramos'))),
                 'staff_id' => $item->staff_id,
             ];
         });
 
+        // Configuración guardada para el Reporte Fotográfico
+        $savedSettings = $module->photo_report_settings ?: [];
+        $photoReportSettings = [
+            'grid' => $savedSettings['grid'] ?? '2x3',
+            'orientation' => $savedSettings['orientation'] ?? 'landscape',
+            'selected_points' => $savedSettings['selected_points'] ?? $measurements->pluck('id')->toArray(),
+            'photo_indices' => $savedSettings['photo_indices'] ?? (object)[],
+        ];
+
         // Contadores
         $totalMeasurements = $measurements->count();
 
-        return view('measurements.illumination', compact(
+        return view('measurements.iluminaciones.index', compact(
             'userName',
             'userRole',
             'module',
@@ -128,7 +137,8 @@ class IlluminationController extends Controller
             'equipmentImage',
             'staffList',
             'measurements',
-            'totalMeasurements'
+            'totalMeasurements',
+            'photoReportSettings'
         ));
     }
 
@@ -150,8 +160,8 @@ class IlluminationController extends Controller
             'lighting_type' => 'required|string|in:Natural,Artificial,Mixta',
             'required_lux' => 'required|numeric|min:0',
             'measured_lux' => 'required|numeric|min:0',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:8192',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:8192',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:30720',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:30720',
             'location' => 'nullable|string|max:255',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
@@ -159,6 +169,12 @@ class IlluminationController extends Controller
             'observations' => 'nullable|string|max:1000',
             'staff_id' => 'nullable|exists:staff,id',
             'registered_by' => 'nullable|string|max:255',
+        ], [
+            'images.*.uploaded' => 'Una o más imágenes superaron el límite de carga del servidor. Las imágenes se optimizarán automáticamente al seleccionarlas.',
+            'image.uploaded' => 'La imagen supera el límite de carga del servidor.',
+            'images.*.image' => 'Cada archivo debe ser una imagen válida (JPG, PNG, WebP, GIF).',
+            'images.*.mimes' => 'Formato de imagen no admitido. Usa JPG, PNG o WebP.',
+            'images.*.max' => 'La fotografía no debe superar los 30 MB.',
         ]);
 
         $readings = null;
@@ -178,18 +194,14 @@ class IlluminationController extends Controller
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $file) {
                 if ($file->isValid()) {
-                    $fileName = 'lux_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-                    $file->move($uploadDir, $fileName);
-                    $uploadedImages[] = 'uploads/measurements/' . $fileName;
+                    $uploadedImages[] = $this->saveAdaptiveImage($file, $uploadDir);
                 }
             }
         }
         if ($request->hasFile('image')) {
             $file = $request->file('image');
             if ($file->isValid()) {
-                $fileName = 'lux_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-                $file->move($uploadDir, $fileName);
-                array_unshift($uploadedImages, 'uploads/measurements/' . $fileName);
+                array_unshift($uploadedImages, $this->saveAdaptiveImage($file, $uploadDir));
             }
         }
         $imagePath = $uploadedImages[0] ?? null;
@@ -260,8 +272,8 @@ class IlluminationController extends Controller
             'lighting_type' => 'required|string|in:Natural,Artificial,Mixta',
             'required_lux' => 'required|numeric|min:0',
             'measured_lux' => 'required|numeric|min:0',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:8192',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:8192',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:30720',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:30720',
             'location' => 'nullable|string|max:255',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
@@ -269,6 +281,12 @@ class IlluminationController extends Controller
             'observations' => 'nullable|string|max:1000',
             'staff_id' => 'nullable|exists:staff,id',
             'registered_by' => 'nullable|string|max:255',
+        ], [
+            'images.*.uploaded' => 'Una o más imágenes superaron el límite de carga del servidor. Las imágenes se optimizarán automáticamente al seleccionarlas.',
+            'image.uploaded' => 'La imagen supera el límite de carga del servidor.',
+            'images.*.image' => 'Cada archivo debe ser una imagen válida (JPG, PNG, WebP, GIF).',
+            'images.*.mimes' => 'Formato de imagen no admitido. Usa JPG, PNG o WebP.',
+            'images.*.max' => 'La fotografía no debe superar los 30 MB.',
         ]);
 
         $readings = null;
@@ -288,18 +306,14 @@ class IlluminationController extends Controller
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $file) {
                 if ($file->isValid()) {
-                    $fileName = 'lux_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-                    $file->move($uploadDir, $fileName);
-                    $uploadedImages[] = 'uploads/measurements/' . $fileName;
+                    $uploadedImages[] = $this->saveAdaptiveImage($file, $uploadDir);
                 }
             }
         }
         if ($request->hasFile('image')) {
             $file = $request->file('image');
             if ($file->isValid()) {
-                $fileName = 'lux_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-                $file->move($uploadDir, $fileName);
-                array_unshift($uploadedImages, 'uploads/measurements/' . $fileName);
+                array_unshift($uploadedImages, $this->saveAdaptiveImage($file, $uploadDir));
             }
         }
 
@@ -308,12 +322,22 @@ class IlluminationController extends Controller
             $existingImages = [$measurement->image_path];
         }
 
+        // Si el usuario eliminó fotos en la edición, conservar solo las remaining_images especificadas
+        if ($request->has('remaining_images')) {
+            $rawRemaining = $request->input('remaining_images');
+            $remaining = is_array($rawRemaining) ? $rawRemaining : json_decode($rawRemaining, true);
+            if (is_array($remaining)) {
+                // Filtrar las imágenes que se mantienen
+                $existingImages = array_values(array_intersect($existingImages, $remaining));
+            }
+        }
+
         if (!empty($uploadedImages)) {
             $allImages = array_merge($existingImages, $uploadedImages);
-            $imagePath = $uploadedImages[0] ?? $measurement->image_path;
+            $imagePath = $allImages[0] ?? null;
         } else {
             $allImages = $existingImages;
-            $imagePath = $measurement->image_path;
+            $imagePath = $allImages[0] ?? null;
         }
 
         $registeredByName = $validated['registered_by'] ?? $measurement->registered_by;
@@ -411,5 +435,165 @@ class IlluminationController extends Controller
 
         return redirect()->route('modules.illumination', $moduleId)
             ->with('success', 'Datos del encabezado técnico actualizados exitosamente.');
+    }
+
+    /**
+     * Save photo report settings (grid distribution, orientation, selected points, chosen photo per point).
+     */
+    public function savePhotoReportSettings(Request $request, $moduleId)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+
+        $validated = $request->validate([
+            'grid' => 'nullable|string|in:2x3,2x4,3x3,3x4',
+            'orientation' => 'nullable|string|in:landscape,portrait',
+            'selected_points' => 'nullable|array',
+            'photo_indices' => 'nullable|array',
+        ]);
+
+        $currentSettings = $module->photo_report_settings ?: [];
+
+        $newSettings = [
+            'grid' => $validated['grid'] ?? ($currentSettings['grid'] ?? '2x3'),
+            'orientation' => $validated['orientation'] ?? ($currentSettings['orientation'] ?? 'landscape'),
+            'selected_points' => array_key_exists('selected_points', $validated) ? $validated['selected_points'] : ($currentSettings['selected_points'] ?? []),
+            'photo_indices' => array_key_exists('photo_indices', $validated) ? $validated['photo_indices'] : ($currentSettings['photo_indices'] ?? []),
+            'updated_at' => now()->toIso8601String(),
+        ];
+
+        $module->photo_report_settings = $newSettings;
+        $module->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Configuración del reporte fotográfico guardada exitosamente.',
+            'settings' => $newSettings,
+        ]);
+    }
+
+    /**
+     * Procesa y guarda una imagen de forma adaptativa según su peso (bytes) y dimensiones (px).
+     * Si la imagen ya es ligera y tiene dimensiones estándar, se conserva intacta sin recomprimir.
+     * Si es pesada o de sensor ultra-HD (48MP+), se remuestrea con bicúbico manteniendo nitidez.
+     */
+    protected function saveAdaptiveImage($uploadedFile, $uploadDir)
+    {
+        $extension = strtolower($uploadedFile->getClientOriginalExtension());
+        $safeExt = ($extension === 'jpeg' || $extension === 'jpg') ? 'jpg' : $extension;
+        $fileName = 'lux_' . time() . '_' . uniqid() . '.' . $safeExt;
+        $destinationPath = $uploadDir . DIRECTORY_SEPARATOR . $fileName;
+        $relativePath = 'uploads/measurements/' . $fileName;
+
+        $sourcePath = $uploadedFile->getRealPath();
+        $fileSize = $uploadedFile->getSize(); // Bytes
+
+        // Leer información de dimensiones de la imagen
+        $imgInfo = @getimagesize($sourcePath);
+        if (!$imgInfo) {
+            // Si no se pueden leer dimensiones (no es imagen raster válida), mover directamente
+            $uploadedFile->move($uploadDir, $fileName);
+            return $relativePath;
+        }
+
+        $srcWidth = $imgInfo[0];
+        $srcHeight = $imgInfo[1];
+        $imageType = $imgInfo[2];
+        $maxDimension = max($srcWidth, $srcHeight);
+
+        // NIVEL 0: ÓPTIMA / LIVIANA
+        // Si pesa <= 1.2 MB y sus dimensiones no superan 1920px (Full HD),
+        // no se altera ni recomprime: se mantiene 100% el archivo original sin pérdida de nitidez.
+        if ($fileSize <= 1.2 * 1024 * 1024 && $maxDimension <= 1920) {
+            $uploadedFile->move($uploadDir, $fileName);
+            return $relativePath;
+        }
+
+        // Determinar perfil adaptativo según peso y resolución
+        if ($fileSize <= 4 * 1024 * 1024 && $maxDimension <= 2800) {
+            // NIVEL 1: PESO MEDIO (1.2MB - 4MB o hasta 2.8K)
+            // Conserva altísima resolución (hasta 2560px QHD) y calidad 92 (visualmente idéntica)
+            $targetMaxDim = 2560;
+            $quality = 92;
+        } elseif ($fileSize <= 9 * 1024 * 1024 && $maxDimension <= 4500) {
+            // NIVEL 2: PESADA (4MB - 9MB o hasta 4.5K)
+            // Escala a 2200px con calidad 90 manteniendo dígitos y etiquetas nítidas
+            $targetMaxDim = 2200;
+            $quality = 90;
+        } else {
+            // NIVEL 3: ULTRA PESADA / SENSOR MÓVIL RAW (48MP+, 6000x8000px, > 9MB)
+            // Escala a 2048px con calidad 88 y remuestreo bicúbico
+            $targetMaxDim = 2048;
+            $quality = 88;
+        }
+
+        // Calcular nuevas dimensiones respetando la relación de aspecto
+        if ($maxDimension > $targetMaxDim) {
+            if ($srcWidth >= $srcHeight) {
+                $targetWidth = $targetMaxDim;
+                $targetHeight = (int) round(($srcHeight * $targetMaxDim) / $srcWidth);
+            } else {
+                $targetHeight = $targetMaxDim;
+                $targetWidth = (int) round(($srcWidth * $targetMaxDim) / $srcHeight);
+            }
+        } else {
+            $targetWidth = $srcWidth;
+            $targetHeight = $srcHeight;
+        }
+
+        // Cargar imagen según formato
+        $srcImage = null;
+        switch ($imageType) {
+            case IMAGETYPE_JPEG:
+                $srcImage = @imagecreatefromjpeg($sourcePath);
+                break;
+            case IMAGETYPE_PNG:
+                $srcImage = @imagecreatefrompng($sourcePath);
+                break;
+            case IMAGETYPE_WEBP:
+                if (function_exists('imagecreatefromwebp')) {
+                    $srcImage = @imagecreatefromwebp($sourcePath);
+                }
+                break;
+        }
+
+        if (!$srcImage) {
+            $uploadedFile->move($uploadDir, $fileName);
+            return $relativePath;
+        }
+
+        // Crear lienzo de alta fidelidad
+        $dstImage = imagecreatetruecolor($targetWidth, $targetHeight);
+
+        // Si es PNG con canal alfa, conservar transparencia o fondo blanco limpio
+        if ($imageType === IMAGETYPE_PNG) {
+            imagealphablending($dstImage, false);
+            imagesavealpha($dstImage, true);
+            $transparent = imagecolorallocatealpha($dstImage, 255, 255, 255, 127);
+            imagefilledrectangle($dstImage, 0, 0, $targetWidth, $targetHeight, $transparent);
+        } else {
+            // Fondo blanco para evitar fondos negros en bordes
+            $white = imagecolorallocate($dstImage, 255, 255, 255);
+            imagefilledrectangle($dstImage, 0, 0, $targetWidth, $targetHeight, $white);
+        }
+
+        // Remuestreo bicúbico de alta calidad
+        imagecopyresampled($dstImage, $srcImage, 0, 0, 0, 0, $targetWidth, $targetHeight, $srcWidth, $srcHeight);
+
+        // Guardar como JPG de alta calidad para máxima compatibilidad en PDF y web
+        $outputFileName = 'lux_' . time() . '_' . uniqid() . '.jpg';
+        $outputDestPath = $uploadDir . DIRECTORY_SEPARATOR . $outputFileName;
+        
+        $saved = imagejpeg($dstImage, $outputDestPath, $quality);
+
+        imagedestroy($srcImage);
+        imagedestroy($dstImage);
+
+        if ($saved && file_exists($outputDestPath)) {
+            return 'uploads/measurements/' . $outputFileName;
+        }
+
+        // Fallback: mover archivo original
+        $uploadedFile->move($uploadDir, $fileName);
+        return $relativePath;
     }
 }

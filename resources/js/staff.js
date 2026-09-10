@@ -184,7 +184,7 @@ window.handleCreateStaffSubmit = function(event) {
 /**
  * Abrir Modal: Editar Colaborador
  */
-window.openEditStaffModal = function(id, firstName, lastName, position, status) {
+window.openEditStaffModal = function(id, firstName, lastName, email, status) {
     const modal = document.getElementById('editStaffModal');
     const form = document.getElementById('editStaffForm');
     if (!modal || !form) return;
@@ -193,12 +193,12 @@ window.openEditStaffModal = function(id, firstName, lastName, position, status) 
     
     const fnInput = document.getElementById('editStaffFirstName');
     const lnInput = document.getElementById('editStaffLastName');
-    const posInput = document.getElementById('editStaffPosition');
+    const emailInput = document.getElementById('editStaffEmail');
     const statusSelect = document.getElementById('editStaffStatus');
 
     if (fnInput) fnInput.value = firstName || '';
     if (lnInput) lnInput.value = lastName || '';
-    if (posInput) posInput.value = position || '';
+    if (emailInput) emailInput.value = email || '';
     if (statusSelect) {
         statusSelect.value = (status === 'activo' || status === 'online') ? 'activo' : 'inactivo';
     }

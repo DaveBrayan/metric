@@ -34,10 +34,12 @@ class MeasurementModule extends Model
         'end_date',
         'monitoring_type',
         'installation_name',
+        'photo_report_settings',
     ];
 
     protected $casts = [
         'field_staff_ids' => 'array',
+        'photo_report_settings' => 'array',
         'start_date' => 'date',
         'end_date' => 'date',
     ];
