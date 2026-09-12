@@ -33,13 +33,21 @@ function runArtisan($command, $params = []) {
     }
 }
 
+function ensureStorageLink() {
+    $linkPath = public_path('storage');
+    if (file_exists($linkPath) || is_link($linkPath)) {
+        return "ℹ️ El enlace simbólico [public/storage] ya existe y está activo.\n";
+    }
+    return runArtisan('storage:link');
+}
+
 if ($action) {
     switch ($action) {
         case 'all_in_one':
             $actionTitle = 'Optimización Integral, Migraciones & Datos Iniciales (1-Clic)';
             $outputLog .= "=== 1. Ejecutando Migraciones ===\n" . runArtisan('migrate', ['--force' => true]) . "\n";
             $outputLog .= "=== 2. Sembrando Administrador & Datos Iniciales ===\n" . runArtisan('db:seed', ['--force' => true]) . "\n";
-            $outputLog .= "=== 3. Creando Storage Link ===\n" . runArtisan('storage:link') . "\n";
+            $outputLog .= "=== 3. Creando Storage Link ===\n" . ensureStorageLink() . "\n";
             $outputLog .= "=== 4. Limpiando Cachés Previas ===\n" . runArtisan('optimize:clear') . "\n";
             $outputLog .= "=== 5. Optimizando Rutas & Configuración ===\n" . runArtisan('optimize') . "\n";
             $statusClass = 'success';
@@ -59,7 +67,7 @@ if ($action) {
 
         case 'storage_link':
             $actionTitle = 'Crear Enlace Simbólico de Almacenamiento (Storage Link)';
-            $outputLog = runArtisan('storage:link');
+            $outputLog = ensureStorageLink();
             $statusClass = 'success';
             break;
 

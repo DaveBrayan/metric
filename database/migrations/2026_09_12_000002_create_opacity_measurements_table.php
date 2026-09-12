@@ -11,51 +11,53 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('opacity_measurements', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('module_id')->constrained('modules')->onDelete('cascade');
-            $table->foreignId('project_id')->nullable()->constrained('projects')->onDelete('cascade');
-            $table->foreignId('staff_id')->nullable()->constrained('staff')->onDelete('set null');
+        if (!Schema::hasTable('opacity_measurements')) {
+            Schema::create('opacity_measurements', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('module_id')->constrained('modules')->onDelete('cascade');
+                $table->foreignId('project_id')->nullable()->constrained('projects')->onDelete('cascade');
+                $table->foreignId('staff_id')->nullable()->constrained('staff')->onDelete('set null');
 
-            $table->string('point_number', 50)->nullable();
-            $table->date('measurement_date')->nullable();
-            $table->string('measurement_time', 50)->nullable();
+                $table->string('point_number', 50)->nullable();
+                $table->date('measurement_date')->nullable();
+                $table->string('measurement_time', 50)->nullable();
 
-            // Card 1: Datos del Vehículo
-            $table->string('tipo_vehiculo')->nullable();
-            $table->string('marca')->nullable();
-            $table->string('modelo')->nullable();
-            $table->string('placa')->nullable();
+                // Card 1: Datos del Vehículo
+                $table->string('tipo_vehiculo')->nullable();
+                $table->string('marca')->nullable();
+                $table->string('modelo')->nullable();
+                $table->string('placa')->nullable();
 
-            // Card 2: Mediciones de Opacidad y Motor
-            $table->decimal('temp_c', 8, 2)->nullable();
-            $table->decimal('opa_1', 8, 2)->nullable();
-            $table->decimal('opa_2', 8, 2)->nullable();
-            $table->decimal('opa_3', 8, 2)->nullable();
-            $table->decimal('rpm_1', 8, 2)->nullable();
-            $table->decimal('rpm_2', 8, 2)->nullable();
-            $table->decimal('rpm_3', 8, 2)->nullable();
+                // Card 2: Mediciones de Opacidad y Motor
+                $table->decimal('temp_c', 8, 2)->nullable();
+                $table->decimal('opa_1', 8, 2)->nullable();
+                $table->decimal('opa_2', 8, 2)->nullable();
+                $table->decimal('opa_3', 8, 2)->nullable();
+                $table->decimal('rpm_1', 8, 2)->nullable();
+                $table->decimal('rpm_2', 8, 2)->nullable();
+                $table->decimal('rpm_3', 8, 2)->nullable();
 
-            // Promedios y evaluación
-            $table->decimal('opa_promedio', 8, 2)->nullable();
-            $table->decimal('rpm_promedio', 8, 2)->nullable();
-            $table->decimal('limite_normativa', 8, 2)->nullable()->default(50.0);
-            $table->boolean('is_compliant')->default(true);
+                // Promedios y evaluación
+                $table->decimal('opa_promedio', 8, 2)->nullable();
+                $table->decimal('rpm_promedio', 8, 2)->nullable();
+                $table->decimal('limite_normativa', 8, 2)->nullable()->default(50.0);
+                $table->boolean('is_compliant')->default(true);
 
-            // Georreferenciación & Satelital
-            $table->decimal('latitude', 10, 7)->nullable();
-            $table->decimal('longitude', 10, 7)->nullable();
-            $table->string('utm_zone', 50)->nullable()->default('19K');
-            $table->decimal('utm_easting', 12, 2)->nullable();
-            $table->decimal('utm_northing', 12, 2)->nullable();
-            $table->string('location_description')->nullable();
+                // Georreferenciación & Satelital
+                $table->decimal('latitude', 10, 7)->nullable();
+                $table->decimal('longitude', 10, 7)->nullable();
+                $table->string('utm_zone', 50)->nullable()->default('19K');
+                $table->decimal('utm_easting', 12, 2)->nullable();
+                $table->decimal('utm_northing', 12, 2)->nullable();
+                $table->string('location_description')->nullable();
 
-            // Observaciones y Fotos
-            $table->text('observations')->nullable();
-            $table->json('photo_paths')->nullable();
+                // Observaciones y Fotos
+                $table->text('observations')->nullable();
+                $table->json('photo_paths')->nullable();
 
-            $table->timestamps();
-        });
+                $table->timestamps();
+            });
+        }
     }
 
     /**

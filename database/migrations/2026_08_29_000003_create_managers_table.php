@@ -8,16 +8,18 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('managers', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
-            $table->string('name');
-            $table->string('email');
-            $table->string('phone')->nullable();
-            $table->string('position')->default('Gerente de Operaciones');
-            $table->string('status')->default('Activo');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('managers')) {
+            Schema::create('managers', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
+                $table->string('name');
+                $table->string('email');
+                $table->string('phone')->nullable();
+                $table->string('position')->default('Gerente de Operaciones');
+                $table->string('status')->default('Activo');
+                $table->timestamps();
+            });
+        }
     }
 
     public function down(): void

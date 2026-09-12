@@ -11,8 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ventilation_measurements', function (Blueprint $table) {
-            $table->id();
+        if (!Schema::hasTable('ventilation_measurements')) {
+            Schema::create('ventilation_measurements', function (Blueprint $table) {
+                $table->id();
             $table->foreignId('module_id')->constrained('modules')->onDelete('cascade');
             $table->string('point_number')->default('01');
             $table->date('measurement_date');
@@ -65,6 +66,7 @@ return new class extends Migration
             
             $table->timestamps();
         });
+        }
     }
 
     /**

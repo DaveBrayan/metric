@@ -35,25 +35,27 @@ return new class extends Migration
         });
 
         // 3. Tabla de mediciones de iluminación ocupacional
-        Schema::create('illumination_measurements', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('module_id')->constrained('modules')->onDelete('cascade');
-            $table->string('point_number')->default('01'); // N° de punto
-            $table->date('measurement_date'); // Fecha
-            $table->string('measurement_time', 20)->nullable(); // Hora (ej: 09:30)
-            $table->string('area'); // Área
-            $table->string('workstation'); // Puesto de Trabajo
-            $table->string('measurement_point'); // Punto de Medición
-            $table->string('lighting_type')->default('Artificial'); // Natural, Artificial, Mixta
-            $table->decimal('required_lux', 10, 2)->default(300.00); // Nivel Requerido
-            $table->decimal('measured_lux', 10, 2)->default(0.00); // Mediciones (LUX)
-            $table->string('image_path')->nullable(); // Imágenes
-            $table->string('location')->nullable(); // Ubicación
-            $table->text('observations')->nullable(); // Observaciones
-            $table->string('registered_by')->nullable(); // Registrado por
-            $table->foreignId('staff_id')->nullable()->constrained('staff')->nullOnDelete();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('illumination_measurements')) {
+            Schema::create('illumination_measurements', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('module_id')->constrained('modules')->onDelete('cascade');
+                $table->string('point_number')->default('01'); // N° de punto
+                $table->date('measurement_date'); // Fecha
+                $table->string('measurement_time', 20)->nullable(); // Hora (ej: 09:30)
+                $table->string('area'); // Área
+                $table->string('workstation'); // Puesto de Trabajo
+                $table->string('measurement_point'); // Punto de Medición
+                $table->string('lighting_type')->default('Artificial'); // Natural, Artificial, Mixta
+                $table->decimal('required_lux', 10, 2)->default(300.00); // Nivel Requerido
+                $table->decimal('measured_lux', 10, 2)->default(0.00); // Mediciones (LUX)
+                $table->string('image_path')->nullable(); // Imágenes
+                $table->string('location')->nullable(); // Ubicación
+                $table->text('observations')->nullable(); // Observaciones
+                $table->string('registered_by')->nullable(); // Registrado por
+                $table->foreignId('staff_id')->nullable()->constrained('staff')->nullOnDelete();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

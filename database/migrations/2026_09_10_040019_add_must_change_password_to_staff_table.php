@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('staff', function (Blueprint $table) {
-            $table->boolean('must_change_password')->default(false)->after('password_plain');
-        });
+        if (Schema::hasTable('staff') && !Schema::hasColumn('staff', 'must_change_password')) {
+            Schema::table('staff', function (Blueprint $table) {
+                $table->boolean('must_change_password')->default(false)->after('password_plain');
+            });
+        }
     }
 
     /**
