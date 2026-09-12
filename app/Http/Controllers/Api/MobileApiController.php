@@ -211,26 +211,57 @@ class MobileApiController extends Controller
 
     /**
      * Lista de proyectos asignados al colaborador.
+     * Solo retorna los proyectos donde el usuario tiene al menos un módulo asignado.
      */
     public function projects(Request $request)
     {
         $staffId = $request->query('staff_id') ?? $request->header('X-Staff-Id');
 
-        $query = Project::with(['company', 'manager', 'modules'])->orderBy('id', 'desc');
-
-        if (!empty($staffId) && is_numeric($staffId)) {
-            $staffIdInt = (int) $staffId;
-            // Filtrar proyectos donde al menos un módulo tiene este staff asignado
-            $query->whereHas('modules', function ($mQuery) use ($staffIdInt) {
-                $mQuery->where('field_staff_id', $staffIdInt)
-                    ->orWhereJsonContains('field_staff_ids', $staffIdInt)
-                    ->orWhereJsonContains('field_staff_ids', (string) $staffIdInt);
-            });
+        if (empty($staffId)) {
+            $authHeader = $request->header('Authorization');
+            if ($authHeader && str_starts_with($authHeader, 'Bearer mtoken_')) {
+                $raw = substr($authHeader, 14);
+                $decoded = base64_decode($raw);
+                if ($decoded && str_contains($decoded, ':')) {
+                    $parts = explode(':', $decoded, 2);
+                    $extractedId = (int) $parts[0];
+                    if ($extractedId > 0) {
+                        $staffId = $extractedId;
+                    }
+                }
+            }
         }
 
-        $projects = $query->get()->map(function ($prj) {
-            $totalMods = $prj->modules->count();
-            $completedMods = $prj->modules->where('status', 'Completado')->count();
+        if (empty($staffId) || !is_numeric($staffId)) {
+            return response()->json([
+                'success' => true,
+                'projects' => [],
+            ]);
+        }
+
+        $staffIdInt = (int) $staffId;
+        $query = Project::with(['company', 'manager', 'modules'])->orderBy('id', 'desc');
+
+        // Filtrar estrictamente proyectos donde al menos un módulo tiene este staff asignado
+        $query->whereHas('modules', function ($mQuery) use ($staffIdInt) {
+            $mQuery->where('field_staff_id', $staffIdInt)
+                ->orWhereJsonContains('field_staff_ids', $staffIdInt)
+                ->orWhereJsonContains('field_staff_ids', (string) $staffIdInt);
+        });
+
+        $projects = $query->get()->map(function ($prj) use ($staffIdInt) {
+            // Módulos asignados a este usuario específico
+            $userMods = $prj->modules->filter(function ($mod) use ($staffIdInt) {
+                $assignedStaffIds = is_array($mod->field_staff_ids) ? $mod->field_staff_ids : [];
+                if ($mod->field_staff_id) {
+                    $assignedStaffIds[] = $mod->field_staff_id;
+                }
+                $assignedStaffIds = array_values(array_unique(array_filter(array_map('intval', $assignedStaffIds))));
+                return in_array($staffIdInt, $assignedStaffIds);
+            });
+
+            $totalMods = $userMods->count();
+            $completedMods = $userMods->where('status', 'Completado')->count();
             $compliancePct = round($prj->compliance_pct ?? 0);
 
             return [
@@ -263,11 +294,27 @@ class MobileApiController extends Controller
     }
 
     /**
-     * Módulos de monitoreo de un proyecto.
+     * Módulos de monitoreo asignados al colaborador en un proyecto.
+     * Solo retorna los módulos donde el usuario está explícitamente asignado.
      */
     public function projectModules(Request $request, $projectId)
     {
         $staffId = $request->query('staff_id') ?? $request->header('X-Staff-Id');
+
+        if (empty($staffId)) {
+            $authHeader = $request->header('Authorization');
+            if ($authHeader && str_starts_with($authHeader, 'Bearer mtoken_')) {
+                $raw = substr($authHeader, 14);
+                $decoded = base64_decode($raw);
+                if ($decoded && str_contains($decoded, ':')) {
+                    $parts = explode(':', $decoded, 2);
+                    $extractedId = (int) $parts[0];
+                    if ($extractedId > 0) {
+                        $staffId = $extractedId;
+                    }
+                }
+            }
+        }
 
         $project = Project::with(['modules' => function ($q) {
             $q->orderBy('id', 'asc');
@@ -276,6 +323,7 @@ class MobileApiController extends Controller
         $keyNames = [
             'iluminacion' => 'Iluminación',
             'ruido' => 'Ruido Ocupacional',
+            'ruido_ambiental' => 'Ruido Ambiental',
             'dosimetria' => 'Dosimetría',
             'estres_calor' => 'Estrés Térmico (Calor)',
             'estres_frio' => 'Estrés Térmico (Frío)',
@@ -289,18 +337,15 @@ class MobileApiController extends Controller
 
         $modules = $project->modules
             ->filter(function ($mod) use ($staffId) {
-                if (empty($staffId)) {
-                    return true;
+                if (empty($staffId) || !is_numeric($staffId)) {
+                    return false; // Sin usuario autenticado/asignado no se muestran módulos
                 }
                 $assignedStaffIds = is_array($mod->field_staff_ids) ? $mod->field_staff_ids : [];
                 if ($mod->field_staff_id) {
                     $assignedStaffIds[] = $mod->field_staff_id;
                 }
                 $assignedStaffIds = array_values(array_unique(array_filter(array_map('intval', $assignedStaffIds))));
-                if (!empty($assignedStaffIds)) {
-                    return in_array((int) $staffId, $assignedStaffIds);
-                }
-                return true;
+                return in_array((int) $staffId, $assignedStaffIds);
             })
             ->values()
             ->map(function ($mod) use ($staffId, $keyNames) {
@@ -309,7 +354,7 @@ class MobileApiController extends Controller
                     $assignedStaffIds[] = $mod->field_staff_id;
                 }
                 $staffIds = array_values(array_unique(array_filter(array_map('intval', $assignedStaffIds))));
-                $isAssigned = empty($staffId) || in_array((int) $staffId, $staffIds);
+                $isAssigned = in_array((int) $staffId, $staffIds);
 
                 $key = strtolower($mod->key ?? 'iluminacion');
                 $isIlum = ($key === 'iluminacion')
