@@ -1,5 +1,5 @@
 /**
- * METRIC — Centered 2-Column Floating Glassmorphic Login
+ * METRIC — Centered 2-Column Floating Glassmorphic Login (Rendered by Vite)
  * Built with UI/UX Pro Max Design Intelligence
  * Ambient Moving Particles, Heroic Left Column & Right Form with Pachabol Logo
  */
@@ -513,43 +513,6 @@
 
 .btn-primary-auth-submit:hover .arrow-icon {
     transform: translateX(4px);
-}
-
-/* Demo Autofill Helper Card */
-.demo-access-card {
-    margin-top: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 11px 16px;
-    background: #f0f9fc;
-    border: 1.5px dashed rgba(16, 185, 223, 0.5);
-    border-radius: 12px;
-    font-size: 12.5px;
-    color: #0369a1;
-    font-weight: 500;
-}
-
-.demo-access-card b {
-    color: #0f1c2e;
-}
-
-.btn-demo-autofill {
-    border: 0;
-    background: var(--cyan-gradient);
-    color: #ffffff;
-    padding: 6px 14px;
-    border-radius: 8px;
-    font-size: 11.5px;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 4px 10px rgba(16, 185, 223, 0.35);
-    transition: all 0.2s ease;
-}
-
-.btn-demo-autofill:hover {
-    transform: scale(1.06);
-    box-shadow: 0 6px 14px rgba(16, 185, 223, 0.5);
 }
 
 /* Error Alerts */

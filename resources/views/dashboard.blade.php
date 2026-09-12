@@ -3,7 +3,7 @@
 @section('title', 'Centro de Mando & Monitoreo Ambiental — Metric v2 Pachabol')
 
 @push('styles')
-    @vite(['resources/css/dashboard.css'])
+    @metricStyle('dashboard')
 @endpush
 
 @section('content')
@@ -438,5 +438,5 @@
 @endsection
 
 @push('scripts')
-    @vite(['resources/js/dashboard.js'])
+    @metricScript('dashboard')
 @endpush

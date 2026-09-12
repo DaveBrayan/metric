@@ -19,8 +19,23 @@
     "src": "resources/css/dashboard.css",
     "isEntry": true
   },
+  "resources/css/dosimetrias.css": {
+    "file": "assets/dosimetrias-CV4XqBJC.css",
+    "src": "resources/css/dosimetrias.css",
+    "isEntry": true
+  },
+  "resources/css/estres_calores.css": {
+    "file": "assets/estres_calores-CsYyVP-n.css",
+    "src": "resources/css/estres_calores.css",
+    "isEntry": true
+  },
+  "resources/css/estres_frios.css": {
+    "file": "assets/estres_frios-BIW8f_EA.css",
+    "src": "resources/css/estres_frios.css",
+    "isEntry": true
+  },
   "resources/css/iluminaciones.css": {
-    "file": "assets/iluminaciones-BItbxE1m.css",
+    "file": "assets/iluminaciones-CkvAhS3X.css",
     "src": "resources/css/iluminaciones.css",
     "isEntry": true
   },
@@ -34,6 +49,16 @@
     "src": "resources/css/managers.css",
     "isEntry": true
   },
+  "resources/css/opacidades.css": {
+    "file": "assets/opacidades-DPpC3NTv.css",
+    "src": "resources/css/opacidades.css",
+    "isEntry": true
+  },
+  "resources/css/ruido_ambientales.css": {
+    "file": "assets/ruido_ambientales-CKT4AuI3.css",
+    "src": "resources/css/ruido_ambientales.css",
+    "isEntry": true
+  },
   "resources/css/settings.css": {
     "file": "assets/settings-h9v-mCyX.css",
     "src": "resources/css/settings.css",
@@ -42,6 +67,11 @@
   "resources/css/staff.css": {
     "file": "assets/staff-CsBNSjz2.css",
     "src": "resources/css/staff.css",
+    "isEntry": true
+  },
+  "resources/css/ventilaciones.css": {
+    "file": "assets/ventilaciones-DZE7gd94.css",
+    "src": "resources/css/ventilaciones.css",
     "isEntry": true
   },
   "resources/js/admins.js": {
@@ -68,8 +98,26 @@
     "src": "resources/js/dashboard.js",
     "isEntry": true
   },
+  "resources/js/dosimetrias.js": {
+    "file": "assets/dosimetrias-DwheV3b5.js",
+    "name": "dosimetrias",
+    "src": "resources/js/dosimetrias.js",
+    "isEntry": true
+  },
+  "resources/js/estres_calores.js": {
+    "file": "assets/estres_calores-GRKxZI52.js",
+    "name": "estres_calores",
+    "src": "resources/js/estres_calores.js",
+    "isEntry": true
+  },
+  "resources/js/estres_frios.js": {
+    "file": "assets/estres_frios-D0PJkTLr.js",
+    "name": "estres_frios",
+    "src": "resources/js/estres_frios.js",
+    "isEntry": true
+  },
   "resources/js/iluminaciones.js": {
-    "file": "assets/iluminaciones-CJArh3Ht.js",
+    "file": "assets/iluminaciones-Do27YJ_u.js",
     "name": "iluminaciones",
     "src": "resources/js/iluminaciones.js",
     "isEntry": true
@@ -86,6 +134,18 @@
     "src": "resources/js/managers.js",
     "isEntry": true
   },
+  "resources/js/opacidades.js": {
+    "file": "assets/opacidades-CDCHx2BI.js",
+    "name": "opacidades",
+    "src": "resources/js/opacidades.js",
+    "isEntry": true
+  },
+  "resources/js/ruido_ambientales.js": {
+    "file": "assets/ruido_ambientales-DY_wLBW6.js",
+    "name": "ruido_ambientales",
+    "src": "resources/js/ruido_ambientales.js",
+    "isEntry": true
+  },
   "resources/js/settings.js": {
     "file": "assets/settings-BB0VjIMM.js",
     "name": "settings",
@@ -96,6 +156,12 @@
     "file": "assets/staff-BsEPHQZP.js",
     "name": "staff",
     "src": "resources/js/staff.js",
+    "isEntry": true
+  },
+  "resources/js/ventilaciones.js": {
+    "file": "assets/ventilaciones-BqgK8-ZF.js",
+    "name": "ventilaciones",
+    "src": "resources/js/ventilaciones.js",
     "isEntry": true
   }
 }

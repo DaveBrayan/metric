@@ -65,6 +65,29 @@ class IlluminationController extends Controller
             $lat = $item->latitude !== null ? (float) $item->latitude : null;
             $lng = $item->longitude !== null ? (float) $item->longitude : null;
 
+            // Si lat/lng no están en la BD, extraer y convertir desde location
+            if (($lat === null || $lng === null) && !empty($item->location)) {
+                $loc = trim($item->location);
+                if (str_starts_with($loc, '{') || str_starts_with($loc, '[')) {
+                    $d = json_decode($loc, true);
+                    if (is_array($d)) {
+                        if (!empty($d['latitude']) && !empty($d['longitude'])) {
+                            $lat = (float) $d['latitude'];
+                            $lng = (float) $d['longitude'];
+                        } elseif (!empty($d['easting']) && !empty($d['northing'])) {
+                            $conv = $this->utmToLatLng($d['easting'], $d['northing'], $d['utm_zone'] ?? $d['zone'] ?? '20K');
+                            $lat = $conv['lat'];
+                            $lng = $conv['lng'];
+                        }
+                    }
+                } elseif (preg_match('/E:\s*([0-9.]+)/i', $loc, $mE) && preg_match('/N:\s*([0-9.]+)/i', $loc, $mN)) {
+                    preg_match('/Z:\s*([0-9A-Za-z]+)/i', $loc, $mZ);
+                    $conv = $this->utmToLatLng((float)$mE[1], (float)$mN[1], $mZ[1] ?? '20K');
+                    $lat = $conv['lat'];
+                    $lng = $conv['lng'];
+                }
+            }
+
             $readingsList = is_array($item->readings) ? $item->readings : (json_decode($item->readings, true) ?: []);
 
             $rawImages = is_array($item->images) ? $item->images : (json_decode($item->images, true) ?: []);
@@ -102,7 +125,28 @@ class IlluminationController extends Controller
                 'longitude' => $lng,
                 'observations' => $item->observations ?: 'Sin observaciones',
                 'raw_observations' => $item->observations,
-                'registered_by' => $item->registered_by ?: ($item->staff ? $item->staff->name : (($assignedStaff && $assignedStaff->isNotEmpty()) ? $assignedStaff->first()->name : ($currentUser ? $currentUser->name : 'Ing. Carlos Mamani Ramos'))),
+                'registered_by' => (function() use ($item, $assignedStaff, $currentUser) {
+                    if (!empty($item->registered_by) && !is_numeric($item->registered_by)) {
+                        return $item->registered_by;
+                    }
+                    if ($item->staff) {
+                        return $item->staff->full_name ?: $item->staff->name;
+                    }
+                    if (!empty($item->staff_id)) {
+                        $st = \App\Models\Staff::find($item->staff_id);
+                        if ($st) return $st->full_name ?: $st->name;
+                    }
+                    if (!empty($item->registered_by) && is_numeric($item->registered_by)) {
+                        $st = \App\Models\Staff::find((int) $item->registered_by);
+                        if ($st) return $st->full_name ?: $st->name;
+                        $u = \App\Models\User::find((int) $item->registered_by);
+                        if ($u) return $u->name;
+                    }
+                    if ($assignedStaff && $assignedStaff->isNotEmpty()) {
+                        return $assignedStaff->first()->full_name ?: $assignedStaff->first()->name;
+                    }
+                    return $currentUser ? $currentUser->name : 'Técnico de Campo';
+                })(),
                 'staff_id' => $item->staff_id,
             ];
         });
@@ -211,10 +255,10 @@ class IlluminationController extends Controller
         if (!empty($validated['staff_id'])) {
             $staff = Staff::find($validated['staff_id']);
             if ($staff) {
-                $registeredByName = $staff->name;
+                $registeredByName = $staff->full_name ?: $staff->name;
             }
         }
-        if (empty($registeredByName)) {
+        if (empty($registeredByName) || is_numeric($registeredByName)) {
             $registeredByName = Auth::user() ? Auth::user()->name : 'Técnico de Campo';
         }
 
@@ -344,7 +388,16 @@ class IlluminationController extends Controller
         if (!empty($validated['staff_id'])) {
             $staff = Staff::find($validated['staff_id']);
             if ($staff) {
-                $registeredByName = $staff->name;
+                $registeredByName = $staff->full_name ?: $staff->name;
+            }
+        }
+        if (empty($registeredByName) || is_numeric($registeredByName)) {
+            if ($measurement->staff) {
+                $registeredByName = $measurement->staff->full_name ?: $measurement->staff->name;
+            } elseif ($module->fieldStaff) {
+                $registeredByName = $module->fieldStaff->full_name ?: $module->fieldStaff->name;
+            } else {
+                $registeredByName = Auth::user() ? Auth::user()->name : 'Técnico de Campo';
             }
         }
 
@@ -595,5 +648,79 @@ class IlluminationController extends Controller
         // Fallback: mover archivo original
         $uploadedFile->move($uploadDir, $fileName);
         return $relativePath;
+    }
+
+    /**
+     * Convierte coordenadas UTM a Latitud/Longitud WGS84.
+     */
+    private function utmToLatLng($utmEasting, $utmNorthing, $utmZoneStr = '20K')
+    {
+        $utmZoneNum = 20;
+        $utmZoneLetter = 'K';
+        if (is_string($utmZoneStr) && preg_match('/(\d+)\s*([A-Za-z]?)/', $utmZoneStr, $utmM)) {
+            $utmZoneNum = (int) $utmM[1] ?: 20;
+            $utmZoneLetter = strtoupper($utmM[2] ?? 'K');
+        } elseif (is_numeric($utmZoneStr)) {
+            $utmZoneNum = (int) $utmZoneStr;
+        }
+
+        $utmA = 6378137.0;
+        $utmF = 1 / 298.257223563;
+        $utmB = $utmA * (1 - $utmF);
+        $utmE = sqrt(($utmA * $utmA - $utmB * $utmB) / ($utmA * $utmA));
+        $utmEPrime = sqrt(($utmA * $utmA - $utmB * $utmB) / ($utmB * $utmB));
+        $utmK0 = 0.9996;
+
+        $utmIsSouth = $utmZoneLetter !== '' ? ($utmZoneLetter < 'N') : true;
+        $utmX = (float)$utmEasting - 500000.0;
+        $utmY = $utmIsSouth ? (float)$utmNorthing - 10000000.0 : (float)$utmNorthing;
+
+        $utmMarc = $utmY / $utmK0;
+        $utmE2 = $utmE * $utmE;
+        $utmE4 = $utmE2 * $utmE2;
+        $utmE6 = $utmE4 * $utmE2;
+        $utmE1 = (1 - sqrt(1 - $utmE2)) / (1 + sqrt(1 - $utmE2));
+
+        $utmMu = $utmMarc / ($utmA * (1 - $utmE2 / 4 - 3 * $utmE4 / 64 - 5 * $utmE6 / 256));
+
+        $utmPhi1 = $utmMu +
+            (3 * $utmE1 / 2 - 27 * pow($utmE1, 3) / 32) * sin(2 * $utmMu) +
+            (21 * $utmE1 * $utmE1 / 16 - 55 * pow($utmE1, 4) / 32) * sin(4 * $utmMu) +
+            (151 * pow($utmE1, 3) / 96) * sin(6 * $utmMu) +
+            (1097 * pow($utmE1, 4) / 512) * sin(8 * $utmMu);
+
+        $utmSinPhi1 = sin($utmPhi1);
+        $utmCosPhi1 = cos($utmPhi1);
+        $utmTanPhi1 = tan($utmPhi1);
+
+        $utmN1 = $utmA / sqrt(1 - $utmE2 * $utmSinPhi1 * $utmSinPhi1);
+        $utmT1 = $utmTanPhi1 * $utmTanPhi1;
+        $utmC1 = $utmEPrime * $utmEPrime * $utmCosPhi1 * $utmCosPhi1;
+        $utmR1 = $utmA * (1 - $utmE2) / pow(1 - $utmE2 * $utmSinPhi1 * $utmSinPhi1, 1.5);
+        $utmD = $utmX / ($utmN1 * $utmK0);
+
+        $utmD2 = $utmD * $utmD;
+        $utmD3 = $utmD2 * $utmD;
+        $utmD4 = $utmD2 * $utmD2;
+        $utmD5 = $utmD4 * $utmD;
+        $utmD6 = $utmD3 * $utmD3;
+
+        $utmLat = $utmPhi1 - ($utmN1 * $utmTanPhi1 / $utmR1) * (
+            $utmD2 / 2 -
+            (5 + 3 * $utmT1 + 10 * $utmC1 - 4 * $utmC1 * $utmC1 - 9 * $utmEPrime * $utmEPrime) * $utmD4 / 24 +
+            (61 + 90 * $utmT1 + 298 * $utmC1 + 45 * $utmT1 * $utmT1 - 252 * $utmEPrime * $utmEPrime - 3 * $utmC1 * $utmC1) * $utmD6 / 720
+        );
+
+        $utmLon0 = ($utmZoneNum - 1) * 6 - 180 + 3;
+        $utmLon = ($utmLon0 * M_PI / 180.0) + (
+            $utmD -
+            (1 + 2 * $utmT1 + $utmC1) * $utmD3 / 6 +
+            (5 - 2 * $utmC1 + 28 * $utmT1 - 3 * $utmC1 * $utmC1 + 8 * $utmEPrime * $utmEPrime + 24 * $utmT1 * $utmT1) * $utmD5 / 120
+        ) / $utmCosPhi1;
+
+        return [
+            'lat' => $utmLat * 180.0 / M_PI,
+            'lng' => $utmLon * 180.0 / M_PI,
+        ];
     }
 }

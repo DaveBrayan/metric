@@ -18,8 +18,13 @@
     <!-- SweetAlert2 Modern UI -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- Rendered & Bundled by Vite for Maximum Performance -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <!-- Auto-Sync Zero-Build Design System & Scripts -->
+    @if (file_exists(public_path('hot')))
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @else
+        @metricStyle('app')
+        @metricScript('app')
+    @endif
     @stack('styles')
 </head>
 <body>

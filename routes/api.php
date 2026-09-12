@@ -29,3 +29,19 @@ Route::get('/modules/{moduleId}/illumination', [MobileApiController::class, 'get
 Route::post('/modules/{moduleId}/illumination', [MobileApiController::class, 'storeIlluminationMeasurement']);
 Route::delete('/modules/{moduleId}/illumination/{id}', [MobileApiController::class, 'destroyIlluminationMeasurement']);
 
+// Monitoreo de Ventilación Ocupacional
+Route::get('/modules/{moduleId}/ventilation', [MobileApiController::class, 'getVentilationMeasurements']);
+Route::post('/modules/{moduleId}/ventilation', [MobileApiController::class, 'storeVentilationMeasurement']);
+Route::delete('/modules/{moduleId}/ventilation/{id}', [MobileApiController::class, 'destroyVentilationMeasurement']);
+
+// Monitoreo de Estrés Térmico (Calor)
+Route::get('/modules/{moduleId}/heat-stress', [MobileApiController::class, 'getHeatStressMeasurements']);
+Route::post('/modules/{moduleId}/heat-stress', [MobileApiController::class, 'storeHeatStressMeasurement']);
+Route::delete('/modules/{moduleId}/heat-stress/{id}', [MobileApiController::class, 'destroyHeatStressMeasurement']);
+
+// Monitoreo de Estrés Térmico (Frío)
+Route::get('/modules/{moduleId}/cold-stress', [MobileApiController::class, 'getColdStressMeasurements']);
+Route::post('/modules/{moduleId}/cold-stress', [MobileApiController::class, 'storeColdStressMeasurement']);
+Route::delete('/modules/{moduleId}/cold-stress/{id}', [MobileApiController::class, 'destroyColdStressMeasurement']);
+
+

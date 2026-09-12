@@ -1,8 +1,8 @@
     <!-- ==========================================================================
              MODAL 4: VISOR DE FOTOGRAFÍA AMPLIFICADA
              ========================================================================== -->
-    <div class="modal-backdrop-custom" id="photoViewerModal" onclick="closePhotoViewer()" role="dialog" aria-modal="true">
-        <div class="modal-dialog-illumination" style="max-width: 600px; background: transparent; box-shadow: none;"
+    <div class="modal-backdrop-custom" id="photoViewerModal" onclick="closePhotoViewer()" role="dialog" aria-modal="true" style="z-index: 999999 !important;">
+        <div class="modal-dialog-illumination" style="max-width: 600px; background: transparent; box-shadow: none; z-index: 1000000 !important;"
             onclick="event.stopPropagation()">
             <div
                 style="position: relative; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.4);">

@@ -100,6 +100,7 @@ class ProjectController extends Controller
                         $staffMembers[] = [
                             'id' => $s->id,
                             'name' => $s->name,
+                            'email' => $s->email ?? '',
                             'initial' => strtoupper(substr($s->name, 0, 1)),
                             'theme' => $s->role_theme ?? 'cyan',
                             'role' => $s->position ?? 'Técnico de Campo',
@@ -111,6 +112,7 @@ class ProjectController extends Controller
                 $staffMembers[] = [
                     'id' => $mod->fieldStaff->id,
                     'name' => $mod->fieldStaff->name,
+                    'email' => $mod->fieldStaff->email ?? '',
                     'initial' => strtoupper(substr($mod->fieldStaff->name, 0, 1)),
                     'theme' => $mod->fieldStaff->role_theme ?? 'cyan',
                     'role' => $mod->fieldStaff->position ?? 'Técnico de Campo',
@@ -310,13 +312,18 @@ class ProjectController extends Controller
         ]);
 
         $keyNames = [
-            'dosimetria' => 'Dosimetría de Ruido',
+            'iluminacion' => 'Iluminación',
+            'ruido' => 'Ruido Ocupacional',
             'ruido_ambiental' => 'Ruido Ambiental',
-            'agua' => 'Agua (Parámetros de Campo)',
-            'opacidad' => 'Opacidad (Humos y Emisiones)',
-            'particulas' => 'Partículas 24 Horas',
-            'iluminacion' => 'Iluminación Ocupacional',
-            'estres_termico' => 'Estrés Térmico',
+            'dosimetria' => 'Dosimetría',
+            'estres_calor' => 'Estrés Térmico (Calor)',
+            'estres_frio' => 'Estrés Térmico (Frío)',
+            'ventilacion' => 'Ventilación',
+            'particulas' => 'Partículas',
+            'gases' => 'Gases',
+            'vibracion' => 'Vibración',
+            'ergonomia' => 'Ergonomía',
+            'opacidad' => 'Opacidad',
         ];
         $moduleName = !empty($validated['name']) 
             ? $validated['name'] 
@@ -395,13 +402,18 @@ class ProjectController extends Controller
         ]);
 
         $keyNames = [
-            'dosimetria' => 'Dosimetría de Ruido',
+            'iluminacion' => 'Iluminación',
+            'ruido' => 'Ruido Ocupacional',
             'ruido_ambiental' => 'Ruido Ambiental',
-            'agua' => 'Agua (Parámetros de Campo)',
-            'opacidad' => 'Opacidad (Humos y Emisiones)',
-            'particulas' => 'Partículas 24 Horas',
-            'iluminacion' => 'Iluminación Ocupacional',
-            'estres_termico' => 'Estrés Térmico',
+            'dosimetria' => 'Dosimetría',
+            'estres_calor' => 'Estrés Térmico (Calor)',
+            'estres_frio' => 'Estrés Térmico (Frío)',
+            'ventilacion' => 'Ventilación',
+            'particulas' => 'Partículas',
+            'gases' => 'Gases',
+            'vibracion' => 'Vibración',
+            'ergonomia' => 'Ergonomía',
+            'opacidad' => 'Opacidad',
         ];
         $moduleName = !empty($validated['name']) 
             ? $validated['name'] 

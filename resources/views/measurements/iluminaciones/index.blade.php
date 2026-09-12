@@ -6,7 +6,7 @@
     <!-- Leaflet CSS for Maps -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    @vite(['resources/css/iluminaciones.css'])
+    @metricStyle('iluminaciones')
 @endpush
 
 @section('content')
@@ -29,6 +29,7 @@
     @include('measurements.iluminaciones.modals.export-modal')
     @include('measurements.iluminaciones.modals.locations-modal')
     @include('measurements.iluminaciones.modals.photo-report-modal')
+    @include('measurements.iluminaciones.modals.tables-modal')
 
     <!-- Formulario oculto para eliminar punto de medición -->
     <form id="deleteMeasurementForm" action="" method="POST" style="display: none;">
@@ -73,8 +74,8 @@
         window.REGISTERED_BY_HEADER = window.METRIC_ILLUMINATION_CONFIG.registeredByHeader;
     </script>
 
-    {{-- Lógica modularizada de Iluminación compilada con Vite --}}
-    @vite(['resources/js/iluminaciones.js'])
+    {{-- Lógica modularizada de Iluminación --}}
+    @metricScript('iluminaciones')
 
     {{-- SweetAlert2 Notificaciones de Sesión con diseño oficial METRIC --}}
     @if(session('success'))

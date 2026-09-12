@@ -824,19 +824,40 @@ table#modulesMasterTable td {
                     Todos ({{ count($modulesData) }})
                 </button>
                 <button type="button" class="role-filter-pill" onclick="filterModulesByTag('dosimetria', this)">
-                    Dosimetría de Ruido
+                    Dosimetría
+                </button>
+                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('ergonomia', this)">
+                    Ergonomía
+                </button>
+                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('estres_calor', this)">
+                    Estrés Térmico (Calor)
+                </button>
+                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('estres_frio', this)">
+                    Estrés Térmico (Frío)
+                </button>
+                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('gases', this)">
+                    Gases
+                </button>
+                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('iluminacion', this)">
+                    Iluminación
+                </button>
+                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('opacidad', this)">
+                    Opacidad
+                </button>
+                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('particulas', this)">
+                    Partículas
                 </button>
                 <button type="button" class="role-filter-pill" onclick="filterModulesByTag('ruido_ambiental', this)">
                     Ruido Ambiental
                 </button>
-                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('agua', this)">
-                    Agua (Parám. de Campo)
+                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('ruido', this)">
+                    Ruido Ocupacional
                 </button>
-                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('opacidad', this)">
-                    Opacidad (Humos/Emisiones)
+                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('ventilacion', this)">
+                    Ventilación
                 </button>
-                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('particulas', this)">
-                    Partículas 24 Horas
+                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('vibracion', this)">
+                    Vibración
                 </button>
             </div>
 
@@ -885,6 +906,48 @@ table#modulesMasterTable td {
                             <td>
                                 @if($item['module_key'] === 'iluminacion')
                                     <a href="{{ route('modules.illumination', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Monitoreo de Iluminación">
+                                        <div style="font-weight: 800; color: #0284c7; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
+                                            <span>{{ $item['module_name'] }}</span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                        </div>
+                                    </a>
+                                @elseif($item['module_key'] === 'ventilacion')
+                                    <a href="{{ route('modules.ventilation', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Monitoreo de Ventilación">
+                                        <div style="font-weight: 800; color: #0284c7; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
+                                            <span>{{ $item['module_name'] }}</span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                        </div>
+                                    </a>
+                                @elseif($item['module_key'] === 'ruido' || $item['module_key'] === 'dosimetria' || $item['module_key'] === 'dosimetry')
+                                    <a href="{{ route('modules.dosimetry', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Monitoreo de Ruido Ocupacional / Dosimetría">
+                                        <div style="font-weight: 800; color: #0284c7; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
+                                            <span>{{ $item['module_name'] }}</span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                        </div>
+                                    </a>
+                                @elseif($item['module_key'] === 'ruido_ambiental')
+                                    <a href="{{ route('modules.ruido_ambiental', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Monitoreo de Ruido Ambiental">
+                                        <div style="font-weight: 800; color: #0284c7; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
+                                            <span>{{ $item['module_name'] }}</span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                        </div>
+                                    </a>
+                                @elseif($item['module_key'] === 'opacidad' || $item['module_key'] === 'opacity')
+                                    <a href="{{ route('modules.opacity', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Monitoreo de Opacidad">
+                                        <div style="font-weight: 800; color: #0284c7; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
+                                            <span>{{ $item['module_name'] }}</span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                        </div>
+                                    </a>
+                                @elseif($item['module_key'] === 'estres_calor' || $item['module_key'] === 'heat_stress')
+                                    <a href="{{ route('modules.heat_stress', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Monitoreo de Estrés Térmico (Calor)">
+                                        <div style="font-weight: 800; color: #0284c7; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
+                                            <span>{{ $item['module_name'] }}</span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                        </div>
+                                    </a>
+                                @elseif($item['module_key'] === 'estres_frio' || $item['module_key'] === 'cold_stress')
+                                    <a href="{{ route('modules.cold_stress', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Monitoreo de Estrés Térmico (Frío)">
                                         <div style="font-weight: 800; color: #0284c7; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
                                             <span>{{ $item['module_name'] }}</span>
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
@@ -997,6 +1060,64 @@ table#modulesMasterTable td {
                                                 <path d="m19.07 4.93-1.41 1.41"/>
                                             </svg>
                                         </button>
+                                    @elseif($item['module_key'] === 'ventilacion')
+                                        <!-- Ver Mediciones de Ventilación -->
+                                        <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.ventilation', $item['id']) }}'" title="Monitoreo de Ventilación (Ver Mediciones)" aria-label="Ver Mediciones de Ventilación">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/>
+                                                <path d="M9.6 4.6A2 2 0 1 1 11 8H2"/>
+                                                <path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>
+                                            </svg>
+                                        </button>
+                                    @elseif($item['module_key'] === 'ruido' || $item['module_key'] === 'dosimetria' || $item['module_key'] === 'dosimetry')
+                                        <!-- Ver Mediciones de Ruido Ocupacional / Dosimetría -->
+                                        <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.dosimetry', $item['id']) }}'" title="Monitoreo de Ruido Ocupacional (Ver Mediciones)" aria-label="Ver Mediciones de Ruido Ocupacional">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M2 10v3"/>
+                                                <path d="M6 6v11"/>
+                                                <path d="M10 3v18"/>
+                                                <path d="M14 8v7"/>
+                                                <path d="M18 5v13"/>
+                                                <path d="M22 10v3"/>
+                                            </svg>
+                                        </button>
+                                    @elseif($item['module_key'] === 'ruido_ambiental')
+                                        <!-- Ver Mediciones de Ruido Ambiental -->
+                                        <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.ruido_ambiental', $item['id']) }}'" title="Monitoreo de Ruido Ambiental (Ver Mediciones)" aria-label="Ver Mediciones de Ruido Ambiental">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M2 10v4"/>
+                                                <path d="M6 6v12"/>
+                                                <path d="M10 3v18"/>
+                                                <path d="M14 7v10"/>
+                                                <path d="M18 5v14"/>
+                                                <path d="M22 10v4"/>
+                                            </svg>
+                                        </button>
+                                    @elseif($item['module_key'] === 'opacidad' || $item['module_key'] === 'opacity')
+                                        <!-- Ver Mediciones de Opacidad -->
+                                        <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.opacity', $item['id']) }}'" title="Monitoreo de Opacidad (Ver Mediciones)" aria-label="Ver Mediciones de Opacidad">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C2.1 10.9 2 11.2 2 11.5V16c0 .6.4 1 1 1h2"/>
+                                                <circle cx="7" cy="17" r="2"/>
+                                                <path d="M9 17h6"/>
+                                                <circle cx="17" cy="17" r="2"/>
+                                            </svg>
+                                        </button>
+                                    @elseif($item['module_key'] === 'estres_calor' || $item['module_key'] === 'heat_stress')
+                                        <!-- Ver Mediciones de Estrés Térmico (Calor) -->
+                                        <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.heat_stress', $item['id']) }}'" title="Monitoreo de Estrés Térmico (Calor) (Ver Mediciones)" aria-label="Ver Mediciones de Estrés Térmico (Calor)">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="12" cy="12" r="4"/>
+                                                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+                                            </svg>
+                                        </button>
+                                    @elseif($item['module_key'] === 'estres_frio' || $item['module_key'] === 'cold_stress')
+                                        <!-- Ver Mediciones de Estrés Térmico (Frío) -->
+                                        <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.cold_stress', $item['id']) }}'" title="Monitoreo de Estrés Térmico (Frío) (Ver Mediciones)" aria-label="Ver Mediciones de Estrés Térmico (Frío)">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/>
+                                            </svg>
+                                        </button>
                                     @endif
 
                                     <!-- Editar Módulo -->
@@ -1087,14 +1208,18 @@ table#modulesMasterTable td {
                                 </label>
                                 <select name="key" id="create_module_key" class="custom-form-select" required>
                                     <option value="">-- Seleccionar Tipo de Módulo --</option>
-                                    <option value="dosimetria">Dosimetría de Ruido</option>
+                                    <option value="dosimetria">Dosimetría</option>
+                                    <option value="ergonomia" disabled>Ergonomía (En construcción)</option>
+                                    <option value="estres_calor">Estrés Térmico (Calor)</option>
+                                    <option value="estres_frio">Estrés Térmico (Frío)</option>
+                                    <option value="gases" disabled>Gases (En construcción)</option>
+                                    <option value="iluminacion">Iluminación</option>
+                                    <option value="opacidad">Opacidad</option>
+                                    <option value="particulas" disabled>Partículas (En construcción)</option>
                                     <option value="ruido_ambiental">Ruido Ambiental</option>
-                                    <option value="agua">Agua (Parámetros de Campo)</option>
-                                    <option value="opacidad">Opacidad (Humos y Emisiones)</option>
-                                    <option value="particulas">Partículas 24 Horas</option>
-                                    <option value="iluminacion">Iluminación Ocupacional</option>
-                                    <option value="estres_termico">Estrés Térmico</option>
-                                    <option value="otro">Monitoreo Personalizado</option>
+                                    <option value="ruido">Ruido Ocupacional</option>
+                                    <option value="ventilacion">Ventilación</option>
+                                    <option value="vibracion" disabled>Vibración (En construcción)</option>
                                 </select>
                             </div>
 
@@ -1136,7 +1261,12 @@ table#modulesMasterTable td {
                                             </div>
                                             <div class="staff-item-info">
                                                 <div class="staff-item-name">{{ $stf->name }}</div>
-                                                <div class="staff-item-role">{{ $stf->position ?? 'Técnico de Campo' }}</div>
+                                                <div class="staff-item-role">
+                                                    {{ $stf->position ?? 'Técnico de Campo' }}
+                                                    @if(!empty($stf->email))
+                                                        <span style="display: block; font-size: 10.5px; opacity: 0.8; font-weight: 500;">{{ $stf->email }}</span>
+                                                    @endif
+                                                </div>
                                             </div>
                                         </label>
                                     @empty
@@ -1290,14 +1420,18 @@ table#modulesMasterTable td {
                                     Tipo de Módulo <span class="req">*</span>
                                 </label>
                                 <select name="key" id="edit_module_key" class="custom-form-select" required>
-                                    <option value="dosimetria">Dosimetría de Ruido</option>
+                                    <option value="dosimetria">Dosimetría</option>
+                                    <option value="ergonomia" disabled>Ergonomía (En construcción)</option>
+                                    <option value="estres_calor">Estrés Térmico (Calor)</option>
+                                    <option value="estres_frio">Estrés Térmico (Frío)</option>
+                                    <option value="gases" disabled>Gases (En construcción)</option>
+                                    <option value="iluminacion">Iluminación</option>
+                                    <option value="opacidad">Opacidad</option>
+                                    <option value="particulas" disabled>Partículas (En construcción)</option>
                                     <option value="ruido_ambiental">Ruido Ambiental</option>
-                                    <option value="agua">Agua (Parámetros de Campo)</option>
-                                    <option value="opacidad">Opacidad (Humos y Emisiones)</option>
-                                    <option value="particulas">Partículas 24 Horas</option>
-                                    <option value="iluminacion">Iluminación Ocupacional</option>
-                                    <option value="estres_termico">Estrés Térmico</option>
-                                    <option value="otro">Monitoreo Personalizado</option>
+                                    <option value="ruido">Ruido Ocupacional</option>
+                                    <option value="ventilacion">Ventilación</option>
+                                    <option value="vibracion" disabled>Vibración (En construcción)</option>
                                 </select>
                             </div>
 
@@ -1339,7 +1473,12 @@ table#modulesMasterTable td {
                                             </div>
                                             <div class="staff-item-info">
                                                 <div class="staff-item-name">{{ $stf->name }}</div>
-                                                <div class="staff-item-role">{{ $stf->position ?? 'Técnico de Campo' }}</div>
+                                                <div class="staff-item-role">
+                                                    {{ $stf->position ?? 'Técnico de Campo' }}
+                                                    @if(!empty($stf->email))
+                                                        <span style="display: block; font-size: 10.5px; opacity: 0.8; font-weight: 500;">{{ $stf->email }}</span>
+                                                    @endif
+                                                </div>
                                             </div>
                                         </label>
                                     @empty
@@ -1574,7 +1713,7 @@ table#modulesMasterTable td {
 
         // 1. Tipo de módulo
         const keySelect = document.getElementById('edit_module_key');
-        if (keySelect) keySelect.value = item.module_key || 'dosimetria';
+        if (keySelect) keySelect.value = item.module_key || 'iluminacion';
 
         // 2. Descripción
         const descInput = document.getElementById('edit_module_description');
@@ -1708,7 +1847,11 @@ table#modulesMasterTable td {
             const rowType = row.getAttribute('data-module-type') || '';
             const rowSearch = row.getAttribute('data-search') || '';
 
-            const matchesTag = (currentModuleFilter === 'all' || rowType === currentModuleFilter);
+            const matchesTag = (currentModuleFilter === 'all' || 
+                rowType === currentModuleFilter || 
+                (currentModuleFilter === 'ruido' && (rowType === 'ruido' || rowType === 'dosimetria' || rowType === 'dosimetry')) ||
+                (currentModuleFilter === 'dosimetria' && (rowType === 'ruido' || rowType === 'dosimetria' || rowType === 'dosimetry'))
+            );
             const matchesSearch = (!searchTerm || rowSearch.includes(searchTerm));
 
             return matchesTag && matchesSearch;

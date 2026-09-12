@@ -3,7 +3,7 @@
 @section('title', 'Configuración del Sistema — Metric v2 Pachabol')
 
 @push('styles')
-    @vite(['resources/css/settings.css'])
+    @metricStyle('settings')
 @endpush
 
 @section('content')
@@ -445,5 +445,5 @@
 @endsection
 
 @push('scripts')
-    @vite(['resources/js/settings.js'])
+    @metricScript('settings')
 @endpush

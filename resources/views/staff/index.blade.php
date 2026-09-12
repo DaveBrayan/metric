@@ -3,7 +3,7 @@
 @section('title', 'Personal Técnico & Colaboradores — Metric v2')
 
 @push('styles')
-    @vite(['resources/css/staff.css'])
+    @metricStyle('staff')
 @endpush
 
 @section('content')
@@ -443,5 +443,5 @@
 @endsection
 
 @push('scripts')
-    @vite(['resources/js/staff.js'])
+    @metricScript('staff')
 @endpush

@@ -51,6 +51,19 @@
                 <span>Exportar</span>
             </button>
 
+            <!-- Botón Ver Tablas (Matriz técnica e informe de evaluación) -->
+            <button type="button" class="btn-secondary-subtle" onclick="openIlluminationTablesModal()"
+                title="Ver tabla técnica e informe de mediciones">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.3"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="18" x="3" y="3" rx="2" />
+                    <path d="M3 9h18" />
+                    <path d="M3 15h18" />
+                    <path d="M9 3v18" />
+                </svg>
+                <span>Ver Tablas</span>
+            </button>
+
             <button type="button" class="btn-primary-hero-action" onclick="openCreateMeasurementModal()">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
                     stroke-linecap="round" stroke-linejoin="round">

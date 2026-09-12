@@ -1,0 +1,304 @@
+    <!-- ==========================================================================
+         MODAL: NUEVA MEDICIÓN DE DOSIMETRÍA DE RUIDO (3 COLUMNAS)
+         ========================================================================== -->
+    <div class="modal-backdrop-custom" id="createMeasurementModal" role="dialog" aria-modal="true"
+        aria-labelledby="createMeasModalTitle">
+        <div class="modal-dialog-ventilation modal-dialog-lg">
+            <div class="modal-header-custom">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.4"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                        <line x1="12" y1="19" x2="12" y2="22" />
+                    </svg>
+                    <h2 id="createMeasModalTitle">Nuevo Punto de Dosimetría</h2>
+                </div>
+                <button type="button" class="btn-close-modal" onclick="closeCreateMeasurementModal()"
+                    aria-label="Cerrar">✕</button>
+            </div>
+            <form action="{{ route('modules.dosimetry.measurements.store', $module->id) }}" method="POST"
+                enctype="multipart/form-data" id="createMeasurementForm">
+                @csrf
+                <div class="modal-body-custom">
+                    <div class="modal-three-cols-grid">
+
+                        <!-- COLUMNA 1: Datos del Puesto y Parámetros Acústicos -->
+                        <div class="modal-col-card">
+                            <div class="modal-col-heading">
+                                <span>1. Datos del Puesto & Parámetros</span>
+                                <span style="font-size: 11px; font-weight: 700; color: #64748b;">N° <strong
+                                        id="create_pt_num_disp">{{ str_pad(count($measurements) + 1, 2, '0', STR_PAD_LEFT) }}</strong></span>
+                            </div>
+
+                            <input type="hidden" name="point_number" id="create_point_number"
+                                value="{{ str_pad(count($measurements) + 1, 2, '0', STR_PAD_LEFT) }}">
+
+                            <!-- Fecha y Hora -->
+                            <div class="form-grid-two-cols">
+                                <div class="form-field-group">
+                                    <label class="form-field-label" for="create_measurement_date">Fecha de Medición <span class="req">*</span></label>
+                                    <input type="date" name="measurement_date" id="create_measurement_date"
+                                        class="custom-form-input" required value="{{ date('Y-m-d') }}">
+                                </div>
+                                <div class="form-field-group">
+                                    <label class="form-field-label" for="create_measurement_time">Hora</label>
+                                    <input type="time" name="measurement_time" id="create_measurement_time"
+                                        class="custom-form-input" value="{{ date('H:i') }}">
+                                </div>
+                            </div>
+
+                            <!-- Técnico de Campo / Personal a Cargo -->
+                            <div class="form-field-group">
+                                <label class="form-field-label" for="create_staff_id">
+                                    <span>Técnico de Campo / Personal a Cargo <span class="req">*</span></span>
+                                </label>
+                                <select name="staff_id" id="create_staff_id" class="custom-form-select" required>
+                                    @if(isset($staffList) && count($staffList) > 0)
+                                        @foreach($staffList as $staff)
+                                            <option value="{{ $staff->id }}">{{ $staff->name }} @if(!empty($staff->position)) — {{ $staff->position }} @endif</option>
+                                        @endforeach
+                                    @else
+                                        <option value="">{{ $registeredByHeader }}</option>
+                                    @endif
+                                </select>
+                            </div>
+
+                            <!-- Área de Trabajo -->
+                            <div class="form-field-group">
+                                <label class="form-field-label" for="create_area">Área de Trabajo <span class="req">*</span></label>
+                                <input type="text" name="area" id="create_area" class="custom-form-input" required
+                                    placeholder="Ej: Planta de Producción, Maestranza...">
+                            </div>
+
+                            <!-- Punto de Medición -->
+                            <div class="form-field-group">
+                                <label class="form-field-label" for="create_punto_medicion">Punto de Medición / Puesto <span class="req">*</span></label>
+                                <input type="text" name="punto_medicion" id="create_punto_medicion" class="custom-form-input" required
+                                    placeholder="Ej: Operador Torno CNC, Soldador...">
+                            </div>
+
+                            <!-- Tipo de Ruido & TPE (Hr) -->
+                            <div class="form-grid-two-cols">
+                                <div class="form-field-group">
+                                    <label class="form-field-label" for="create_tipo_ruido">Tipo de Ruido <span class="req">*</span></label>
+                                    <select name="tipo_ruido" id="create_tipo_ruido" class="custom-form-select" required>
+                                        <option value="Estable">Estable</option>
+                                        <option value="Fluctuante" selected>Fluctuante</option>
+                                        <option value="Estable escalonado">Estable escalonado</option>
+                                        <option value="Impacto">Impacto</option>
+                                    </select>
+                                </div>
+                                <div class="form-field-group">
+                                    <label class="form-field-label" for="create_tiempo_expos_h">TPE (Horas) <span class="req">*</span></label>
+                                    <input type="number" step="0.1" min="0.1" max="24" name="tiempo_expos_h" id="create_tiempo_expos_h"
+                                        class="custom-form-input" required value="8.0" oninput="recalcDosimetry('create')">
+                                </div>
+                            </div>
+
+                            <!-- Ponderación & Respuesta -->
+                            <div class="form-grid-two-cols">
+                                <div class="form-field-group">
+                                    <label class="form-field-label" for="create_ponderacion">Ponderación</label>
+                                    <select name="ponderacion" id="create_ponderacion" class="custom-form-select">
+                                        <option value="A" selected>A (dBA)</option>
+                                        <option value="C">C (dBC)</option>
+                                    </select>
+                                </div>
+                                <div class="form-field-group">
+                                    <label class="form-field-label" for="create_respuesta">Respuesta</label>
+                                    <select name="respuesta" id="create_respuesta" class="custom-form-select">
+                                        <option value="Lento" selected>Lento (Slow)</option>
+                                        <option value="Rápido">Rápido (Fast)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- TARJETA INTERNA: Mediciones y Niveles Sonoros -->
+                            <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; margin-top: 8px;">
+                                <span style="font-size: 11.5px; font-weight: 800; color: #334155; display: block; margin-bottom: 8px;">
+                                    Niveles de Presión Sonora (dB)
+                                </span>
+                                
+                                <div class="form-grid-two-cols">
+                                    <div class="form-field-group" style="margin-bottom: 8px;">
+                                        <label class="form-field-label" for="create_duracion_medicion_h">Tiempo Medición (h)</label>
+                                        <input type="number" step="0.01" name="duracion_medicion_h" id="create_duracion_medicion_h"
+                                            class="custom-form-input" placeholder="Ej: 1.50" oninput="recalcDosimetry('create')">
+                                    </div>
+                                    <div class="form-field-group" style="margin-bottom: 8px;">
+                                        <label class="form-field-label" for="create_leq_t_db">Leq,T (dB) <span class="req">*</span></label>
+                                        <input type="number" step="0.1" name="leq_t_db" id="create_leq_t_db"
+                                            class="custom-form-input" required placeholder="Ej: 83.4" oninput="recalcDosimetry('create')">
+                                    </div>
+                                </div>
+
+                                <div class="form-grid-two-cols">
+                                    <div class="form-field-group" style="margin-bottom: 0;">
+                                        <label class="form-field-label" for="create_nps_max_db">NPS MAX (dB)</label>
+                                        <input type="number" step="0.1" name="nps_max_db" id="create_nps_max_db"
+                                            class="custom-form-input" placeholder="Ej: 92.1">
+                                    </div>
+                                    <div class="form-field-group" style="margin-bottom: 0;">
+                                        <label class="form-field-label" for="create_nps_min_db">NPS MIN (dB)</label>
+                                        <input type="number" step="0.1" name="nps_min_db" id="create_nps_min_db"
+                                            class="custom-form-input" placeholder="Ej: 68.5">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Indicador de Cumplimiento Normativo -->
+                            <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 12px;">
+                                <div style="font-size: 11.5px; color: #475569; font-weight: 600;">
+                                    LMP Calculado: <strong id="create_lmp_display" style="color: #0284c7;">85.0 dBA</strong>
+                                </div>
+                                <div id="create_cumple_badge" class="badge-compliance-ok">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                    <span id="create_cumple_text">CUMPLE</span>
+                                </div>
+                            </div>
+
+                            <!-- Personal Registrador -->
+                            <div class="form-field-group" style="margin-top: 10px; margin-bottom: 0;">
+                                <label class="form-field-label">Personal Registrador</label>
+                                <div class="custom-form-input"
+                                    style="background: #f8fafc; display: flex; align-items: center; gap: 7px; color: #334155; font-weight: 600; cursor: default;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0284c7"
+                                        stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                                        <circle cx="12" cy="7" r="4" />
+                                    </svg>
+                                    <span>{{ $registeredByHeader }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- COLUMNA 2: Evidencia Fotográfica (Slide / Carrusel) -->
+                        <div class="modal-col-card">
+                            <div class="modal-col-heading">
+                                <span>2. Evidencia Fotográfica (Slide)</span>
+                                <span style="font-size: 11px; color: #64748b;" id="create_photo_count_indicator">0 fotos</span>
+                            </div>
+
+                            <div class="modal-photo-slider-wrapper">
+                                <div class="modal-slider-viewport" id="create_slider_viewport">
+                                    <span id="create_slider_counter" class="slider-counter-badge" style="display: none;">1 / 1</span>
+
+                                    <button type="button" class="slider-nav-btn prev" id="create_slider_btn_prev"
+                                        onclick="slidePhotoNav('create', -1)" style="display: none;"
+                                        aria-label="Anterior">❮</button>
+                                    <button type="button" class="slider-nav-btn next" id="create_slider_btn_next"
+                                        onclick="slidePhotoNav('create', 1)" style="display: none;"
+                                        aria-label="Siguiente">❯</button>
+
+                                    <img id="create_slider_img" class="modal-slider-main-img" src="" alt="Foto punto"
+                                        style="display: none;">
+
+                                    <div id="create_slider_placeholder" class="modal-slider-placeholder"
+                                        onclick="document.getElementById('create_images_input').click()"
+                                        style="cursor: pointer;">
+                                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#64748b"
+                                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+                                            style="margin-bottom: 10px;">
+                                            <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                                            <circle cx="9" cy="9" r="2" />
+                                            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                                        </svg>
+                                        <strong style="font-size: 13.5px; color: #cbd5e1; margin-bottom: 4px;">Subir Evidencia Fotográfica</strong>
+                                        <span style="font-size: 11.5px; color: #94a3b8;">Haz clic para seleccionar una o más imágenes</span>
+                                    </div>
+                                </div>
+
+                                <div class="slider-thumbs-strip" id="create_slider_thumbs" style="display: none;"></div>
+
+                                <input type="file" name="photos[]" id="create_images_input" multiple accept="image/*"
+                                    style="display: none;" onchange="handleMultipleImagesSelected(this, 'create')">
+                                <button type="button" class="btn-add-photos-trigger" id="create_btn_add_photos"
+                                    onclick="document.getElementById('create_images_input').click()">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2.3">
+                                        <path d="M5 12h14" />
+                                        <path d="M12 5v14" />
+                                    </svg>
+                                    <span>+ Subir / Agregar Fotografías</span>
+                                </button>
+                            </div>
+                            <span style="font-size: 11.5px; color: #64748b; line-height: 1.4;">Permite subir varias fotos del dosímetro en el puesto. Puedes pasar imagen por imagen con las flechas.</span>
+                        </div>
+
+                        <!-- COLUMNA 3: Ubicación Geográfica & Mapa + Observaciones -->
+                        <div class="modal-col-card">
+                            <div class="modal-col-heading">
+                                <span>3. Ubicación & GPS</span>
+                                <button type="button"
+                                    onclick="getCurrentGpsPosition('create_latitude', 'create_longitude', 'create')"
+                                    style="background: none; border: none; color: #0284c7; font-size: 11px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2.3">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <circle cx="12" cy="12" r="3" />
+                                        <line x1="12" y1="2" x2="12" y2="5" />
+                                        <line x1="12" y1="19" x2="12" y2="22" />
+                                        <line x1="2" y1="12" x2="5" y2="12" />
+                                        <line x1="19" y1="12" x2="22" y2="12" />
+                                    </svg>
+                                    Mi GPS
+                                </button>
+                            </div>
+
+                            <div class="utm-coords-grid">
+                                <div class="form-field-group">
+                                    <label class="form-field-label" for="create_utm_easting">Este (E)</label>
+                                    <input type="number" step="any" name="utm_easting" id="create_utm_easting" class="custom-form-input"
+                                        placeholder="218468.016" oninput="syncUtmToMap('create')">
+                                </div>
+                                <div class="form-field-group">
+                                    <label class="form-field-label" for="create_utm_northing">Norte (N)</label>
+                                    <input type="number" step="any" name="utm_northing" id="create_utm_northing" class="custom-form-input"
+                                        placeholder="7627234.367" oninput="syncUtmToMap('create')">
+                                </div>
+                                <div class="form-field-group" style="max-width: 85px;">
+                                    <label class="form-field-label" for="create_utm_zone">Zona (Z)</label>
+                                    <input type="text" name="utm_zone" id="create_utm_zone" class="custom-form-input" placeholder="20K"
+                                        value="20K" oninput="syncUtmToMap('create')">
+                                </div>
+                            </div>
+                            <div class="utm-preview-pill">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+                                    <path d="M2 12h20" />
+                                </svg>
+                                <span id="create_utm_display">E: —, N: —, Z: 20K</span>
+                            </div>
+                            <input type="hidden" name="location" id="create_location">
+                            <input type="hidden" name="latitude" id="create_latitude">
+                            <input type="hidden" name="longitude" id="create_longitude">
+
+                            <!-- Mini Mapa interactivo -->
+                            <div>
+                                <label class="form-field-label" style="margin-bottom: 4px;">Ubicación en Mapa (Haz clic para posicionar)</label>
+                                <div id="create_modal_map" class="modal-minimap-container"></div>
+                            </div>
+
+                            <!-- Observaciones -->
+                            <div class="form-field-group" style="margin-top: 6px;">
+                                <label class="form-field-label" for="create_observations">Observaciones</label>
+                                <textarea name="observations" id="create_observations" class="custom-form-textarea" rows="3"
+                                    placeholder="Fuentes generadoras de ruido, EPP auditivo utilizado por el trabajador, ciclos de trabajo..."></textarea>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="modal-footer-custom">
+                    <button type="button" class="btn-secondary-subtle" onclick="closeCreateMeasurementModal()">Cancelar</button>
+                    <button type="submit" class="btn-primary-hero-action" id="create_modal_submit_btn">Guardar Punto de Medición</button>
+                </div>
+            </form>
+        </div>
+    </div>

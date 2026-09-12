@@ -3,7 +3,7 @@
 @section('title', 'Gestión de Administradores — Metric v2 Pachabol')
 
 @push('styles')
-    @vite(['resources/css/admins.css'])
+    @metricStyle('admins')
 @endpush
 
 @section('content')
@@ -531,5 +531,5 @@
 @endsection
 
 @push('scripts')
-    @vite(['resources/js/admins.js'])
+    @metricScript('admins')
 @endpush

@@ -1,5 +1,5 @@
 /**
- * METRIC — Vibrant Background Particle Physics Engine & Login Script
+ * METRIC — Vibrant Background Particle Physics Engine & Login Script (Rendered by Vite)
  * Full-Viewport moving particles with constellation lines and magnetic mouse reactivity
  */
 
@@ -198,7 +198,7 @@ function initFullscreenParticles() {
  * @param {string} inputId 
  * @param {HTMLElement} btn 
  */
-function togglePasswordVisibility(inputId, btn) {
+window.togglePasswordVisibility = function(inputId, btn) {
     const input = document.getElementById(inputId);
     if (!input) return;
 
@@ -212,4 +212,4 @@ function togglePasswordVisibility(inputId, btn) {
         eyeOpen.style.display = isPassword ? 'none' : 'block';
         eyeClosed.style.display = isPassword ? 'block' : 'none';
     }
-}
+};

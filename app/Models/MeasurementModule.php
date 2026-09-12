@@ -64,6 +64,36 @@ class MeasurementModule extends Model
         return $this->hasMany(IlluminationMeasurement::class, 'module_id')->orderBy('id', 'asc');
     }
 
+    public function ventilationMeasurements(): HasMany
+    {
+        return $this->hasMany(VentilationMeasurement::class, 'module_id')->orderBy('id', 'asc');
+    }
+
+    public function dosimetryMeasurements(): HasMany
+    {
+        return $this->hasMany(DosimetryMeasurement::class, 'module_id')->orderBy('id', 'asc');
+    }
+
+    public function ruidoAmbientalMeasurements(): HasMany
+    {
+        return $this->hasMany(RuidoAmbientalMeasurement::class, 'module_id')->orderBy('id', 'asc');
+    }
+
+    public function opacityMeasurements(): HasMany
+    {
+        return $this->hasMany(OpacityMeasurement::class, 'module_id')->orderBy('id', 'asc');
+    }
+
+    public function coldStressMeasurements(): HasMany
+    {
+        return $this->hasMany(ColdStressMeasurement::class, 'module_id')->orderBy('id', 'asc');
+    }
+
+    public function heatStressMeasurements(): HasMany
+    {
+        return $this->hasMany(HeatStressMeasurement::class, 'module_id')->orderBy('id', 'asc');
+    }
+
     public function readings(): HasMany
     {
         return $this->hasMany(TelemetryReading::class, 'module_id');

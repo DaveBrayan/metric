@@ -3,7 +3,7 @@
 @section('title', 'Responsables de Planta — Metric v2 Pachabol')
 
 @push('styles')
-    @vite(['resources/css/managers.css'])
+    @metricStyle('managers')
 @endpush
 
 @section('content')
@@ -366,5 +366,5 @@
 @endsection
 
 @push('scripts')
-    @vite(['resources/js/managers.js'])
+    @metricScript('managers')
 @endpush

@@ -3,7 +3,7 @@
 @section('title', 'Empresas & Clientes — Metric v2 Pachabol')
 
 @push('styles')
-    @vite(['resources/css/companies.css'])
+    @metricStyle('companies')
 @endpush
 
 @section('content')
@@ -280,6 +280,6 @@
 @endsection
 
 @push('scripts')
-    @vite(['resources/js/companies.js'])
+    @metricScript('companies')
 @endpush
 
