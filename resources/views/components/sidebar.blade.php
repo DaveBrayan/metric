@@ -3,6 +3,22 @@
     $sidebarUserName = $sidebarUser ? $sidebarUser->name : ($userName ?? 'Reynaldo');
     $sidebarUserRole = $sidebarUser ? $sidebarUser->role : ($userRole ?? 'Superadministrador');
     $isSuperOrAdmin = in_array(strtolower($sidebarUserRole), ['superadministrador', 'administrador', 'admin']);
+
+    // Conteo dinámico de proyectos
+    $isManagerRole = in_array(strtolower($sidebarUserRole), ['responsable', 'responsable de planta', 'manager', 'cliente']);
+    if ($isManagerRole && $sidebarUser) {
+        $managerModel = \App\Models\Manager::where('email', $sidebarUser->email)->first();
+        if ($managerModel) {
+            $sidebarProjectsCount = \App\Models\Project::where('manager_id', $managerModel->id)->count();
+        } else {
+            $sidebarProjectsCount = \App\Models\Project::count();
+        }
+    } else {
+        $sidebarProjectsCount = \App\Models\Project::count();
+    }
+
+    // Conteo dinámico de equipos
+    $sidebarEquipmentCount = \App\Models\Equipment::count();
 @endphp
 
 <!-- Modern Animated & Optimized Sidebar (METRIC_V2) -->
@@ -96,9 +112,9 @@
                 </svg>
                 <span class="nav-item-text">Proyectos Activos</span>
                 @if(request()->routeIs('projects.index'))
-                    <span class="nav-badge-pill" style="margin-left: auto; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 20px; background: #f2fadc; color: #5c840c; border: 1px solid rgba(145, 197, 27, 0.45); box-shadow: 0 0 8px rgba(145, 197, 27, 0.2);">36</span>
+                    <span class="nav-badge-pill" style="margin-left: auto; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 20px; background: #f2fadc; color: #5c840c; border: 1px solid rgba(145, 197, 27, 0.45); box-shadow: 0 0 8px rgba(145, 197, 27, 0.2);">{{ $sidebarProjectsCount }}</span>
                 @else
-                    <span class="nav-badge-pill" style="margin-left: auto; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 20px; background: rgba(16, 185, 223, 0.18); color: #0896b5; border: 1px solid rgba(16, 185, 223, 0.35);">36</span>
+                    <span class="nav-badge-pill" style="margin-left: auto; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 20px; background: rgba(16, 185, 223, 0.18); color: #0896b5; border: 1px solid rgba(16, 185, 223, 0.35);">{{ $sidebarProjectsCount }}</span>
                 @endif
             </a>
 
@@ -119,9 +135,9 @@
                 </svg>
                 <span class="nav-item-text">Equipos</span>
                 @if(request()->routeIs('equipment.*'))
-                    <span class="nav-badge-pill" style="margin-left: auto; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 20px; background: #f2fadc; color: #5c840c; border: 1px solid rgba(145, 197, 27, 0.45); box-shadow: 0 0 8px rgba(145, 197, 27, 0.2);">18</span>
+                    <span class="nav-badge-pill" style="margin-left: auto; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 20px; background: #f2fadc; color: #5c840c; border: 1px solid rgba(145, 197, 27, 0.45); box-shadow: 0 0 8px rgba(145, 197, 27, 0.2);">{{ $sidebarEquipmentCount }}</span>
                 @else
-                    <span class="nav-badge-pill" style="margin-left: auto; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 20px; background: rgba(16, 185, 223, 0.18); color: #0896b5; border: 1px solid rgba(16, 185, 223, 0.35);">18</span>
+                    <span class="nav-badge-pill" style="margin-left: auto; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 20px; background: rgba(16, 185, 223, 0.18); color: #0896b5; border: 1px solid rgba(16, 185, 223, 0.35);">{{ $sidebarEquipmentCount }}</span>
                 @endif
             </a>
         </div>

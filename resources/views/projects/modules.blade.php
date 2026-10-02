@@ -749,6 +749,164 @@ table#modulesMasterTable td {
     cursor: not-allowed;
     background: #f8fafc;
 }
+
+/* Custom Modern Filter Dropdown */
+.custom-filter-dropdown-wrap {
+    position: relative;
+    width: 270px;
+    flex-shrink: 0;
+    user-select: none;
+}
+.custom-filter-dropdown-btn {
+    width: 100%;
+    height: 40px;
+    background: #ffffff;
+    border: 1.5px solid rgba(203, 213, 225, 0.9);
+    border-radius: var(--radius-full);
+    padding: 0 16px 0 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.25s var(--spring-ease);
+    box-shadow: 0 2px 6px rgba(15, 28, 46, 0.04);
+}
+.custom-filter-dropdown-btn:hover {
+    border-color: var(--cyan);
+    box-shadow: 0 4px 12px rgba(16, 185, 223, 0.18);
+    transform: translateY(-1px);
+}
+.custom-filter-dropdown-wrap.open .custom-filter-dropdown-btn {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3.5px rgba(16, 185, 223, 0.22);
+    background: #ffffff;
+}
+.dropdown-btn-left {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    overflow: hidden;
+    white-space: nowrap;
+}
+.dropdown-btn-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, rgba(16, 185, 223, 0.15), rgba(7, 153, 167, 0.08));
+    color: var(--cyan-dark);
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+}
+.dropdown-btn-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+.dropdown-chevron-icon {
+    color: #94a3b8;
+    transition: transform 0.25s var(--spring-ease), color 0.2s ease;
+    flex-shrink: 0;
+}
+.custom-filter-dropdown-wrap.open .dropdown-chevron-icon {
+    transform: rotate(180deg);
+    color: var(--cyan-dark);
+}
+/* Floating Dropdown Panel */
+.custom-filter-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    width: 100%;
+    min-width: 270px;
+    background: #ffffff;
+    border: 1px solid rgba(226, 232, 240, 0.95);
+    border-radius: 14px;
+    box-shadow: 0 14px 35px -5px rgba(15, 28, 46, 0.15), 0 4px 12px -2px rgba(15, 28, 46, 0.06);
+    padding: 6px;
+    max-height: 340px;
+    overflow-y: auto;
+    z-index: 1050;
+    display: none;
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+    transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.custom-filter-dropdown-menu::-webkit-scrollbar {
+    width: 5px;
+}
+.custom-filter-dropdown-menu::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+.custom-filter-dropdown-wrap.open .custom-filter-dropdown-menu {
+    display: block;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+/* Dropdown Option Item */
+.dropdown-option-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+}
+.dropdown-option-item:hover {
+    background: #f0f9ff;
+    color: #0284c7;
+    transform: translateX(3px);
+}
+.dropdown-option-item.active {
+    background: linear-gradient(135deg, rgba(16, 185, 223, 0.12), rgba(2, 132, 199, 0.08));
+    color: #0369a1;
+    font-weight: 700;
+}
+.option-item-left {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+.option-item-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #cbd5e1;
+    flex-shrink: 0;
+}
+.dropdown-option-item.active .option-item-dot {
+    background: var(--cyan);
+    box-shadow: 0 0 6px rgba(16, 185, 223, 0.6);
+}
+.option-badge-count {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 9999px;
+    background: #f1f5f9;
+    color: #64748b;
+}
+.dropdown-option-item.active .option-badge-count {
+    background: rgba(14, 165, 233, 0.15);
+    color: #0284c7;
+}
+.option-check-icon {
+    display: none;
+    color: #0284c7;
+    flex-shrink: 0;
+}
+.dropdown-option-item.active .option-check-icon {
+    display: block;
+}
 </style>
 @endpush
 
@@ -817,52 +975,143 @@ table#modulesMasterTable td {
 
     <!-- Master Table Panel -->
     <div class="glass-card panel-box">
-        <!-- Module Filter Pills & Quick Search -->
-        <div class="table-head-action-bar" style="align-items: center;">
-            <div class="admins-role-filter-group" id="moduleFilterGroup">
-                <button type="button" class="role-filter-pill active" onclick="filterModulesByTag('all', this)">
-                    Todos ({{ count($modulesData) }})
-                </button>
-                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('dosimetria', this)">
-                    Dosimetría
-                </button>
-                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('ergonomia', this)">
-                    Ergonomía
-                </button>
-                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('estres_calor', this)">
-                    Estrés Térmico (Calor)
-                </button>
-                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('estres_frio', this)">
-                    Estrés Térmico (Frío)
-                </button>
-                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('gases', this)">
-                    Gases
-                </button>
-                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('iluminacion', this)">
-                    Iluminación
-                </button>
-                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('opacidad', this)">
-                    Opacidad
-                </button>
-                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('particulas', this)">
-                    Partículas
-                </button>
-                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('ruido_ambiental', this)">
-                    Ruido Ambiental
-                </button>
-                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('ruido', this)">
-                    Ruido Ocupacional
-                </button>
-                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('ventilacion', this)">
-                    Ventilación
-                </button>
-                <button type="button" class="role-filter-pill" onclick="filterModulesByTag('vibracion', this)">
-                    Vibración
-                </button>
-            </div>
+        <!-- Module Filter Dropdown & Quick Search -->
+        <div class="table-head-action-bar" style="margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; width: 100%;">
+                <!-- Custom Modern Floating Dropdown (Lado Izquierdo del Buscador) -->
+                <div class="custom-filter-dropdown-wrap" id="moduleFilterDropdownWrap">
+                    <button type="button" class="custom-filter-dropdown-btn" id="moduleFilterDropdownBtn" onclick="toggleModuleFilterDropdown(event)" aria-haspopup="listbox" aria-expanded="false">
+                        <div class="dropdown-btn-left">
+                            <span class="dropdown-btn-icon">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                                </svg>
+                            </span>
+                            <span class="dropdown-btn-label" id="selectedModuleLabel">Todos los Módulos ({{ count($modulesData) }})</span>
+                        </div>
+                        <svg class="dropdown-chevron-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </button>
 
-            <div class="table-search-and-action">
-                <div class="table-quick-search-box">
+                    <div class="custom-filter-dropdown-menu" id="moduleFilterDropdownMenu" role="listbox">
+                        <div class="dropdown-option-item active" data-value="all" onclick="selectCustomModuleFilter('all', 'Todos los Módulos ({{ count($modulesData) }})')">
+                            <div class="option-item-left">
+                                <span class="option-item-dot"></span>
+                                <span>Todos los Módulos</span>
+                            </div>
+                            <span class="option-badge-count">{{ count($modulesData) }}</span>
+                        </div>
+                        <div class="dropdown-option-item" data-value="dosimetria" onclick="selectCustomModuleFilter('dosimetria', 'Dosimetría')">
+                            <div class="option-item-left">
+                                <span class="option-item-dot" style="background: #3b82f6;"></span>
+                                <span>Dosimetría</span>
+                            </div>
+                            <svg class="option-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div class="dropdown-option-item" data-value="carga_fuego_actividad" onclick="selectCustomModuleFilter('carga_fuego_actividad', 'Carga de Fuego por Actividad')">
+                            <div class="option-item-left">
+                                <span class="option-item-dot" style="background: #0284c7;"></span>
+                                <span>Carga de Fuego por Actividad</span>
+                            </div>
+                            <svg class="option-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div class="dropdown-option-item" data-value="carga_fuego_peso" onclick="selectCustomModuleFilter('carga_fuego_peso', 'Carga de Fuego por Peso')">
+                            <div class="option-item-left">
+                                <span class="option-item-dot" style="background: #0284c7;"></span>
+                                <span>Carga de Fuego por Peso</span>
+                            </div>
+                            <svg class="option-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div class="dropdown-option-item" data-value="ergonomia_reba" onclick="selectCustomModuleFilter('ergonomia_reba', 'Ergonomía REBA')">
+                            <div class="option-item-left">
+                                <span class="option-item-dot" style="background: #0284c7;"></span>
+                                <span>Ergonomía REBA</span>
+                            </div>
+                            <svg class="option-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div class="dropdown-option-item" data-value="ergonomia_rosa" onclick="selectCustomModuleFilter('ergonomia_rosa', 'Ergonomía ROSA')">
+                            <div class="option-item-left">
+                                <span class="option-item-dot" style="background: #e11d48;"></span>
+                                <span>Ergonomía ROSA</span>
+                            </div>
+                            <svg class="option-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div class="dropdown-option-item" data-value="estres_calor" onclick="selectCustomModuleFilter('estres_calor', 'Estrés Térmico (Calor)')">
+                            <div class="option-item-left">
+                                <span class="option-item-dot" style="background: #f97316;"></span>
+                                <span>Estrés Térmico (Calor)</span>
+                            </div>
+                            <svg class="option-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div class="dropdown-option-item" data-value="estres_frio" onclick="selectCustomModuleFilter('estres_frio', 'Estrés Térmico (Frío)')">
+                            <div class="option-item-left">
+                                <span class="option-item-dot" style="background: #06b6d4;"></span>
+                                <span>Estrés Térmico (Frío)</span>
+                            </div>
+                            <svg class="option-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div class="dropdown-option-item" data-value="gases" onclick="selectCustomModuleFilter('gases', 'Gases')">
+                            <div class="option-item-left">
+                                <span class="option-item-dot" style="background: #8b5cf6;"></span>
+                                <span>Gases</span>
+                            </div>
+                            <svg class="option-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div class="dropdown-option-item" data-value="iluminacion" onclick="selectCustomModuleFilter('iluminacion', 'Iluminación')">
+                            <div class="option-item-left">
+                                <span class="option-item-dot" style="background: #eab308;"></span>
+                                <span>Iluminación</span>
+                            </div>
+                            <svg class="option-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div class="dropdown-option-item" data-value="opacidad" onclick="selectCustomModuleFilter('opacidad', 'Opacidad')">
+                            <div class="option-item-left">
+                                <span class="option-item-dot" style="background: #64748b;"></span>
+                                <span>Opacidad</span>
+                            </div>
+                            <svg class="option-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div class="dropdown-option-item" data-value="particulas" onclick="selectCustomModuleFilter('particulas', 'Partículas')">
+                            <div class="option-item-left">
+                                <span class="option-item-dot" style="background: #a855f7;"></span>
+                                <span>Partículas</span>
+                            </div>
+                            <svg class="option-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div class="dropdown-option-item" data-value="ruido_ambiental" onclick="selectCustomModuleFilter('ruido_ambiental', 'Ruido Ambiental')">
+                            <div class="option-item-left">
+                                <span class="option-item-dot" style="background: #0284c7;"></span>
+                                <span>Ruido Ambiental</span>
+                            </div>
+                            <svg class="option-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div class="dropdown-option-item" data-value="ruido" onclick="selectCustomModuleFilter('ruido', 'Ruido Ocupacional')">
+                            <div class="option-item-left">
+                                <span class="option-item-dot" style="background: #0f172a;"></span>
+                                <span>Ruido Ocupacional</span>
+                            </div>
+                            <svg class="option-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div class="dropdown-option-item" data-value="ventilacion" onclick="selectCustomModuleFilter('ventilacion', 'Ventilación')">
+                            <div class="option-item-left">
+                                <span class="option-item-dot" style="background: #14b8a6;"></span>
+                                <span>Ventilación</span>
+                            </div>
+                            <svg class="option-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div class="dropdown-option-item" data-value="vibracion" onclick="selectCustomModuleFilter('vibracion', 'Vibración')">
+                            <div class="option-item-left">
+                                <span class="option-item-dot" style="background: #ec4899;"></span>
+                                <span>Vibración</span>
+                            </div>
+                            <svg class="option-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Buscador Rápido -->
+                <div class="table-quick-search-box" style="flex: 1; min-width: 260px; max-width: 440px;">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="search-icon-pos">
                         <circle cx="11" cy="11" r="8"/>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -949,6 +1198,34 @@ table#modulesMasterTable td {
                                 @elseif($item['module_key'] === 'estres_frio' || $item['module_key'] === 'cold_stress')
                                     <a href="{{ route('modules.cold_stress', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Monitoreo de Estrés Térmico (Frío)">
                                         <div style="font-weight: 800; color: #0284c7; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
+                                            <span>{{ $item['module_name'] }}</span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                        </div>
+                                    </a>
+                                @elseif($item['module_key'] === 'carga_fuego_actividad' || $item['module_key'] === 'fuego_actividad')
+                                    <a href="{{ route('modules.fire_activity', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Carga de Fuego por Actividad">
+                                        <div style="font-weight: 800; color: #0284c7; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
+                                            <span>{{ $item['module_name'] }}</span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                        </div>
+                                    </a>
+                                @elseif($item['module_key'] === 'carga_fuego_peso' || $item['module_key'] === 'fuego_peso')
+                                    <a href="{{ route('modules.fire_weight', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Carga de Fuego por Peso">
+                                        <div style="font-weight: 800; color: #0284c7; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
+                                            <span>{{ $item['module_name'] }}</span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                        </div>
+                                    </a>
+                                @elseif($item['module_key'] === 'ergonomia_reba' || $item['module_key'] === 'ergonomia')
+                                    <a href="{{ route('modules.ergonomia_reba', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Ergonomía REBA">
+                                        <div style="font-weight: 800; color: #0284c7; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
+                                            <span>{{ $item['module_name'] }}</span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                        </div>
+                                    </a>
+                                @elseif($item['module_key'] === 'ergonomia_rosa' || $item['module_key'] === 'rosa')
+                                    <a href="{{ route('modules.ergonomia_rosa', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Ergonomía ROSA">
+                                        <div style="font-weight: 800; color: #e11d48; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
                                             <span>{{ $item['module_name'] }}</span>
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                                         </div>
@@ -1118,6 +1395,43 @@ table#modulesMasterTable td {
                                                 <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/>
                                             </svg>
                                         </button>
+                                    @elseif($item['module_key'] === 'carga_fuego_actividad' || $item['module_key'] === 'fuego_actividad')
+                                        <!-- Ver Mediciones de Carga de Fuego por Actividad -->
+                                        <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.fire_activity', $item['id']) }}'" title="Carga de Fuego por Actividad (Ver Sectores)" aria-label="Ver Sectores de Carga de Fuego">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3.5z"/>
+                                            </svg>
+                                        </button>
+                                    @elseif($item['module_key'] === 'carga_fuego_peso' || $item['module_key'] === 'fuego_peso')
+                                        <!-- Ver Mediciones de Carga de Fuego por Peso -->
+                                        <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.fire_weight', $item['id']) }}'" title="Carga de Fuego por Peso (Ver Sectores)" aria-label="Ver Sectores de Carga de Fuego por Peso">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
+                                                <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
+                                                <path d="M7 21h10"/>
+                                                <path d="M12 3v18"/>
+                                                <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>
+                                            </svg>
+                                        </button>
+                                    @elseif($item['module_key'] === 'ergonomia_reba' || $item['module_key'] === 'ergonomia')
+                                        <!-- Ver Evaluaciones de Ergonomía REBA -->
+                                        <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.ergonomia_reba', $item['id']) }}'" title="Ergonomía REBA (Ver Evaluaciones)" aria-label="Ver Evaluaciones de Ergonomía REBA">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="12" cy="5" r="3" />
+                                                <path d="M6.5 9a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1" />
+                                                <path d="M17.5 9a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1" />
+                                                <path d="M9 11v8a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-8" />
+                                            </svg>
+                                        </button>
+                                    @elseif($item['module_key'] === 'ergonomia_rosa' || $item['module_key'] === 'rosa')
+                                        <!-- Ver Evaluaciones de Ergonomía ROSA -->
+                                        <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.ergonomia_rosa', $item['id']) }}'" title="Ergonomía ROSA (Ver Evaluaciones)" aria-label="Ver Evaluaciones de Ergonomía ROSA">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <rect width="20" height="14" x="2" y="3" rx="2"/>
+                                                <line x1="8" x2="16" y1="21" y2="21"/>
+                                                <line x1="12" x2="12" y1="17" y2="21"/>
+                                            </svg>
+                                        </button>
                                     @endif
 
                                     <!-- Editar Módulo -->
@@ -1209,7 +1523,10 @@ table#modulesMasterTable td {
                                 <select name="key" id="create_module_key" class="custom-form-select" required>
                                     <option value="">-- Seleccionar Tipo de Módulo --</option>
                                     <option value="dosimetria">Dosimetría</option>
-                                    <option value="ergonomia" disabled>Ergonomía (En construcción)</option>
+                                    <option value="ergonomia_reba">Ergonomía REBA</option>
+                                    <option value="ergonomia_rosa">Ergonomía ROSA</option>
+                                    <option value="carga_fuego_actividad">Carga de Fuego por Actividad</option>
+                                    <option value="carga_fuego_peso">Carga de Fuego por Peso</option>
                                     <option value="estres_calor">Estrés Térmico (Calor)</option>
                                     <option value="estres_frio">Estrés Térmico (Frío)</option>
                                     <option value="gases" disabled>Gases (En construcción)</option>
@@ -1421,7 +1738,10 @@ table#modulesMasterTable td {
                                 </label>
                                 <select name="key" id="edit_module_key" class="custom-form-select" required>
                                     <option value="dosimetria">Dosimetría</option>
-                                    <option value="ergonomia" disabled>Ergonomía (En construcción)</option>
+                                    <option value="ergonomia_reba">Ergonomía REBA</option>
+                                    <option value="ergonomia_rosa">Ergonomía ROSA</option>
+                                    <option value="carga_fuego_actividad">Carga de Fuego por Actividad</option>
+                                    <option value="carga_fuego_peso">Carga de Fuego por Peso</option>
                                     <option value="estres_calor">Estrés Térmico (Calor)</option>
                                     <option value="estres_frio">Estrés Térmico (Frío)</option>
                                     <option value="gases" disabled>Gases (En construcción)</option>
@@ -1788,14 +2108,15 @@ table#modulesMasterTable td {
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 title: '¿Eliminar Módulo?',
-                html: `Se eliminará el módulo <b>${name}</b>. Esta acción no se puede deshacer.`,
+                html: `¿Estás seguro de eliminar el módulo <b>${name}</b>?<br><span style="font-size:13px;color:#64748b;">Esta acción no se puede deshacer.</span>`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#ef4444',
                 cancelButtonColor: '#64748b',
                 confirmButtonText: 'Sí, eliminar',
                 cancelButtonText: 'Cancelar',
-                reverseButtons: true,
+                reverseButtons: false,
+                focusCancel: false,
                 borderRadius: '16px'
             }).then((result) => {
                 if (result.isConfirmed) {
@@ -1849,6 +2170,8 @@ table#modulesMasterTable td {
 
             const matchesTag = (currentModuleFilter === 'all' || 
                 rowType === currentModuleFilter || 
+                ((currentModuleFilter === 'ergonomia' || currentModuleFilter === 'ergonomia_reba') && (rowType === 'ergonomia' || rowType === 'ergonomia_reba')) ||
+                ((currentModuleFilter === 'ergonomia_rosa' || currentModuleFilter === 'rosa') && (rowType === 'ergonomia_rosa' || rowType === 'rosa')) ||
                 (currentModuleFilter === 'ruido' && (rowType === 'ruido' || rowType === 'dosimetria' || rowType === 'dosimetry')) ||
                 (currentModuleFilter === 'dosimetria' && (rowType === 'ruido' || rowType === 'dosimetria' || rowType === 'dosimetry'))
             );
@@ -1944,10 +2267,66 @@ table#modulesMasterTable td {
         if (table) table.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
+    function toggleModuleFilterDropdown(e) {
+        if (e) e.stopPropagation();
+        const wrap = document.getElementById('moduleFilterDropdownWrap');
+        const btn = document.getElementById('moduleFilterDropdownBtn');
+        if (!wrap) return;
+        const isOpen = wrap.classList.contains('open');
+        if (isOpen) {
+            wrap.classList.remove('open');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+        } else {
+            wrap.classList.add('open');
+            if (btn) btn.setAttribute('aria-expanded', 'true');
+        }
+    }
+
+    function selectCustomModuleFilter(moduleKey, labelText) {
+        currentModuleFilter = moduleKey;
+        const labelEl = document.getElementById('selectedModuleLabel');
+        if (labelEl) labelEl.textContent = labelText;
+
+        document.querySelectorAll('.dropdown-option-item').forEach(item => {
+            if (item.getAttribute('data-value') === moduleKey) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+        });
+
+        const wrap = document.getElementById('moduleFilterDropdownWrap');
+        if (wrap) wrap.classList.remove('open');
+        const btn = document.getElementById('moduleFilterDropdownBtn');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+
+        currentModPage = 1;
+        updateModulesPagination();
+    }
+
+    // Global listener to close custom dropdown on click outside or escape key
+    document.addEventListener('click', (e) => {
+        const wrap = document.getElementById('moduleFilterDropdownWrap');
+        if (wrap && wrap.classList.contains('open') && !wrap.contains(e.target)) {
+            wrap.classList.remove('open');
+            const btn = document.getElementById('moduleFilterDropdownBtn');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const wrap = document.getElementById('moduleFilterDropdownWrap');
+            if (wrap && wrap.classList.contains('open')) {
+                wrap.classList.remove('open');
+                const btn = document.getElementById('moduleFilterDropdownBtn');
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+            }
+        }
+    });
+
     function filterModulesByTag(moduleKey, btnElement) {
         currentModuleFilter = moduleKey;
-        document.querySelectorAll('#moduleFilterGroup .role-filter-pill').forEach(b => b.classList.remove('active'));
-        if (btnElement) btnElement.classList.add('active');
         currentModPage = 1;
         updateModulesPagination();
     }
@@ -1965,4 +2344,59 @@ table#modulesMasterTable td {
         setTimeout(updateModulesPagination, 60);
     }
 </script>
+
+{{-- SweetAlert2 Notificaciones de Sesión (Guardar, Editar, Eliminar) --}}
+@if(session('success'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '¡Operación Exitosa!',
+                    text: @json(session('success')),
+                    icon: 'success',
+                    confirmButtonText: 'Aceptar',
+                    confirmButtonColor: '#00b5e2',
+                    timer: 3500,
+                    timerProgressBar: true,
+                    borderRadius: '16px'
+                });
+            }
+        });
+    </script>
+@endif
+
+@if(session('error'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Atención',
+                    text: @json(session('error')),
+                    icon: 'error',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#ef4444',
+                    borderRadius: '16px'
+                });
+            }
+        });
+    </script>
+@endif
+
+@if($errors->any())
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof Swal !== 'undefined') {
+                const errorMessages = @json($errors->all()).join('<br>');
+                Swal.fire({
+                    title: 'Error en el formulario',
+                    html: errorMessages,
+                    icon: 'error',
+                    confirmButtonText: 'Revisar',
+                    confirmButtonColor: '#ef4444',
+                    borderRadius: '16px'
+                });
+            }
+        });
+    </script>
+@endif
 @endpush

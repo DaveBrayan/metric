@@ -24,16 +24,36 @@ class OpacityController extends Controller
 
         $module = MeasurementModule::with(['project.company', 'equipment', 'fieldStaff'])->findOrFail($moduleId);
 
-        // Resuelve información técnica del encabezado
-        $projectName = $module->project ? $module->project->name : 'Proyecto';
-        $companyName = ($module->project && $module->project->company) ? $module->project->company->name : '';
-        $defaultInstallation = $projectName . ($companyName ? " - {$companyName}" : '');
-        $installationName = $module->installation_name ?: $defaultInstallation;
+        // Resuelve información técnica del encabezado: Razón Social de la empresa o proyecto
+        $project = $module->project;
+        $company = $project ? $project->company : null;
+        $projectName = $project ? $project->name : 'Proyecto General';
+        $companyName = $company ? $company->name : 'Empresa';
+        
+        $razonSocial = '';
+        if ($project) {
+            if (!empty($project->razon_social)) {
+                $razonSocial = $project->razon_social;
+            } elseif ($company && !empty($company->legal_name)) {
+                $razonSocial = $company->legal_name;
+            } elseif ($company && !empty($company->name)) {
+                $razonSocial = $company->name;
+            } else {
+                $razonSocial = $project->name;
+            }
+        }
+
+        $oldDefault = ($project ? $project->name : '') . ($company ? " - {$company->name}" : '');
+        if (empty($module->installation_name) || $module->installation_name === $oldDefault || $module->installation_name === 'PACHABOL - PLANTA CENTRAL EMV') {
+            $installationName = $razonSocial ?: ($module->installation_name ?: 'Instalación');
+        } else {
+            $installationName = $module->installation_name ?: $razonSocial;
+        }
 
         $startDateRaw = $module->start_date ? $module->start_date->format('Y-m-d') : '';
         $endDateRaw = $module->end_date ? $module->end_date->format('Y-m-d') : '';
-        $startDateFormatted = $module->start_date ? $module->start_date->format('d/m/Y') : '';
-        $endDateFormatted = $module->end_date ? $module->end_date->format('d/m/Y') : '';
+        $startDateFormatted = $module->start_date ? $module->start_date->format('d/m/Y') : ($module->created_at ? $module->created_at->format('d/m/Y') : date('d/m/Y'));
+        $endDateFormatted = $module->end_date ? $module->end_date->format('d/m/Y') : ($module->created_at ? $module->created_at->format('d/m/Y') : date('d/m/Y'));
 
         $monitoringType = $module->monitoring_type ?: 'Emisión de Humos Vehiculares';
 
@@ -90,6 +110,8 @@ class OpacityController extends Controller
                 'date_raw' => $item->measurement_date ? $item->measurement_date->format('Y-m-d') : '',
                 'time_raw' => $item->measurement_time ?: '',
                 'tipo_vehiculo' => $item->tipo_vehiculo ?: 'Vehículo',
+                'area' => $item->area ?: '',
+                'altitud' => $item->altitud ?: '1500-3000',
                 'marca' => $item->marca ?: '',
                 'modelo' => $item->modelo ?: '',
                 'placa' => $item->placa ?: '',
@@ -167,23 +189,36 @@ class OpacityController extends Controller
             'limite_normativa' => 'nullable|numeric',
         ]);
 
-        $opa1 = $request->filled('opa_1') ? (float) $request->input('opa_1') : null;
-        $opa2 = $request->filled('opa_2') ? (float) $request->input('opa_2') : null;
-        $opa3 = $request->filled('opa_3') ? (float) $request->input('opa_3') : null;
+        $cleanFloat = function($val) {
+            if ($val === null || $val === '') return null;
+            if (is_numeric($val)) return (float) $val;
+            $clean = str_replace([' ', ','], ['', '.'], (string) $val);
+            return is_numeric($clean) ? (float) $clean : null;
+        };
 
-        $rpm1 = $request->filled('rpm_1') ? (float) $request->input('rpm_1') : null;
-        $rpm2 = $request->filled('rpm_2') ? (float) $request->input('rpm_2') : null;
-        $rpm3 = $request->filled('rpm_3') ? (float) $request->input('rpm_3') : null;
+        $opa1 = $cleanFloat($request->input('opa_1'));
+        $opa2 = $cleanFloat($request->input('opa_2'));
+        $opa3 = $cleanFloat($request->input('opa_3'));
+
+        $rpm1 = $cleanFloat($request->input('rpm_1'));
+        $rpm2 = $cleanFloat($request->input('rpm_2'));
+        $rpm3 = $cleanFloat($request->input('rpm_3'));
 
         // Calcula promedio de opacidad
         $opaVals = array_values(array_filter([$opa1, $opa2, $opa3], fn($v) => $v !== null));
-        $opaPromedio = count($opaVals) > 0 ? round(array_sum($opaVals) / count($opaVals), 2) : ($request->filled('opa_promedio') ? (float) $request->input('opa_promedio') : null);
+        $opaPromedio = count($opaVals) > 0 ? round(array_sum($opaVals) / count($opaVals), 2) : $cleanFloat($request->input('opa_promedio'));
 
-        // Calcula promedio de RPM
+        // Calcula promedio de RPM (sin redondear a entero)
         $rpmVals = array_values(array_filter([$rpm1, $rpm2, $rpm3], fn($v) => $v !== null));
-        $rpmPromedio = count($rpmVals) > 0 ? round(array_sum($rpmVals) / count($rpmVals), 0) : ($request->filled('rpm_promedio') ? (float) $request->input('rpm_promedio') : null);
+        $rpmPromedio = count($rpmVals) > 0 ? round(array_sum($rpmVals) / count($rpmVals), 2) : $cleanFloat($request->input('rpm_promedio'));
 
-        $limite = $request->filled('limite_normativa') ? (float) $request->input('limite_normativa') : 50.0;
+        $altitud = $request->input('altitud', '1500-3000');
+        $defaultLimits = [
+            '0-1500' => 2.44,
+            '1500-3000' => 2.80,
+            '3000-4500' => 3.22,
+        ];
+        $limite = $request->filled('limite_normativa') ? $cleanFloat($request->input('limite_normativa')) : ($defaultLimits[$altitud] ?? 2.80);
         $isCompliant = ($opaPromedio !== null) ? ($opaPromedio <= $limite) : true;
 
         // Subida de fotografías
@@ -212,6 +247,8 @@ class OpacityController extends Controller
         $measurement->point_number = $pointNum;
         $measurement->measurement_date = $request->input('measurement_date') ?: Carbon::today();
         $measurement->measurement_time = $request->input('measurement_time') ?: Carbon::now()->format('H:i');
+        $measurement->area = $request->input('area') ?? $request->input('sector') ?? $request->input('area_sector');
+        $measurement->altitud = $altitud;
 
         $measurement->tipo_vehiculo = $request->input('tipo_vehiculo');
         $measurement->marca = $request->input('marca');
@@ -272,24 +309,51 @@ class OpacityController extends Controller
             'limite_normativa' => 'nullable|numeric',
         ]);
 
-        $opa1 = $request->filled('opa_1') ? (float) $request->input('opa_1') : null;
-        $opa2 = $request->filled('opa_2') ? (float) $request->input('opa_2') : null;
-        $opa3 = $request->filled('opa_3') ? (float) $request->input('opa_3') : null;
+        $cleanFloat = function($val) {
+            if ($val === null || $val === '') return null;
+            if (is_numeric($val)) return (float) $val;
+            $clean = str_replace([' ', ','], ['', '.'], (string) $val);
+            return is_numeric($clean) ? (float) $clean : null;
+        };
 
-        $rpm1 = $request->filled('rpm_1') ? (float) $request->input('rpm_1') : null;
-        $rpm2 = $request->filled('rpm_2') ? (float) $request->input('rpm_2') : null;
-        $rpm3 = $request->filled('rpm_3') ? (float) $request->input('rpm_3') : null;
+        $opa1 = $cleanFloat($request->input('opa_1'));
+        $opa2 = $cleanFloat($request->input('opa_2'));
+        $opa3 = $cleanFloat($request->input('opa_3'));
+
+        $rpm1 = $cleanFloat($request->input('rpm_1'));
+        $rpm2 = $cleanFloat($request->input('rpm_2'));
+        $rpm3 = $cleanFloat($request->input('rpm_3'));
 
         $opaVals = array_values(array_filter([$opa1, $opa2, $opa3], fn($v) => $v !== null));
-        $opaPromedio = count($opaVals) > 0 ? round(array_sum($opaVals) / count($opaVals), 2) : ($request->filled('opa_promedio') ? (float) $request->input('opa_promedio') : $measurement->opa_promedio);
+        $opaPromedio = count($opaVals) > 0 ? round(array_sum($opaVals) / count($opaVals), 2) : ($cleanFloat($request->input('opa_promedio')) ?? $measurement->opa_promedio);
 
         $rpmVals = array_values(array_filter([$rpm1, $rpm2, $rpm3], fn($v) => $v !== null));
-        $rpmPromedio = count($rpmVals) > 0 ? round(array_sum($rpmVals) / count($rpmVals), 0) : ($request->filled('rpm_promedio') ? (float) $request->input('rpm_promedio') : $measurement->rpm_promedio);
+        $rpmPromedio = count($rpmVals) > 0 ? round(array_sum($rpmVals) / count($rpmVals), 2) : ($cleanFloat($request->input('rpm_promedio')) ?? $measurement->rpm_promedio);
 
-        $limite = $request->filled('limite_normativa') ? (float) $request->input('limite_normativa') : ($measurement->limite_normativa ?: 50.0);
+        $altitud = $request->input('altitud', $measurement->altitud ?: '1500-3000');
+        $defaultLimits = [
+            '0-1500' => 2.44,
+            '1500-3000' => 2.80,
+            '3000-4500' => 3.22,
+        ];
+        $limite = $request->filled('limite_normativa') ? $cleanFloat($request->input('limite_normativa')) : ($defaultLimits[$altitud] ?? ($measurement->limite_normativa ?: 2.80));
         $isCompliant = ($opaPromedio !== null) ? ($opaPromedio <= $limite) : true;
 
         $photoPaths = $measurement->photo_paths ?: [];
+        if ($request->filled('remaining_images')) {
+            $remaining = json_decode($request->input('remaining_images'), true);
+            if (is_array($remaining)) {
+                $photoPaths = [];
+                foreach ($remaining as $p) {
+                    $cleanPath = preg_replace('#^https?://[^/]+/#i', '', (string)$p);
+                    $cleanPath = ltrim($cleanPath, '/');
+                    if (!empty($cleanPath) && !str_starts_with($cleanPath, 'data:')) {
+                        $photoPaths[] = $cleanPath;
+                    }
+                }
+            }
+        }
+
         if ($request->hasFile('photos')) {
             $destPath = public_path('uploads/measurements/opacity');
             if (!File::isDirectory($destPath)) {
@@ -304,6 +368,22 @@ class OpacityController extends Controller
             }
         }
 
+        if ($request->hasFile('images')) {
+            $destPath = public_path('uploads/measurements/opacity');
+            if (!File::isDirectory($destPath)) {
+                File::makeDirectory($destPath, 0755, true, true);
+            }
+            foreach ($request->file('images') as $file) {
+                if ($file->isValid()) {
+                    $fileName = 'opa_' . $module->id . '_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    $file->move($destPath, $fileName);
+                    $photoPaths[] = 'uploads/measurements/opacity/' . $fileName;
+                }
+            }
+        }
+
+        $measurement->photo_paths = array_values(array_unique($photoPaths));
+
         $measurement->staff_id = $request->input('staff_id') ?: $measurement->staff_id;
         if ($request->filled('measurement_date')) {
             $measurement->measurement_date = $request->input('measurement_date');
@@ -312,12 +392,17 @@ class OpacityController extends Controller
             $measurement->measurement_time = $request->input('measurement_time');
         }
 
+        if ($request->has('area') || $request->has('sector') || $request->has('area_sector')) {
+            $measurement->area = $request->input('area') ?? $request->input('sector') ?? $request->input('area_sector');
+        }
+        $measurement->altitud = $altitud;
+
         $measurement->tipo_vehiculo = $request->input('tipo_vehiculo');
         $measurement->marca = $request->input('marca');
         $measurement->modelo = $request->input('modelo');
         $measurement->placa = strtoupper(trim($request->input('placa')));
 
-        $measurement->temp_c = $request->filled('temp_c') ? (float) $request->input('temp_c') : $measurement->temp_c;
+        $measurement->temp_c = $request->filled('temp_c') ? $cleanFloat($request->input('temp_c')) : $measurement->temp_c;
         $measurement->opa_1 = $opa1;
         $measurement->opa_2 = $opa2;
         $measurement->opa_3 = $opa3;
@@ -344,14 +429,13 @@ class OpacityController extends Controller
         if ($request->filled('utm_northing')) {
             $measurement->utm_northing = (float) $request->input('utm_northing');
         }
-        if ($request->filled('location_description')) {
-            $measurement->location_description = $request->input('location_description');
+        if ($request->filled('location_description') || $request->filled('location')) {
+            $measurement->location_description = $request->input('location_description') ?: $request->input('location');
         }
-        if ($request->filled('observations')) {
+        if ($request->has('observations')) {
             $measurement->observations = $request->input('observations');
         }
 
-        $measurement->photo_paths = $photoPaths;
         $measurement->save();
 
         if ($request->ajax() || $request->wantsJson()) {
@@ -466,5 +550,208 @@ class OpacityController extends Controller
         $lng = ($zone - 1) * 6 - 180 + 3 + rad2deg($lng);
 
         return ['lat' => round($lat, 6), 'lng' => round($lng, 6)];
+    }
+
+    /**
+     * Display the official technical report page for Opacity monitoring (Landscape Sheet with Table 1 & Table 2).
+     */
+    public function showReport($moduleId)
+    {
+        $currentUser = Auth::user();
+        $userName = $currentUser ? $currentUser->name : 'Reynaldo';
+        $userRole = $currentUser ? $currentUser->role : 'Superadministrador';
+
+        $module = MeasurementModule::with(['project.company', 'equipment', 'fieldStaff'])->findOrFail($moduleId);
+
+        // Technical Header Information: Razón Social
+        $project = $module->project;
+        $company = $project ? $project->company : null;
+        $razonSocial = '';
+        if ($project) {
+            if (!empty($project->razon_social)) {
+                $razonSocial = $project->razon_social;
+            } elseif ($company && !empty($company->legal_name)) {
+                $razonSocial = $company->legal_name;
+            } elseif ($company && !empty($company->name)) {
+                $razonSocial = $company->name;
+            } else {
+                $razonSocial = $project->name;
+            }
+        }
+
+        $oldDefault = ($project ? $project->name : '') . ($company ? " - {$company->name}" : '');
+        if (empty($module->installation_name) || $module->installation_name === $oldDefault || $module->installation_name === 'PACHABOL - PLANTA CENTRAL EMV') {
+            $installationName = $razonSocial ?: ($module->installation_name ?: 'Instalación');
+        } else {
+            $installationName = $module->installation_name ?: $razonSocial;
+        }
+
+        $startDateRaw = $module->start_date ? $module->start_date->format('Y-m-d') : '';
+        $endDateRaw = $module->end_date ? $module->end_date->format('Y-m-d') : '';
+        $startDateFormatted = $module->start_date ? $module->start_date->format('d/m/Y') : ($module->created_at ? $module->created_at->format('d/m/Y') : date('d/m/Y'));
+        $endDateFormatted = $module->end_date ? $module->end_date->format('d/m/Y') : ($module->created_at ? $module->created_at->format('d/m/Y') : date('d/m/Y'));
+
+        $monitoringType = $module->monitoring_type ?: 'Emisión de Humos Vehiculares';
+
+        // Assigned Equipment
+        $equipment = $module->equipment;
+        $reportSettings = $module->photo_report_settings ?: [];
+
+        $equipmentName = !empty($reportSettings['equipment_name']) ? $reportSettings['equipment_name'] : ($equipment ? ($equipment->name ?: 'Opacímetro de Flujo Parcial') : ($module->calibration_equipment ?: 'Opacímetro de Flujo Parcial'));
+        $equipmentBrand = !empty($reportSettings['equipment_brand']) ? $reportSettings['equipment_brand'] : ($equipment ? ($equipment->brand ?: 'BRAIN BEE') : 'BRAIN BEE');
+        $equipmentModel = !empty($reportSettings['equipment_model']) ? $reportSettings['equipment_model'] : ($equipment ? ($equipment->model ?: 'OPA-100') : 'OPA-100');
+        $equipmentSerial = !empty($reportSettings['equipment_serial']) ? $reportSettings['equipment_serial'] : ($equipment ? ($equipment->serial_number ?: 'OP-88341') : 'OP-88341');
+
+        // Staff
+        $assignedStaff = $module->getAssignedStaffAttribute();
+        if ($assignedStaff && $assignedStaff->isNotEmpty()) {
+            $registeredByHeader = $assignedStaff->pluck('name')->implode(', ');
+        } else {
+            $registeredByHeader = $currentUser ? $currentUser->name : 'Técnico de Campo';
+        }
+
+        // Measurements List (Datos reales registrados desde la App Móvil o Web)
+        $dbMeasurements = $module->opacityMeasurements()->with('staff')->get();
+        $vehiclesList = [];
+
+        foreach ($dbMeasurements as $index => $item) {
+            $parseNum = function($v) {
+                if ($v === null || $v === '') return null;
+                if (is_numeric($v)) return (float) $v;
+                $clean = str_replace([' ', ','], ['', '.'], (string) $v);
+                return is_numeric($clean) ? (float) $clean : null;
+            };
+
+            $opa1 = $parseNum($item->opa_1);
+            $opa2 = $parseNum($item->opa_2);
+            $opa3 = $parseNum($item->opa_3);
+
+            $opaVals = array_values(array_filter([$opa1, $opa2, $opa3], fn($v) => $v !== null));
+            $mediaK = count($opaVals) > 0 ? (array_sum($opaVals) / count($opaVals)) : $parseNum($item->opa_promedio);
+
+            $rpm1 = $parseNum($item->rpm_1);
+            $rpm2 = $parseNum($item->rpm_2);
+            $rpm3 = $parseNum($item->rpm_3);
+            $rpmVals = array_values(array_filter([$rpm1, $rpm2, $rpm3], fn($v) => $v !== null));
+            $rpmAvg = count($rpmVals) > 0 ? (array_sum($rpmVals) / count($rpmVals)) : $parseNum($item->rpm_promedio);
+
+            $limite = $item->limite_normativa !== null ? (float) $item->limite_normativa : 2.80;
+            $cumple = ($mediaK !== null) ? ($mediaK <= $limite ? 'Cumple' : 'No cumple') : ($item->is_compliant ? 'Cumple' : 'No cumple');
+
+            // Coordenadas
+            $coords = '';
+            if ($item->latitude !== null && $item->longitude !== null) {
+                $coords = number_format($item->latitude, 5) . ', ' . number_format($item->longitude, 5);
+            } elseif ($item->utm_easting !== null && $item->utm_northing !== null) {
+                $coords = 'E:' . number_format($item->utm_easting, 1) . ' N:' . number_format($item->utm_northing, 1);
+            } elseif (!empty($item->location_description)) {
+                $coords = $item->location_description;
+            }
+
+            // Fecha y hora
+            $mDate = $item->measurement_date;
+            if (!$mDate && !empty($item->created_at)) {
+                $mDate = $item->created_at;
+            }
+            $fechaMedicion = '';
+            if ($mDate) {
+                $fechaMedicion = is_string($mDate) ? Carbon::parse($mDate)->format('d/m/Y') : $mDate->format('d/m/Y');
+            }
+
+            $horaMedicion = '';
+            if (!empty($item->measurement_time)) {
+                $horaMedicion = substr($item->measurement_time, 0, 5);
+            } elseif (!empty($item->created_at)) {
+                $horaMedicion = $item->created_at->format('H:i');
+            }
+
+            $vehiclesList[] = [
+                'id' => $item->id,
+                'num' => $index + 1,
+                'area' => $item->area ?: 'Área Operativa',
+                'coordenadas' => $coords,
+                'altitud' => $item->altitud ?: ($reportSettings['altitud'] ?? '1500-3000'),
+                'fecha_medicion' => $fechaMedicion,
+                'hora_medicion' => $horaMedicion,
+                'nombre_vehiculo' => $item->tipo_vehiculo ?: ($item->point_number ?: 'Vehículo #' . ($index + 1)),
+                'marca' => $item->marca ?: '—',
+                'modelo' => $item->modelo ?: '—',
+                'placa' => $item->placa ?: '—',
+                'temp_c' => $item->temp_c !== null ? number_format((float)$item->temp_c, 1, ',', '.') : '—',
+                'rpm' => $rpmAvg !== null ? number_format($rpmAvg, 2, ',', '.') : '—',
+                'lectura_1' => $opa1 !== null ? number_format($opa1, 2, ',', '.') : '—',
+                'lectura_2' => $opa2 !== null ? number_format($opa2, 2, ',', '.') : '—',
+                'lectura_3' => $opa3 !== null ? number_format($opa3, 2, ',', '.') : '—',
+                'media_k' => $mediaK !== null ? number_format($mediaK, 2, ',', '.') : '—',
+                'limite_permisible' => number_format($limite, 2, ',', '.'),
+                'observaciones_tab1' => $item->observations ?: 'Sin observaciones',
+                'observaciones_tab2' => $cumple,
+                'is_compliant' => ($cumple === 'Cumple'),
+            ];
+        }
+
+        return view('measurements.opacidades.report', compact(
+            'module',
+            'installationName',
+            'startDateRaw',
+            'endDateRaw',
+            'startDateFormatted',
+            'endDateFormatted',
+            'monitoringType',
+            'equipmentName',
+            'equipmentBrand',
+            'equipmentModel',
+            'equipmentSerial',
+            'registeredByHeader',
+            'vehiclesList',
+            'reportSettings',
+            'userName',
+            'userRole'
+        ));
+    }
+
+    /**
+     * Save/autosave report header settings or overrides for opacity.
+     */
+    public function saveReportData(Request $request, $moduleId)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+
+        if ($request->has('installation_name')) {
+            $module->installation_name = $request->input('installation_name');
+        }
+        if ($request->has('start_date')) {
+            $module->start_date = $request->input('start_date') ?: null;
+        }
+        if ($request->has('end_date')) {
+            $module->end_date = $request->input('end_date') ?: null;
+        }
+        if ($request->has('monitoring_type')) {
+            $module->monitoring_type = $request->input('monitoring_type');
+        }
+
+        $settings = $module->photo_report_settings ?: [];
+        if ($request->has('equipment_name')) {
+            $settings['equipment_name'] = $request->input('equipment_name');
+        }
+        if ($request->has('equipment_brand')) {
+            $settings['equipment_brand'] = $request->input('equipment_brand');
+        }
+        if ($request->has('equipment_model')) {
+            $settings['equipment_model'] = $request->input('equipment_model');
+        }
+        if ($request->has('equipment_serial')) {
+            $settings['equipment_serial'] = $request->input('equipment_serial');
+        }
+        if ($request->has('altitud')) {
+            $settings['altitud'] = $request->input('altitud');
+        }
+        $module->photo_report_settings = $settings;
+        $module->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Informe de opacidad guardado correctamente.',
+        ]);
     }
 }

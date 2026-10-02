@@ -233,6 +233,47 @@
     letter-spacing: 0.3px;
 }
 
+/* Contenedor Flex para Tarjeta de Equipo (Distribución perfecta con filas al 100% de altura) */
+.tech-card-body-flex {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    flex: 1;
+    width: 100%;
+    height: 100%;
+}
+
+.tech-table-equipment {
+    flex: 1;
+    height: 100%;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tech-table-equipment tr {
+    height: 25%;
+    border-bottom: 1.5px solid #cbd5e1;
+}
+
+.tech-table-equipment tr:last-child {
+    border-bottom: none;
+}
+
+.tech-eq-photo-container {
+    width: 32%;
+    min-width: 115px;
+    max-width: 160px;
+    background: #ffffff;
+    border-left: 1.5px solid #cbd5e1;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
 .tech-eq-photo-cell {
     width: 32%;
     text-align: center;

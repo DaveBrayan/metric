@@ -1,25 +1,7 @@
     <!-- 3. Tabla Maestra de Mediciones de Ventilación -->
     <div class="ventilation-table-card">
-        <!-- Toolbar & Filtros -->
-        <div class="ventilation-toolbar">
-            <div class="table-filter-pills" id="ventilationFilterGroup">
-                <button type="button" class="filter-pill-btn active" onclick="filterVentilation('all', this)">
-                    Todos ({{ $totalMeasurements }})
-                </button>
-                <button type="button" class="filter-pill-btn" onclick="filterVentilation('compliant', this)">
-                    Conformes
-                </button>
-                <button type="button" class="filter-pill-btn" onclick="filterVentilation('non-compliant', this)">
-                    No Conformes
-                </button>
-                <button type="button" class="filter-pill-btn" onclick="filterVentilation('Natural', this)">
-                    Natural
-                </button>
-                <button type="button" class="filter-pill-btn" onclick="filterVentilation('Mecánica', this)">
-                    Mecánica
-                </button>
-            </div>
-
+        <!-- Toolbar (Buscador a la Derecha) -->
+        <div class="ventilation-toolbar" style="display: flex; justify-content: flex-end;">
             <div class="search-box-pill">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2"
                     stroke-linecap="round" stroke-linejoin="round" class="search-icon-inside">

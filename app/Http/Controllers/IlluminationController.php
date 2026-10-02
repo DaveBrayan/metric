@@ -24,11 +24,28 @@ class IlluminationController extends Controller
 
         $module = MeasurementModule::with(['project.company', 'equipment', 'fieldStaff'])->findOrFail($moduleId);
 
-        // Resuelve información técnica del encabezado (fiel a la captura)
-        $projectName = $module->project ? $module->project->name : 'Proyecto';
-        $companyName = ($module->project && $module->project->company) ? $module->project->company->name : '';
-        $defaultInstallation = $projectName . ($companyName ? " - {$companyName}" : '');
-        $installationName = $module->installation_name ?: $defaultInstallation;
+        // Resuelve información técnica del encabezado: Razón Social de la empresa o proyecto para Instalación
+        $project = $module->project;
+        $company = $project ? $project->company : null;
+        $razonSocial = '';
+        if ($project) {
+            if (!empty($project->razon_social)) {
+                $razonSocial = $project->razon_social;
+            } elseif ($company && !empty($company->legal_name)) {
+                $razonSocial = $company->legal_name;
+            } elseif ($company && !empty($company->name)) {
+                $razonSocial = $company->name;
+            } else {
+                $razonSocial = $project->name;
+            }
+        }
+
+        $oldDefault = ($project ? $project->name : '') . ($company ? " - {$company->name}" : '');
+        if (empty($module->installation_name) || $module->installation_name === $oldDefault || $module->installation_name === 'PACHABOL - PLANTA CENTRAL EMV') {
+            $installationName = $razonSocial ?: ($module->installation_name ?: 'Instalación');
+        } else {
+            $installationName = $module->installation_name ?: $razonSocial;
+        }
 
         // Las fechas son exclusivas del módulo (no se heredan del proyecto)
         $startDateRaw = $module->start_date ? $module->start_date->format('Y-m-d') : '';
@@ -361,6 +378,13 @@ class IlluminationController extends Controller
             }
         }
 
+        $normalizePath = function($url) {
+            if (!$url || !is_string($url)) return '';
+            $parsed = parse_url($url, PHP_URL_PATH);
+            $path = $parsed ?: $url;
+            return ltrim($path, '/\\');
+        };
+
         $existingImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
         if (empty($existingImages) && !empty($measurement->image_path)) {
             $existingImages = [$measurement->image_path];
@@ -371,16 +395,23 @@ class IlluminationController extends Controller
             $rawRemaining = $request->input('remaining_images');
             $remaining = is_array($rawRemaining) ? $rawRemaining : json_decode($rawRemaining, true);
             if (is_array($remaining)) {
-                // Filtrar las imágenes que se mantienen
-                $existingImages = array_values(array_intersect($existingImages, $remaining));
+                $normalizedRemaining = array_map($normalizePath, $remaining);
+                $filteredExisting = [];
+                foreach ($existingImages as $img) {
+                    $norm = $normalizePath($img);
+                    if (in_array($norm, $normalizedRemaining) || in_array($img, $remaining)) {
+                        $filteredExisting[] = $img;
+                    }
+                }
+                $existingImages = $filteredExisting;
             }
         }
 
         if (!empty($uploadedImages)) {
-            $allImages = array_merge($existingImages, $uploadedImages);
+            $allImages = array_values(array_merge($existingImages, $uploadedImages));
             $imagePath = $allImages[0] ?? null;
         } else {
-            $allImages = $existingImages;
+            $allImages = array_values($existingImages);
             $imagePath = $allImages[0] ?? null;
         }
 
@@ -722,5 +753,272 @@ class IlluminationController extends Controller
             'lat' => $utmLat * 180.0 / M_PI,
             'lng' => $utmLon * 180.0 / M_PI,
         ];
+    }
+
+    /**
+     * Display the official technical report page for illumination monitoring (Landscape Sheet).
+     */
+    public function showReport($moduleId)
+    {
+        $currentUser = Auth::user();
+        $userName = $currentUser ? $currentUser->name : 'Reynaldo';
+        $userRole = $currentUser ? $currentUser->role : 'Superadministrador';
+
+        $module = MeasurementModule::with(['project.company', 'equipment', 'fieldStaff'])->findOrFail($moduleId);
+
+        // Technical Header Information: Razón Social de la empresa o proyecto para Instalación
+        $project = $module->project;
+        $company = $project ? $project->company : null;
+        $razonSocial = '';
+        if ($project) {
+            if (!empty($project->razon_social)) {
+                $razonSocial = $project->razon_social;
+            } elseif ($company && !empty($company->legal_name)) {
+                $razonSocial = $company->legal_name;
+            } elseif ($company && !empty($company->name)) {
+                $razonSocial = $company->name;
+            } else {
+                $razonSocial = $project->name;
+            }
+        }
+
+        $oldDefault = ($project ? $project->name : '') . ($company ? " - {$company->name}" : '');
+        if (empty($module->installation_name) || $module->installation_name === $oldDefault || $module->installation_name === 'PACHABOL - PLANTA CENTRAL EMV') {
+            $installationName = $razonSocial ?: ($module->installation_name ?: 'Instalación');
+        } else {
+            $installationName = $module->installation_name ?: $razonSocial;
+        }
+
+        $startDateRaw = $module->start_date ? $module->start_date->format('Y-m-d') : '';
+        $endDateRaw = $module->end_date ? $module->end_date->format('Y-m-d') : '';
+        $startDateFormatted = $module->start_date ? $module->start_date->format('d/m/Y') : ($module->created_at ? $module->created_at->format('d/m/Y') : date('d/m/Y'));
+        $endDateFormatted = $module->end_date ? $module->end_date->format('d/m/Y') : ($module->created_at ? $module->created_at->format('d/m/Y') : date('d/m/Y'));
+
+        $monitoringType = $module->monitoring_type ?: 'Seguimiento';
+
+        // Assigned Equipment
+        $equipment = $module->equipment;
+        $reportSettings = $module->photo_report_settings ?: [];
+
+        $equipmentName = !empty($reportSettings['equipment_name']) ? $reportSettings['equipment_name'] : ($equipment ? ($equipment->name ?: 'LUXÓMETRO - PCE') : ($module->calibration_equipment ?: 'LUXÓMETRO - PCE'));
+        $equipmentBrand = !empty($reportSettings['equipment_brand']) ? $reportSettings['equipment_brand'] : ($equipment ? ($equipment->brand ?: 'PCE') : 'PCE');
+        $equipmentModel = !empty($reportSettings['equipment_model']) ? $reportSettings['equipment_model'] : ($equipment ? ($equipment->model ?: 'PCE - 174') : 'PCE - 174');
+        $equipmentSerial = !empty($reportSettings['equipment_serial']) ? $reportSettings['equipment_serial'] : ($equipment ? ($equipment->serial_number ?: '150206371') : '150206371');
+
+        // Staff
+        $assignedStaff = $module->getAssignedStaffAttribute();
+        if ($assignedStaff && $assignedStaff->isNotEmpty()) {
+            $registeredByHeader = $assignedStaff->pluck('name')->implode(', ');
+        } else {
+            $registeredByHeader = $currentUser ? $currentUser->name : 'Técnico de Campo';
+        }
+
+        // Measurements List
+        $dbMeasurements = $module->illuminationMeasurements()->with('staff')->get();
+        $measurementsList = [];
+
+        if ($dbMeasurements->isNotEmpty()) {
+            foreach ($dbMeasurements as $index => $item) {
+                $dateFormatted = $item->measurement_date ? $item->measurement_date->format('d/m/Y') : '—';
+                $measuredLux = (float) $item->measured_lux;
+                $requiredLux = (float) $item->required_lux;
+                
+                $readingsList = is_array($item->readings) ? $item->readings : (json_decode($item->readings, true) ?: []);
+                
+                // Extract valid numeric readings
+                $numericReadings = [];
+                if (!empty($readingsList) && is_array($readingsList)) {
+                    foreach ($readingsList as $v) {
+                        if ($v !== null && $v !== '' && is_numeric($v)) {
+                            $numericReadings[] = (float)$v;
+                        }
+                    }
+                }
+                if (empty($numericReadings) && $measuredLux > 0) {
+                    $numericReadings = [$measuredLux];
+                }
+
+                $hasReadings = count($numericReadings) > 0;
+                $minVal = $hasReadings ? min($numericReadings) : ($measuredLux > 0 ? $measuredLux : 0);
+                $maxVal = $hasReadings ? max($numericReadings) : ($measuredLux > 0 ? $measuredLux : 0);
+                $avgVal = $hasReadings ? (array_sum($numericReadings) / count($numericReadings)) : ($measuredLux > 0 ? $measuredLux : 0);
+                $isCumple = $avgVal >= $requiredLux;
+
+                $measurementsList[] = [
+                    'id' => $item->id,
+                    'num' => $item->point_number ?: ($index + 1),
+                    'date' => $dateFormatted,
+                    'time' => $item->measurement_time ?: '—',
+                    'area' => $item->area ?: '—',
+                    'workstation' => $item->workstation ?: '—',
+                    'measurement_point' => $item->measurement_point ?: '—',
+                    'activity_description' => $item->activity_description ?: '—',
+                    'lighting_type' => $item->lighting_type ?: 'Natural',
+                    'required_lux' => $requiredLux,
+                    'readings' => $numericReadings,
+                    'min_lux' => $minVal,
+                    'max_lux' => $maxVal,
+                    'avg_lux' => $avgVal,
+                    'is_compliant' => $isCumple,
+                    'compliance_text' => $isCumple ? 'Cumple' : 'No cumple',
+                    'observations' => ($item->observations && $item->observations !== 'Sin observaciones') ? $item->observations : '',
+                ];
+            }
+        } else {
+            // Mock sample rows matching the user's spreadsheet image for demonstration
+            $measurementsList = [
+                [
+                    'id' => 1,
+                    'num' => 1,
+                    'date' => '23/07/2026',
+                    'time' => '11:50:00',
+                    'area' => 'Destintado Cinta Transportadora',
+                    'workstation' => 'Carga de materia prima',
+                    'measurement_point' => 'Ambiente de trabajo',
+                    'activity_description' => 'Supervisión intermitente',
+                    'lighting_type' => 'Natural',
+                    'required_lux' => 100.00,
+                    'readings' => [342.0, 324.0, 284.0, 224.0],
+                    'min_lux' => 224.0,
+                    'max_lux' => 342.0,
+                    'avg_lux' => 293.5,
+                    'is_compliant' => true,
+                    'compliance_text' => 'Cumple',
+                    'observations' => '',
+                ],
+                [
+                    'id' => 2,
+                    'num' => 2,
+                    'date' => '23/07/2026',
+                    'time' => '11:55:00',
+                    'area' => 'Destintado Tablero De Control',
+                    'workstation' => 'Operador de tablero de control',
+                    'measurement_point' => 'Puesto de trabajo',
+                    'activity_description' => 'Supervisión intermitente',
+                    'lighting_type' => 'Natural',
+                    'required_lux' => 100.00,
+                    'readings' => [173.0, 175.0, 326.0, 355.0],
+                    'min_lux' => 173.0,
+                    'max_lux' => 355.0,
+                    'avg_lux' => 257.0,
+                    'is_compliant' => true,
+                    'compliance_text' => 'Cumple',
+                    'observations' => 'Luminarias solo se enciende en las noches',
+                ],
+                [
+                    'id' => 3,
+                    'num' => 3,
+                    'date' => '24/07/2026',
+                    'time' => '12:01:00',
+                    'area' => 'Pulper De Baja Consistencia',
+                    'workstation' => 'Ambiente de trabajo',
+                    'measurement_point' => 'Puesto de trabajo',
+                    'activity_description' => 'Transporte o movimiento de materiales',
+                    'lighting_type' => 'Artificial',
+                    'required_lux' => 100.00,
+                    'readings' => [145.0, 188.0, 182.0, 104.0, 102.0, 160.0, 168.0, 135.0, 141.0, 147.0, 189.0, 170.0, 185.0, 146.0, 130.0, 136.0],
+                    'min_lux' => 102.0,
+                    'max_lux' => 189.0,
+                    'avg_lux' => 151.6,
+                    'is_compliant' => true,
+                    'compliance_text' => 'Cumple',
+                    'observations' => 'Mejorar la redistribución de la iluminación',
+                ],
+                [
+                    'id' => 4,
+                    'num' => 4,
+                    'date' => '24/07/2026',
+                    'time' => '12:18:00',
+                    'area' => 'Mesa De Formación',
+                    'workstation' => 'Ambiente de trabajo',
+                    'measurement_point' => 'Ambiente de trabajo',
+                    'activity_description' => 'Supervisión intermitente',
+                    'lighting_type' => 'Artificial',
+                    'required_lux' => 100.00,
+                    'readings' => [145.0, 162.0, 138.0, 89.0, 89.0, 102.0, 145.0, 146.0, 189.0],
+                    'min_lux' => 89.0,
+                    'max_lux' => 189.0,
+                    'avg_lux' => 133.9,
+                    'is_compliant' => true,
+                    'compliance_text' => 'Cumple',
+                    'observations' => 'Un foco no sirve',
+                ],
+            ];
+        }
+
+        // Determinar el número máximo de lecturas M llenadas dinámicamente
+        $maxReadingsCount = 0;
+        foreach ($measurementsList as $m) {
+            $cnt = (isset($m['readings']) && is_array($m['readings'])) ? count($m['readings']) : 0;
+            if ($cnt > $maxReadingsCount) {
+                $maxReadingsCount = $cnt;
+            }
+        }
+        if ($maxReadingsCount < 1) {
+            $maxReadingsCount = 4;
+        }
+
+        return view('measurements.iluminaciones.report', compact(
+            'module',
+            'installationName',
+            'startDateRaw',
+            'endDateRaw',
+            'startDateFormatted',
+            'endDateFormatted',
+            'monitoringType',
+            'equipmentName',
+            'equipmentBrand',
+            'equipmentModel',
+            'equipmentSerial',
+            'registeredByHeader',
+            'measurementsList',
+            'maxReadingsCount',
+            'reportSettings',
+            'userName',
+            'userRole'
+        ));
+    }
+
+    /**
+     * Save/autosave report header settings or overrides.
+     */
+    public function saveReportData(Request $request, $moduleId)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+
+        if ($request->has('installation_name')) {
+            $module->installation_name = $request->input('installation_name');
+        }
+        if ($request->has('start_date')) {
+            $module->start_date = $request->input('start_date') ?: null;
+        }
+        if ($request->has('end_date')) {
+            $module->end_date = $request->input('end_date') ?: null;
+        }
+        if ($request->has('monitoring_type')) {
+            $module->monitoring_type = $request->input('monitoring_type');
+        }
+
+        // Custom equipment overrides in photo_report_settings if provided
+        $settings = $module->photo_report_settings ?: [];
+        if ($request->has('equipment_name')) {
+            $settings['equipment_name'] = $request->input('equipment_name');
+        }
+        if ($request->has('equipment_brand')) {
+            $settings['equipment_brand'] = $request->input('equipment_brand');
+        }
+        if ($request->has('equipment_model')) {
+            $settings['equipment_model'] = $request->input('equipment_model');
+        }
+        if ($request->has('equipment_serial')) {
+            $settings['equipment_serial'] = $request->input('equipment_serial');
+        }
+        $module->photo_report_settings = $settings;
+        $module->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Informe guardado correctamente.',
+        ]);
     }
 }

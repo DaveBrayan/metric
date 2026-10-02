@@ -1,24 +1,6 @@
 <div class="ruido-table-card">
-    <!-- Toolbar & Filtros -->
-    <div class="ruido-toolbar">
-        <div class="table-filter-pills" id="ruidoFilterGroup">
-            <button type="button" class="filter-pill-btn active" onclick="filterRuidoAmbiental('all', this)">
-                Todos ({{ $totalMeasurements }})
-            </button>
-            <button type="button" class="filter-pill-btn" onclick="filterRuidoAmbiental('compliant', this)">
-                Conformes ({{ $compliantMeasurements }})
-            </button>
-            <button type="button" class="filter-pill-btn" onclick="filterRuidoAmbiental('non-compliant', this)">
-                No Conformes ({{ $nonCompliantMeasurements }})
-            </button>
-            <button type="button" class="filter-pill-btn" onclick="filterRuidoAmbiental('rasim', this)">
-                RASIM 12-C
-            </button>
-            <button type="button" class="filter-pill-btn" onclick="filterRuidoAmbiental('rmca', this)">
-                RMCA Anexo 6
-            </button>
-        </div>
-
+    <!-- Toolbar (Buscador a la Derecha) -->
+    <div class="ruido-toolbar" style="display: flex; justify-content: flex-end;">
         <div class="search-box-pill">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2"
                 stroke-linecap="round" stroke-linejoin="round" class="search-icon-inside">

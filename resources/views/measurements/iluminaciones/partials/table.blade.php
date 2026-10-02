@@ -1,28 +1,7 @@
-    <!-- 3. Tabla Maestra de Mediciones de Iluminación (Sin Observaciones) -->
+    <!-- 3. Tabla Maestra de Mediciones de Iluminación -->
     <div class="illumination-table-card">
-        <!-- Toolbar & Filtros -->
-        <div class="illumination-toolbar">
-            <div class="table-filter-pills" id="illuminationFilterGroup">
-                <button type="button" class="filter-pill-btn active" onclick="filterIllumination('all', this)">
-                    Todos ({{ $totalMeasurements }})
-                </button>
-                <button type="button" class="filter-pill-btn" onclick="filterIllumination('compliant', this)">
-                    Conformes
-                </button>
-                <button type="button" class="filter-pill-btn" onclick="filterIllumination('non-compliant', this)">
-                    No Conformes
-                </button>
-                <button type="button" class="filter-pill-btn" onclick="filterIllumination('Natural', this)">
-                    Natural
-                </button>
-                <button type="button" class="filter-pill-btn" onclick="filterIllumination('Artificial', this)">
-                    Artificial
-                </button>
-                <button type="button" class="filter-pill-btn" onclick="filterIllumination('Mixta', this)">
-                    Mixta
-                </button>
-            </div>
-
+        <!-- Toolbar (Buscador a la Derecha) -->
+        <div class="illumination-toolbar" style="display: flex; justify-content: flex-end;">
             <div class="search-box-pill">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2"
                     stroke-linecap="round" stroke-linejoin="round" class="search-icon-inside">

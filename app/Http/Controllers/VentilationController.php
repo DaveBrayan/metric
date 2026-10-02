@@ -92,11 +92,28 @@ class VentilationController extends Controller
 
         $module = MeasurementModule::with(['project.company', 'equipment', 'fieldStaff'])->findOrFail($moduleId);
 
-        // Resuelve información técnica del encabezado
-        $projectName = $module->project ? $module->project->name : 'Proyecto';
-        $companyName = ($module->project && $module->project->company) ? $module->project->company->name : '';
-        $defaultInstallation = $projectName . ($companyName ? " - {$companyName}" : '');
-        $installationName = $module->installation_name ?: $defaultInstallation;
+        // Resuelve información técnica del encabezado: Razón Social de la empresa o proyecto para Instalación
+        $project = $module->project;
+        $company = $project ? $project->company : null;
+        $razonSocial = '';
+        if ($project) {
+            if (!empty($project->razon_social)) {
+                $razonSocial = $project->razon_social;
+            } elseif ($company && !empty($company->legal_name)) {
+                $razonSocial = $company->legal_name;
+            } elseif ($company && !empty($company->name)) {
+                $razonSocial = $company->name;
+            } else {
+                $razonSocial = $project->name;
+            }
+        }
+
+        $oldDefault = ($project ? $project->name : '') . ($company ? " - {$company->name}" : '');
+        if (empty($module->installation_name) || $module->installation_name === $oldDefault || $module->installation_name === 'PACHABOL - PLANTA CENTRAL EMV') {
+            $installationName = $razonSocial ?: ($module->installation_name ?: 'Instalación');
+        } else {
+            $installationName = $module->installation_name ?: $razonSocial;
+        }
 
         $startDateRaw = $module->start_date ? $module->start_date->format('Y-m-d') : '';
         $endDateRaw = $module->end_date ? $module->end_date->format('Y-m-d') : '';
@@ -545,6 +562,13 @@ class VentilationController extends Controller
             }
         }
 
+        $normalizePath = function($url) {
+            if (!$url || !is_string($url)) return '';
+            $parsed = parse_url($url, PHP_URL_PATH);
+            $path = $parsed ?: $url;
+            return ltrim($path, '/\\');
+        };
+
         $existingImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
         if (empty($existingImages) && !empty($measurement->image_path)) {
             $existingImages = [$measurement->image_path];
@@ -554,15 +578,23 @@ class VentilationController extends Controller
             $rawRemaining = $request->input('remaining_images');
             $remaining = is_array($rawRemaining) ? $rawRemaining : json_decode($rawRemaining, true);
             if (is_array($remaining)) {
-                $existingImages = array_values(array_intersect($existingImages, $remaining));
+                $normalizedRemaining = array_map($normalizePath, $remaining);
+                $filteredExisting = [];
+                foreach ($existingImages as $img) {
+                    $norm = $normalizePath($img);
+                    if (in_array($norm, $normalizedRemaining) || in_array($img, $remaining)) {
+                        $filteredExisting[] = $img;
+                    }
+                }
+                $existingImages = $filteredExisting;
             }
         }
 
         if (!empty($uploadedImages)) {
-            $allImages = array_merge($existingImages, $uploadedImages);
+            $allImages = array_values(array_merge($existingImages, $uploadedImages));
             $imagePath = $allImages[0] ?? null;
         } else {
-            $allImages = $existingImages;
+            $allImages = array_values($existingImages);
             $imagePath = $allImages[0] ?? null;
         }
 
@@ -897,5 +929,257 @@ class VentilationController extends Controller
             'lat' => $utmLat * 180.0 / M_PI,
             'lng' => $utmLon * 180.0 / M_PI,
         ];
+    }
+
+    /**
+     * Display the official technical report page for ventilation monitoring (Landscape Sheet).
+     */
+    public function showReport($moduleId)
+    {
+        $currentUser = Auth::user();
+        $userName = $currentUser ? $currentUser->name : 'Reynaldo';
+        $userRole = $currentUser ? $currentUser->role : 'Superadministrador';
+
+        $module = MeasurementModule::with(['project.company', 'equipment', 'fieldStaff'])->findOrFail($moduleId);
+
+        // Technical Header Information: Razón Social de la empresa o proyecto para Instalación
+        $project = $module->project;
+        $company = $project ? $project->company : null;
+        $razonSocial = '';
+        if ($project) {
+            if (!empty($project->razon_social)) {
+                $razonSocial = $project->razon_social;
+            } elseif ($company && !empty($company->legal_name)) {
+                $razonSocial = $company->legal_name;
+            } elseif ($company && !empty($company->name)) {
+                $razonSocial = $company->name;
+            } else {
+                $razonSocial = $project->name;
+            }
+        }
+
+        $oldDefault = ($project ? $project->name : '') . ($company ? " - {$company->name}" : '');
+        if (empty($module->installation_name) || $module->installation_name === $oldDefault || $module->installation_name === 'PACHABOL - PLANTA CENTRAL EMV') {
+            $installationName = $razonSocial ?: ($module->installation_name ?: 'Instalación');
+        } else {
+            $installationName = $module->installation_name ?: $razonSocial;
+        }
+
+        $startDateRaw = $module->start_date ? $module->start_date->format('Y-m-d') : '';
+        $endDateRaw = $module->end_date ? $module->end_date->format('Y-m-d') : '';
+        $startDateFormatted = $module->start_date ? $module->start_date->format('d/m/Y') : ($module->created_at ? $module->created_at->format('d/m/Y') : date('d/m/Y'));
+        $endDateFormatted = $module->end_date ? $module->end_date->format('d/m/Y') : ($module->created_at ? $module->created_at->format('d/m/Y') : date('d/m/Y'));
+
+        $monitoringType = $module->monitoring_type ?: 'Seguimiento';
+
+        // Assigned Equipment
+        $equipment = $module->equipment;
+        $reportSettings = $module->photo_report_settings ?: [];
+
+        $equipmentName = !empty($reportSettings['equipment_name']) ? $reportSettings['equipment_name'] : ($equipment ? ($equipment->name ?: 'Termo-Anemómetro') : ($module->calibration_equipment ?: 'Termo-Anemómetro'));
+        $equipmentBrand = !empty($reportSettings['equipment_brand']) ? $reportSettings['equipment_brand'] : ($equipment ? ($equipment->brand ?: 'Testo') : 'Testo');
+        $equipmentModel = !empty($reportSettings['equipment_model']) ? $reportSettings['equipment_model'] : ($equipment ? ($equipment->model ?: '410-1') : '410-1');
+        $equipmentSerial = !empty($reportSettings['equipment_serial']) ? $reportSettings['equipment_serial'] : ($equipment ? ($equipment->serial_number ?: '61452984') : '61452984');
+
+        // Staff
+        $assignedStaff = $module->getAssignedStaffAttribute();
+        if ($assignedStaff && $assignedStaff->isNotEmpty()) {
+            $registeredByHeader = $assignedStaff->pluck('name')->implode(', ');
+        } else {
+            $registeredByHeader = $currentUser ? $currentUser->name : 'Técnico de Campo';
+        }
+
+        // Measurements List
+        $dbMeasurements = $module->ventilationMeasurements()->with('staff')->get();
+        $measurementsList = [];
+
+        if ($dbMeasurements->isNotEmpty()) {
+            foreach ($dbMeasurements as $index => $item) {
+                $velMs = (float) ($item->vel_aire_ms ?? 0);
+                $areaLargo = (float) ($item->area_largo_m ?? 0);
+                $areaAncho = (float) ($item->area_ancho_m ?? 0);
+                $areaDiametro = (float) ($item->area_diametro_m ?? 0);
+                $areaM2 = ($areaLargo * $areaAncho) + (3.1416 * $areaDiametro);
+                if ($areaM2 <= 0 && !empty($item->area_ventilacion_m2)) {
+                    $areaM2 = (float) $item->area_ventilacion_m2;
+                }
+
+                $volLargo = (float) ($item->vol_largo_m ?? 0);
+                $volAncho = (float) ($item->vol_ancho_m ?? 0);
+                $volAlto = (float) ($item->vol_alto_m ?? 0);
+                $volM3 = ($volLargo * $volAncho * $volAlto);
+                if ($volM3 <= 0 && !empty($item->volumen_m3)) {
+                    $volM3 = (float) $item->volumen_m3;
+                }
+
+                $caudal = $velMs * $areaM2;
+                $renovH = ($volM3 > 0) ? (3600.0 * ($caudal / $volM3)) : (float) ($item->renovaciones_h ?? 0);
+
+                $norma = self::getNormaForTipoLocal($item->tipo_local);
+                $minNorma = (float) ($item->renovaciones_min ?? $norma['min']);
+                $maxNorma = (float) ($item->renovaciones_max ?? $norma['max']);
+                $intervaloStr = $item->renovaciones_intervalo ?: $norma['intervalo'];
+
+                $isCumple = !empty($item->cumple) ? (strtoupper(trim($item->cumple)) === 'SI' || strtoupper(trim($item->cumple)) === 'CUMPLE') : (($minNorma > 0) ? ($renovH >= $minNorma) : true);
+                $cumpleStr = $isCumple ? 'SI' : 'NO';
+
+                $measurementsList[] = [
+                    'id' => $item->id,
+                    'num' => $item->point_number ?: ($index + 1),
+                    'local_trabajo' => $item->local_trabajo ?: 'Área Operativa',
+                    'tipo_ventilacion' => $item->tipo_ventilacion ?: 'Natural',
+                    'elemento_ventilacion' => $item->elemento_ventilacion ?: 'Ventana',
+                    'temperatura_seca_c' => (float) ($item->temperatura_seca_c ?? 20.0),
+                    'vel_aire_ms' => $velMs,
+                    'area_ventilacion_m2' => $areaM2,
+                    'caudal_m3h' => $caudal,
+                    'volumen_m3' => $volM3,
+                    'renovaciones_h' => $renovH,
+                    'renovaciones_intervalo' => $intervaloStr,
+                    'is_compliant' => $isCumple,
+                    'cumple' => $cumpleStr,
+                    'compliance_text' => $cumpleStr,
+                    'observations' => ($item->observations && $item->observations !== 'Sin observaciones') ? $item->observations : '',
+                ];
+            }
+        } else {
+            // Mock sample rows matching the official ventilation table
+            $measurementsList = [
+                [
+                    'id' => 1,
+                    'num' => 1,
+                    'local_trabajo' => 'Oficina Técnica y Administrativa',
+                    'tipo_ventilacion' => 'Natural',
+                    'elemento_ventilacion' => 'Ventanas exteriores',
+                    'temperatura_seca_c' => 21.5,
+                    'vel_aire_ms' => 0.42,
+                    'area_ventilacion_m2' => 2.40,
+                    'caudal_m3h' => 1.01,
+                    'volumen_m3' => 180.00,
+                    'renovaciones_h' => 20.16,
+                    'renovaciones_intervalo' => '4 - 8',
+                    'is_compliant' => true,
+                    'cumple' => 'SI',
+                    'compliance_text' => 'SI',
+                    'observations' => 'Ventilación natural adecuada con flujo cruzado',
+                ],
+                [
+                    'id' => 2,
+                    'num' => 2,
+                    'local_trabajo' => 'Sala de Control y Operaciones',
+                    'tipo_ventilacion' => 'Mecánica',
+                    'elemento_ventilacion' => 'Extractor helicoidal',
+                    'temperatura_seca_c' => 22.0,
+                    'vel_aire_ms' => 1.85,
+                    'area_ventilacion_m2' => 0.38,
+                    'caudal_m3h' => 0.70,
+                    'volumen_m3' => 140.00,
+                    'renovaciones_h' => 18.08,
+                    'renovaciones_intervalo' => '4 - 10',
+                    'is_compliant' => true,
+                    'cumple' => 'SI',
+                    'compliance_text' => 'SI',
+                    'observations' => 'Sistema de extracción forzada en funcionamiento óptimo',
+                ],
+                [
+                    'id' => 3,
+                    'num' => 3,
+                    'local_trabajo' => 'Taller de Mantenimiento Mecánico',
+                    'tipo_ventilacion' => 'Mixta',
+                    'elemento_ventilacion' => 'Portón y extractores de techo',
+                    'temperatura_seca_c' => 19.8,
+                    'vel_aire_ms' => 0.65,
+                    'area_ventilacion_m2' => 6.50,
+                    'caudal_m3h' => 4.23,
+                    'volumen_m3' => 850.00,
+                    'renovaciones_h' => 17.89,
+                    'renovaciones_intervalo' => '3 - 8',
+                    'is_compliant' => true,
+                    'cumple' => 'SI',
+                    'compliance_text' => 'SI',
+                    'observations' => 'Condiciones ambientales conformes a la normativa',
+                ],
+                [
+                    'id' => 4,
+                    'num' => 4,
+                    'local_trabajo' => 'Almacén de Insumos y Repuestos',
+                    'tipo_ventilacion' => 'Natural',
+                    'elemento_ventilacion' => 'Rejillas de ventilación perimetrales',
+                    'temperatura_seca_c' => 18.5,
+                    'vel_aire_ms' => 0.28,
+                    'area_ventilacion_m2' => 1.80,
+                    'caudal_m3h' => 0.50,
+                    'volumen_m3' => 320.00,
+                    'renovaciones_h' => 5.67,
+                    'renovaciones_intervalo' => '6 - 10',
+                    'is_compliant' => false,
+                    'cumple' => 'NO',
+                    'compliance_text' => 'NO',
+                    'observations' => 'Se sugiere instalar sistema de inyección/extracción mecánica',
+                ],
+            ];
+        }
+
+        return view('measurements.ventilaciones.report', compact(
+            'module',
+            'installationName',
+            'startDateRaw',
+            'endDateRaw',
+            'startDateFormatted',
+            'endDateFormatted',
+            'monitoringType',
+            'equipmentName',
+            'equipmentBrand',
+            'equipmentModel',
+            'equipmentSerial',
+            'registeredByHeader',
+            'measurementsList',
+            'reportSettings',
+            'userName',
+            'userRole'
+        ));
+    }
+
+    /**
+     * Save/autosave report header settings or overrides for ventilation.
+     */
+    public function saveReportData(Request $request, $moduleId)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+
+        if ($request->has('installation_name')) {
+            $module->installation_name = $request->input('installation_name');
+        }
+        if ($request->has('start_date')) {
+            $module->start_date = $request->input('start_date') ?: null;
+        }
+        if ($request->has('end_date')) {
+            $module->end_date = $request->input('end_date') ?: null;
+        }
+        if ($request->has('monitoring_type')) {
+            $module->monitoring_type = $request->input('monitoring_type');
+        }
+
+        // Custom equipment overrides in photo_report_settings if provided
+        $settings = $module->photo_report_settings ?: [];
+        if ($request->has('equipment_name')) {
+            $settings['equipment_name'] = $request->input('equipment_name');
+        }
+        if ($request->has('equipment_brand')) {
+            $settings['equipment_brand'] = $request->input('equipment_brand');
+        }
+        if ($request->has('equipment_model')) {
+            $settings['equipment_model'] = $request->input('equipment_model');
+        }
+        if ($request->has('equipment_serial')) {
+            $settings['equipment_serial'] = $request->input('equipment_serial');
+        }
+        $module->photo_report_settings = $settings;
+        $module->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Informe de ventilación guardado correctamente.',
+        ]);
     }
 }

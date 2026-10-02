@@ -1,28 +1,12 @@
     <!-- 3. Tabla Maestra de Mediciones de Dosimetría -->
     <div class="dosimetry-table-card illumination-table-card">
-        <!-- Toolbar & Filtros -->
-        <div class="dosimetry-toolbar illumination-toolbar">
+        <!-- Toolbar (Filtros & Buscador) -->
+        <div class="dosimetry-toolbar illumination-toolbar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
             <div class="table-filter-pills" id="dosimetryFilterGroup">
-                <button type="button" class="filter-pill-btn active" onclick="filterDosimetry('all', this)">
-                    Todos ({{ count($measurements) }})
-                </button>
-                <button type="button" class="filter-pill-btn" onclick="filterDosimetry('SI', this)">
-                    Cumple ({{ $stats['cumple_count'] ?? 0 }})
-                </button>
-                <button type="button" class="filter-pill-btn" onclick="filterDosimetry('NO', this)">
-                    No Cumple ({{ $stats['no_cumple_count'] ?? 0 }})
-                </button>
-                <button type="button" class="filter-pill-btn" onclick="filterDosimetry('Estable', this)">
-                    Estable
-                </button>
-                <button type="button" class="filter-pill-btn" onclick="filterDosimetry('Fluctuante', this)">
-                    Fluctuante
-                </button>
-                <button type="button" class="filter-pill-btn" onclick="filterDosimetry('Impacto', this)">
-                    Impacto
-                </button>
+                <button type="button" class="filter-pill-btn active" onclick="filterDosimetry('all', this)">Todos</button>
+                <button type="button" class="filter-pill-btn" onclick="filterDosimetry('SI', this)">Cumple LMP</button>
+                <button type="button" class="filter-pill-btn" onclick="filterDosimetry('NO', this)">Supera LMP</button>
             </div>
-
             <div class="search-box-pill">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2"
                     stroke-linecap="round" stroke-linejoin="round" class="search-icon-inside">
@@ -40,22 +24,16 @@
             <table class="modern-table" id="dosimetryMasterTable">
                 <thead>
                     <tr>
-                        <th style="width: 45px; text-align: center;">N°</th>
-                        <th style="width: 105px;">Fecha / Hora</th>
-                        <th style="width: 160px;">Área de Trabajo</th>
-                        <th style="width: 140px;">Punto Medición</th>
-                        <th style="width: 120px;">Tipo Ruido</th>
-                        <th style="width: 85px; text-align: center;">TPE (h)</th>
-                        <th style="width: 100px; text-align: center;">Pond. / Resp.</th>
-                        <th style="width: 90px; text-align: center;">T. Med. (h)</th>
-                        <th style="width: 95px; text-align: right;">NPS Max</th>
-                        <th style="width: 95px; text-align: right;">NPS Min</th>
-                        <th style="width: 105px; text-align: right;">Leq,T (dB)</th>
-                        <th style="width: 95px; text-align: center;">LMP (dBA)</th>
-                        <th style="width: 90px; text-align: center;">Cumple</th>
-                        <th style="width: 75px; text-align: center;">Imágenes</th>
+                        <th style="width: 50px; text-align: center;">N°</th>
+                        <th style="width: 110px;">Fecha / Hora</th>
+                        <th style="width: 170px;">Área de Trabajo</th>
+                        <th style="width: 130px;">Punto Medición</th>
+                        <th style="width: 130px;">Tipo de Ruido</th>
+                        <th style="width: 110px; text-align: center;">LMP Requerido</th>
+                        <th style="width: 140px; text-align: center;">Medición Leq,T</th>
+                        <th style="width: 80px; text-align: center;">Imágenes</th>
                         <th style="width: 140px;">Registrado por</th>
-                        <th style="width: 90px; text-align: right;">Acciones</th>
+                        <th style="width: 95px; text-align: right;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="dosimetryTableBody">
@@ -66,16 +44,16 @@
                             data-search="{{ strtolower($m['num'] . ' ' . $m['area'] . ' ' . $m['punto_medicion'] . ' ' . $m['tipo_ruido'] . ' ' . $m['ponderacion'] . ' ' . $m['respuesta'] . ' ' . $m['location'] . ' ' . $m['registered_by']) }}">
 
                             <!-- 1. N° -->
-                            <td style="font-family: 'Outfit', sans-serif; font-weight: 800; color: #94a3b8; font-size: 13px; text-align: center;">
+                            <td style="font-family: 'Outfit', sans-serif; font-weight: 800; color: #94a3b8; font-size: 13.5px; text-align: center;">
                                 {{ $m['num'] }}
                             </td>
 
                             <!-- 2. Fecha / Hora -->
                             <td>
-                                <div style="display: flex; flex-direction: column; gap: 2px;">
-                                    <span style="font-size: 12px; font-weight: 700; color: var(--ink);">{{ $m['date'] }}</span>
+                                <div style="display: flex; flex-direction: column; gap: 3px;">
+                                    <span style="font-size: 12.5px; font-weight: 700; color: var(--ink);">{{ $m['date'] }}</span>
                                     <span class="table-time-pill" title="Hora de medición">
-                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                             stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                                             <circle cx="12" cy="12" r="10" />
                                             <polyline points="12 6 12 12 16 14" />
@@ -87,85 +65,69 @@
 
                             <!-- 3. Área de Trabajo -->
                             <td>
-                                <span style="font-weight: 700; color: var(--ink); font-size: 13px;">{{ $m['area'] }}</span>
+                                <div style="display: flex; flex-direction: column; gap: 2px;">
+                                    <span style="font-weight: 700; color: var(--ink); font-size: 13px;">{{ $m['area'] }}</span>
+                                    @if(!empty($m['observations']) && $m['observations'] !== 'Sin observaciones')
+                                        <span style="font-size: 11px; color: #64748b; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                                            title="{{ $m['observations'] }}">
+                                            {{ $m['observations'] }}
+                                        </span>
+                                    @endif
+                                </div>
                             </td>
 
                             <!-- 4. Punto de Medición -->
                             <td>
-                                <span style="font-weight: 600; color: #1e293b; font-size: 12.5px;" title="{{ $m['punto_medicion'] }}">
+                                <span style="font-weight: 600; color: #1e293b; font-size: 13px;" title="{{ $m['punto_medicion'] }}">
                                     {{ $m['punto_medicion'] }}
                                 </span>
                             </td>
 
-                            <!-- 5. Tipo Ruido -->
+                            <!-- 5. Tipo Ruido + TPE -->
                             <td>
-                                <span class="noise-type-tag {{ strtolower(str_replace(' ', '-', $m['tipo_ruido'])) }}">
-                                    {{ $m['tipo_ruido'] }}
-                                </span>
+                                <div style="display: flex; flex-direction: column; gap: 3px; align-items: flex-start;">
+                                    <span class="noise-type-tag {{ strtolower(str_replace(' ', '-', $m['tipo_ruido'])) }}">
+                                        {{ $m['tipo_ruido'] }}
+                                    </span>
+                                    <span class="table-time-pill" style="font-size: 10.5px; padding: 1px 6px; font-weight: 600; background: #f1f5f9; color: #475569; border-color: #e2e8f0;" title="Tiempo Ponderado de Exposición">
+                                        TPE: {{ $m['tiempo_expos_h'] }}h
+                                    </span>
+                                </div>
                             </td>
 
-                            <!-- 6. TPE (h) -->
-                            <td style="text-align: center;">
-                                <span class="calc-mono-pill">{{ $m['tiempo_expos_h'] }}h</span>
-                            </td>
-
-                            <!-- 7. Pond. / Resp. -->
-                            <td style="text-align: center;">
-                                <span style="font-size: 11px; font-weight: 700; color: #475569; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">
-                                    {{ $m['ponderacion'] }} / {{ $m['respuesta'] }}
-                                </span>
-                            </td>
-
-                            <!-- 8. T. Medición (h) -->
-                            <td style="text-align: center;">
-                                <span class="calc-mono-pill">{{ $m['duracion_medicion_h'] !== '—' ? $m['duracion_medicion_h'] . 'h' : '—' }}</span>
-                            </td>
-
-                            <!-- 9. NPS Max (dB) -->
-                            <td style="text-align: right; font-family: monospace; font-size: 12.5px; font-weight: 600; color: #0f172a;">
-                                {{ $m['nps_max_db'] }}
-                            </td>
-
-                            <!-- 10. NPS Min (dB) -->
-                            <td style="text-align: right; font-family: monospace; font-size: 12.5px; font-weight: 600; color: #0f172a;">
-                                {{ $m['nps_min_db'] }}
-                            </td>
-
-                            <!-- 11. Leq,T (dB) -->
-                            <td style="text-align: right;">
-                                <span class="leq-measured-badge {{ $m['cumple'] === 'SI' ? 'compliant' : 'non-compliant' }}" title="Nivel Sonoro Equivalente Leq,T">
-                                    {{ $m['leq_t_db'] }} dB
-                                </span>
-                            </td>
-
-                            <!-- 12. LMP (dBA) -->
+                            <!-- 6. LMP Requerido -->
                             <td style="text-align: center;">
                                 <span class="lmp-req-code">{{ $m['lmp'] }} dBA</span>
                             </td>
 
-                            <!-- 13. Cumple (SI / NO) -->
+                            <!-- 7. Medición Leq,T (dB) con badge de cumplimiento y NPS Max/Min -->
                             <td style="text-align: center;">
-                                @if($m['cumple'] === 'SI')
-                                    <span class="badge-compliance-ok" title="Cumple con el Límite Máximo Permisible">
-                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                            <polyline points="20 6 9 17 4 12" />
-                                        </svg>
-                                        <span>SI</span>
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+                                    <span class="leq-measured-badge {{ $m['cumple'] === 'SI' ? 'compliant' : 'non-compliant' }}"
+                                        title="{{ $m['cumple'] === 'SI' ? 'Cumple con el Límite Máximo Permisible' : 'Supera el Límite Máximo Permisible' }}">
+                                        @if($m['cumple'] === 'SI')
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="20 6 9 17 4 12" />
+                                            </svg>
+                                        @else
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <line x1="18" y1="6" x2="6" y2="18" />
+                                                <line x1="6" y1="6" x2="18" y2="18" />
+                                            </svg>
+                                        @endif
+                                        <span>{{ $m['leq_t_db'] }} dB</span>
                                     </span>
-                                @elseif($m['cumple'] === 'NO')
-                                    <span class="badge-compliance-danger" title="Supera el Límite Máximo Permisible">
-                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                            <line x1="18" y1="6" x2="6" y2="18" />
-                                            <line x1="6" y1="6" x2="18" y2="18" />
-                                        </svg>
-                                        <span>NO</span>
-                                    </span>
-                                @else
-                                    <span class="badge-compliance-neutral">—</span>
-                                @endif
+                                    @if($m['nps_max_db'] !== '—' || $m['nps_min_db'] !== '—')
+                                        <span style="font-size: 10px; font-weight: 700; color: #64748b; font-family: monospace;" title="NPS Máximo y Mínimo">
+                                            Max: {{ $m['nps_max_db'] }} | Min: {{ $m['nps_min_db'] }}
+                                        </span>
+                                    @endif
+                                </div>
                             </td>
 
-                            <!-- 14. Imágenes -->
+                            <!-- 8. Imágenes -->
                             <td style="text-align: center;">
                                 @if(!empty($m['image_path']))
                                     <div class="table-thumb-preview"
@@ -189,14 +151,14 @@
                                 @endif
                             </td>
 
-                            <!-- 15. Registrado por -->
+                            <!-- 9. Registrado por -->
                             <td>
                                 <span class="badge-registered-staff" title="Registrado por: {{ $m['registered_by'] }}">
                                     {{ $m['registered_by'] }}
                                 </span>
                             </td>
 
-                            <!-- 16. Acciones -->
+                            <!-- 10. Acciones -->
                             <td style="text-align: right;">
                                 <div class="admin-actions-cell" style="justify-content: flex-end; gap: 6px;">
                                     <!-- Ver / Editar Detalle -->
@@ -227,13 +189,13 @@
                         </tr>
                     @empty
                         <tr id="emptyTableRow">
-                            <td colspan="16" style="text-align: center; color: #64748b; padding: 36px;">
+                            <td colspan="10" style="text-align: center; color: #64748b; padding: 36px;">
                                 No se han registrado puntos de medición en este módulo de dosimetría.
                             </td>
                         </tr>
                     @endforelse
                     <tr id="noResultsSearchRow" style="display: none;">
-                        <td colspan="16" style="text-align: center; color: #64748b; padding: 36px;">
+                        <td colspan="10" style="text-align: center; color: #64748b; padding: 36px;">
                             No se encontraron puntos de medición que coincidan con la búsqueda.
                         </td>
                     </tr>

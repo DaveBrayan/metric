@@ -17,6 +17,10 @@ use App\Http\Controllers\RuidoAmbientalController;
 use App\Http\Controllers\OpacityController;
 use App\Http\Controllers\ColdStressController;
 use App\Http\Controllers\HeatStressController;
+use App\Http\Controllers\FireActivityController;
+use App\Http\Controllers\FireWeightController;
+use App\Http\Controllers\ErgonomiaRebaController;
+use App\Http\Controllers\ErgonomiaRosaController;
 
 // 0. Live Zero-Build Asset Fallback (Automatic Dynamic Serving & Sync)
 Route::get('/css/{file}', function ($file) {
@@ -96,6 +100,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Monitoreo de Iluminación Ocupacional
     Route::get('/modulos/{id}/iluminacion', [IlluminationController::class, 'index'])->name('modules.illumination');
+    Route::get('/modulos/{id}/iluminacion/informe', [IlluminationController::class, 'showReport'])->name('modules.illumination.report');
+    Route::post('/modulos/{id}/iluminacion/informe/save', [IlluminationController::class, 'saveReportData'])->name('modules.illumination.report.save');
     Route::post('/modulos/{id}/iluminacion/mediciones', [IlluminationController::class, 'storeMeasurement'])->name('modules.illumination.measurements.store');
     Route::put('/modulos/{id}/iluminacion/mediciones/{measurementId}', [IlluminationController::class, 'updateMeasurement'])->name('modules.illumination.measurements.update');
     Route::match(['delete', 'post'], '/modulos/{id}/iluminacion/mediciones/{measurementId}/delete', [IlluminationController::class, 'destroyMeasurement'])->name('modules.illumination.measurements.destroy.post');
@@ -105,6 +111,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Monitoreo de Ventilación Ocupacional
     Route::get('/modulos/{id}/ventilacion', [VentilationController::class, 'index'])->name('modules.ventilation');
+    Route::get('/modulos/{id}/ventilacion/informe', [VentilationController::class, 'showReport'])->name('modules.ventilation.report');
+    Route::post('/modulos/{id}/ventilacion/informe/save', [VentilationController::class, 'saveReportData'])->name('modules.ventilation.report.save');
     Route::post('/modulos/{id}/ventilacion/mediciones', [VentilationController::class, 'storeMeasurement'])->name('modules.ventilation.measurements.store');
     Route::put('/modulos/{id}/ventilacion/mediciones/{measurementId}', [VentilationController::class, 'updateMeasurement'])->name('modules.ventilation.measurements.update');
     Route::match(['delete', 'post'], '/modulos/{id}/ventilacion/mediciones/{measurementId}/delete', [VentilationController::class, 'destroyMeasurement'])->name('modules.ventilation.measurements.destroy.post');
@@ -114,6 +122,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Monitoreo de Dosimetría de Ruido
     Route::get('/modulos/{id}/dosimetria', [DosimetryController::class, 'index'])->name('modules.dosimetry');
+    Route::get('/modulos/{id}/dosimetria/informe', [DosimetryController::class, 'showReport'])->name('modules.dosimetry.report');
+    Route::post('/modulos/{id}/dosimetria/informe/save', [DosimetryController::class, 'saveReportData'])->name('modules.dosimetry.report.save');
     Route::post('/modulos/{id}/dosimetria/mediciones', [DosimetryController::class, 'storeMeasurement'])->name('modules.dosimetry.measurements.store');
     Route::put('/modulos/{id}/dosimetria/mediciones/{measurementId}', [DosimetryController::class, 'updateMeasurement'])->name('modules.dosimetry.measurements.update');
     Route::match(['delete', 'post'], '/modulos/{id}/dosimetria/mediciones/{measurementId}/delete', [DosimetryController::class, 'destroyMeasurement'])->name('modules.dosimetry.measurements.destroy.post');
@@ -132,6 +142,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Monitoreo de Opacidad (Vehicular / Humos)
     Route::get('/modulos/{id}/opacidad', [OpacityController::class, 'index'])->name('modules.opacity');
+    Route::get('/modulos/{id}/opacidad/informe', [OpacityController::class, 'showReport'])->name('modules.opacity.report');
+    Route::post('/modulos/{id}/opacidad/informe/save', [OpacityController::class, 'saveReportData'])->name('modules.opacity.report.save');
     Route::post('/modulos/{id}/opacidad/mediciones', [OpacityController::class, 'storeMeasurement'])->name('modules.opacity.measurements.store');
     Route::put('/modulos/{id}/opacidad/mediciones/{measurementId}', [OpacityController::class, 'updateMeasurement'])->name('modules.opacity.measurements.update');
     Route::match(['delete', 'post'], '/modulos/{id}/opacidad/mediciones/{measurementId}/delete', [OpacityController::class, 'destroyMeasurement'])->name('modules.opacity.measurements.destroy.post');
@@ -157,12 +169,64 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/modulos/{id}/estres-calor/header', [HeatStressController::class, 'updateHeader'])->name('modules.heat_stress.header.update');
     Route::post('/modulos/{id}/estres-calor/photo-report-settings', [HeatStressController::class, 'savePhotoReportSettings'])->name('modules.heat_stress.photo-report-settings.save');
 
-    // Equipos: Inventario, altas, edición y eliminación con soporte de fotos
+    // Monitoreo de Carga de Fuego por Actividad (NB 58005 / NTP 453)
+    Route::get('/modulos/{id}/carga-fuego-actividad', [FireActivityController::class, 'index'])->name('modules.fire_activity');
+    Route::get('/modulos/{id}/carga-fuego-actividad/informe', [FireActivityController::class, 'showReport'])->name('modules.fire_activity.report');
+    Route::post('/modulos/{id}/carga-fuego-actividad/informe/save', [FireActivityController::class, 'saveReportData'])->name('modules.fire_activity.report.save');
+    Route::post('/modulos/{id}/carga-fuego-actividad/mediciones', [FireActivityController::class, 'storeMeasurement'])->name('modules.fire_activity.measurements.store');
+    Route::put('/modulos/{id}/carga-fuego-actividad/mediciones/{measurementId}', [FireActivityController::class, 'updateMeasurement'])->name('modules.fire_activity.measurements.update');
+    Route::match(['delete', 'post'], '/modulos/{id}/carga-fuego-actividad/mediciones/{measurementId}/delete', [FireActivityController::class, 'destroyMeasurement'])->name('modules.fire_activity.measurements.destroy.post');
+    Route::match(['delete', 'post'], '/modulos/{id}/carga-fuego-actividad/mediciones/{measurementId}', [FireActivityController::class, 'destroyMeasurement'])->name('modules.fire_activity.measurements.destroy');
+    Route::post('/modulos/{id}/carga-fuego-actividad/header', [FireActivityController::class, 'updateHeader'])->name('modules.fire_activity.header.update');
+    Route::post('/modulos/{id}/carga-fuego-actividad/photo-report-settings', [FireActivityController::class, 'savePhotoReportSettings'])->name('modules.fire_activity.photo-report-settings.save');
+
+    // Monitoreo de Carga de Fuego por Peso (NB 58005 / NTP 453)
+    Route::get('/modulos/{id}/carga-fuego-peso', [FireWeightController::class, 'index'])->name('modules.fire_weight');
+    Route::get('/modulos/{id}/carga-fuego-peso/informe', [FireWeightController::class, 'showReport'])->name('modules.fire_weight.report');
+    Route::post('/modulos/{id}/carga-fuego-peso/informe/save', [FireWeightController::class, 'saveReportData'])->name('modules.fire_weight.report.save');
+    Route::post('/modulos/{id}/carga-fuego-peso/mediciones', [FireWeightController::class, 'storeMeasurement'])->name('modules.fire_weight.measurements.store');
+    Route::put('/modulos/{id}/carga-fuego-peso/mediciones/{measurementId}', [FireWeightController::class, 'updateMeasurement'])->name('modules.fire_weight.measurements.update');
+    Route::match(['delete', 'post'], '/modulos/{id}/carga-fuego-peso/mediciones/{measurementId}/delete', [FireWeightController::class, 'destroyMeasurement'])->name('modules.fire_weight.measurements.destroy.post');
+    Route::match(['delete', 'post'], '/modulos/{id}/carga-fuego-peso/mediciones/{measurementId}', [FireWeightController::class, 'destroyMeasurement'])->name('modules.fire_weight.measurements.destroy');
+    Route::post('/modulos/{id}/carga-fuego-peso/header', [FireWeightController::class, 'updateHeader'])->name('modules.fire_weight.header.update');
+    Route::post('/modulos/{id}/carga-fuego-peso/photo-report-settings', [FireWeightController::class, 'savePhotoReportSettings'])->name('modules.fire_weight.photo-report-settings.save');
+
+    // Monitoreo de Ergonomía REBA (NTP 601 / ISO 11226)
+    Route::get('/modulos/{id}/ergonomia-reba', [ErgonomiaRebaController::class, 'index'])->name('modules.ergonomia_reba');
+    Route::get('/modulos/{id}/ergonomia-reba/tablas', [ErgonomiaRebaController::class, 'showTables'])->name('modules.ergonomia_reba.tables');
+    Route::post('/modulos/{id}/ergonomia-reba/mediciones', [ErgonomiaRebaController::class, 'storeMeasurement'])->name('modules.ergonomia_reba.measurements.store');
+    Route::put('/modulos/{id}/ergonomia-reba/mediciones/{measurementId}', [ErgonomiaRebaController::class, 'updateMeasurement'])->name('modules.ergonomia_reba.measurements.update');
+    Route::match(['delete', 'post'], '/modulos/{id}/ergonomia-reba/mediciones/{measurementId}/delete', [ErgonomiaRebaController::class, 'destroyMeasurement'])->name('modules.ergonomia_reba.measurements.destroy.post');
+    Route::match(['delete', 'post'], '/modulos/{id}/ergonomia-reba/mediciones/{measurementId}', [ErgonomiaRebaController::class, 'destroyMeasurement'])->name('modules.ergonomia_reba.measurements.destroy');
+    Route::post('/modulos/{id}/ergonomia-reba/header', [ErgonomiaRebaController::class, 'updateHeader'])->name('modules.ergonomia_reba.header.update');
+    Route::post('/modulos/{id}/ergonomia-reba/photo-report-settings', [ErgonomiaRebaController::class, 'savePhotoReportSettings'])->name('modules.ergonomia_reba.photo-report-settings.save');
+    Route::post('/modulos/{id}/ergonomia-reba/anexo2', [ErgonomiaRebaController::class, 'saveAnexo2'])->name('modules.ergonomia_reba.anexo2.save');
+    Route::post('/modulos/{id}/ergonomia-reba/prompts', [ErgonomiaRebaController::class, 'savePrompts'])->name('modules.ergonomia_reba.prompts.save');
+    Route::post('/modulos/{id}/ergonomia-reba/generate-ai', [ErgonomiaRebaController::class, 'generateAiContent'])->name('modules.ergonomia_reba.generate-ai');
+
+    // Monitoreo de Ergonomía ROSA (Rapid Office Strain Assessment)
+    Route::get('/modulos/{id}/ergonomia-rosa', [ErgonomiaRosaController::class, 'index'])->name('modules.ergonomia_rosa');
+    Route::get('/modulos/{id}/ergonomia-rosa/tablas', [ErgonomiaRosaController::class, 'showTables'])->name('modules.ergonomia_rosa.tables');
+    Route::post('/modulos/{id}/ergonomia-rosa/mediciones', [ErgonomiaRosaController::class, 'storeMeasurement'])->name('modules.ergonomia_rosa.measurements.store');
+    Route::put('/modulos/{id}/ergonomia-rosa/mediciones/{measurementId}', [ErgonomiaRosaController::class, 'updateMeasurement'])->name('modules.ergonomia_rosa.measurements.update');
+    Route::match(['delete', 'post'], '/modulos/{id}/ergonomia-rosa/mediciones/{measurementId}/delete', [ErgonomiaRosaController::class, 'destroyMeasurement'])->name('modules.ergonomia_rosa.measurements.destroy.post');
+    Route::match(['delete', 'post'], '/modulos/{id}/ergonomia-rosa/mediciones/{measurementId}', [ErgonomiaRosaController::class, 'destroyMeasurement'])->name('modules.ergonomia_rosa.measurements.destroy');
+    Route::post('/modulos/{id}/ergonomia-rosa/header', [ErgonomiaRosaController::class, 'updateHeader'])->name('modules.ergonomia_rosa.header.update');
+    Route::post('/modulos/{id}/ergonomia-rosa/photo-report-settings', [ErgonomiaRosaController::class, 'savePhotoReportSettings'])->name('modules.ergonomia_rosa.photo-report-settings.save');
+    Route::post('/modulos/{id}/ergonomia-rosa/anexo2', [ErgonomiaRosaController::class, 'saveAnexo2'])->name('modules.ergonomia_rosa.anexo2.save');
+    Route::post('/modulos/{id}/ergonomia-rosa/prompts', [ErgonomiaRosaController::class, 'savePrompts'])->name('modules.ergonomia_rosa.prompts.save');
+    Route::post('/modulos/{id}/ergonomia-rosa/generate-ai', [ErgonomiaRosaController::class, 'generateAiContent'])->name('modules.ergonomia_rosa.generate-ai');
+
+    // Equipos: Inventario, altas, edición, eliminación y calibraciones
     Route::get('/equipos', [EquipmentController::class, 'index'])->name('equipment.index');
     Route::post('/equipos', [EquipmentController::class, 'store'])->name('equipment.store');
     Route::put('/equipos/{id}', [EquipmentController::class, 'update'])->name('equipment.update');
     Route::match(['delete', 'post'], '/equipos/{id}/delete', [EquipmentController::class, 'destroy'])->name('equipment.destroy.post');
     Route::match(['delete', 'post'], '/equipos/{id}', [EquipmentController::class, 'destroy'])->name('equipment.destroy');
+    Route::get('/equipos/{id}/calibraciones', [EquipmentController::class, 'getCalibrations'])->name('equipment.calibrations.index');
+    Route::post('/equipos/{id}/calibraciones', [EquipmentController::class, 'storeCalibration'])->name('equipment.calibrations.store');
+    Route::match(['delete', 'post'], '/equipos/calibraciones/{calibrationId}/delete', [EquipmentController::class, 'destroyCalibration'])->name('equipment.calibrations.destroy.post');
+    Route::match(['delete', 'post'], '/equipos/calibraciones/{calibrationId}', [EquipmentController::class, 'destroyCalibration'])->name('equipment.calibrations.destroy');
 
     // Sistema: Administradores y Configuración
     Route::get('/administradores', [AdminController::class, 'index'])->name('admins.index');
@@ -181,7 +245,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/modulos/{id}/opacidad/export', function ($id) { return redirect()->route('modules.opacity', $id); })->name('modules.opacity.export');
     Route::get('/modulos/{id}/estres-frio/export', function ($id) { return redirect()->route('modules.cold_stress', $id); })->name('modules.cold_stress.export');
     Route::get('/modulos/{id}/estres-calor/export', function ($id) { return redirect()->route('modules.heat_stress', $id); })->name('modules.heat_stress.export');
+    Route::get('/modulos/{id}/carga-fuego-actividad/export', function ($id) { return redirect()->route('modules.fire_activity', $id); })->name('modules.fire_activity.export');
+    Route::get('/modulos/{id}/carga-fuego-peso/export', function ($id) { return redirect()->route('modules.fire_weight', $id); })->name('modules.fire_weight.export');
+    Route::get('/modulos/{id}/ergonomia-reba/export', function ($id) { return redirect()->route('modules.ergonomia_reba', $id); })->name('modules.ergonomia_reba.export');
+    Route::get('/modulos/{id}/ergonomia-rosa/export', function ($id) { return redirect()->route('modules.ergonomia_rosa', $id); })->name('modules.ergonomia_rosa.export');
 
     Route::get('/configuracion', [SettingsController::class, 'index'])->name('settings.index');
     Route::post('/configuracion', [SettingsController::class, 'update'])->name('settings.update');
+    Route::post('/configuracion/test-gemini', [SettingsController::class, 'testGeminiConnection'])->name('settings.test-gemini');
+    Route::post('/configuracion/gemini-models', [SettingsController::class, 'getAvailableGeminiModels'])->name('settings.gemini-models');
 });

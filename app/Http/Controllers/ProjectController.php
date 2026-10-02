@@ -39,6 +39,8 @@ class ProjectController extends Controller
                 'id' => $prj->id,
                 'num' => str_pad($index + 1, 2, '0', STR_PAD_LEFT),
                 'name' => $prj->name,
+                'razon_social' => $prj->razon_social ?? ($prj->company ? ($prj->company->legal_name ?: $prj->company->name) : ''),
+                'direccion' => $prj->direccion ?? '',
                 'code' => $prj->code,
                 'project_sigla' => strlen($projSigla) <= 3 ? $projSigla : 'PRJ',
                 'description' => $prj->description ?? 'Sin descripción registrada.',
@@ -192,6 +194,8 @@ class ProjectController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'razon_social' => 'nullable|string|max:255',
+            'direccion' => 'nullable|string|max:500',
             'company_id' => 'required|exists:companies,id',
             'manager_id' => 'nullable|exists:managers,id',
             'description' => 'nullable|string',
@@ -230,6 +234,8 @@ class ProjectController extends Controller
 
         $project = new Project();
         $project->name = $validated['name'];
+        $project->razon_social = $validated['razon_social'] ?? null;
+        $project->direccion = $validated['direccion'] ?? null;
         $project->code = $finalCode;
         $project->company_id = $validated['company_id'];
         $project->region_id = $request->input('region_id', null);
@@ -254,6 +260,8 @@ class ProjectController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'razon_social' => 'nullable|string|max:255',
+            'direccion' => 'nullable|string|max:500',
             'company_id' => 'required|exists:companies,id',
             'manager_id' => 'nullable|exists:managers,id',
             'description' => 'nullable|string',
@@ -271,6 +279,8 @@ class ProjectController extends Controller
         };
 
         $project->name = $validated['name'];
+        $project->razon_social = $validated['razon_social'] ?? null;
+        $project->direccion = $validated['direccion'] ?? null;
         $project->code = strtoupper($validated['code']);
         $project->company_id = $validated['company_id'];
         $project->manager_id = $validated['manager_id'] ?? null;
@@ -322,8 +332,15 @@ class ProjectController extends Controller
             'particulas' => 'Partículas',
             'gases' => 'Gases',
             'vibracion' => 'Vibración',
-            'ergonomia' => 'Ergonomía',
+            'ergonomia' => 'Ergonomía REBA',
+            'ergonomia_reba' => 'Ergonomía REBA',
+            'ergonomia_rosa' => 'Ergonomía ROSA',
+            'rosa' => 'Ergonomía ROSA',
             'opacidad' => 'Opacidad',
+            'fuego_actividad' => 'Carga de Fuego por Actividad',
+            'carga_fuego_actividad' => 'Carga de Fuego por Actividad',
+            'fuego_peso' => 'Carga de Fuego por Peso',
+            'carga_fuego_peso' => 'Carga de Fuego por Peso',
         ];
         $moduleName = !empty($validated['name']) 
             ? $validated['name'] 
@@ -412,8 +429,15 @@ class ProjectController extends Controller
             'particulas' => 'Partículas',
             'gases' => 'Gases',
             'vibracion' => 'Vibración',
-            'ergonomia' => 'Ergonomía',
+            'ergonomia' => 'Ergonomía REBA',
+            'ergonomia_reba' => 'Ergonomía REBA',
+            'ergonomia_rosa' => 'Ergonomía ROSA',
+            'rosa' => 'Ergonomía ROSA',
             'opacidad' => 'Opacidad',
+            'fuego_actividad' => 'Carga de Fuego por Actividad',
+            'carga_fuego_actividad' => 'Carga de Fuego por Actividad',
+            'fuego_peso' => 'Carga de Fuego por Peso',
+            'carga_fuego_peso' => 'Carga de Fuego por Peso',
         ];
         $moduleName = !empty($validated['name']) 
             ? $validated['name'] 

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class MeasurementModule extends Model
 {
@@ -35,11 +36,13 @@ class MeasurementModule extends Model
         'monitoring_type',
         'installation_name',
         'photo_report_settings',
+        'anexo2_data',
     ];
 
     protected $casts = [
         'field_staff_ids' => 'array',
         'photo_report_settings' => 'array',
+        'anexo2_data' => 'array',
         'start_date' => 'date',
         'end_date' => 'date',
     ];
@@ -92,6 +95,31 @@ class MeasurementModule extends Model
     public function heatStressMeasurements(): HasMany
     {
         return $this->hasMany(HeatStressMeasurement::class, 'module_id')->orderBy('id', 'asc');
+    }
+
+    public function rebaMeasurements(): HasMany
+    {
+        return $this->hasMany(RebaMeasurement::class, 'module_id')->orderBy('id', 'asc');
+    }
+
+    public function rosaMeasurements(): HasMany
+    {
+        return $this->hasMany(RosaMeasurement::class, 'module_id')->orderBy('id', 'asc');
+    }
+
+    public function fireActivityMeasurements(): HasMany
+    {
+        return $this->hasMany(FireActivityMeasurement::class, 'module_id')->orderBy('id', 'asc');
+    }
+
+    public function fireWeightMeasurements(): HasMany
+    {
+        return $this->hasMany(FireWeightMeasurement::class, 'module_id')->orderBy('id', 'asc');
+    }
+
+    public function fireWeightReport(): HasOne
+    {
+        return $this->hasOne(FireWeightReport::class, 'module_id');
     }
 
     public function readings(): HasMany

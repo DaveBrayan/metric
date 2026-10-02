@@ -56,7 +56,7 @@
             </table>
         </div>
 
-        <!-- Tarjeta Derecha: Equipo de Medición Asignado en 3 Columnas (Imagen Directa sin Card ni Modal) -->
+        <!-- Tarjeta Derecha: Equipo de Medición Asignado en 2 Columnas Flex (Info 4 filas + Foto) -->
         <div class="tech-header-card">
             <div class="tech-card-header-bar">
                 <div class="tech-card-title">
@@ -69,48 +69,50 @@
                     <span>Equipo Asignado</span>
                 </div>
             </div>
-            <table class="tech-table-grid">
-                <tr>
-                    <th class="tech-label-cell" style="width: 25%;">EQUIPO:</th>
-                    <td class="tech-val-cell" style="width: 43%;">
-                        <div class="tech-val-static">{{ $equipmentName }}</div>
-                    </td>
-                    <td rowspan="4" class="tech-eq-photo-cell">
-                        @if($equipmentImage)
-                            <img src="{{ $equipmentImage }}" alt="{{ $equipmentName }}"
-                                style="max-width: 100%; max-height: 145px; object-fit: contain; display: block; margin: 0 auto;">
-                        @else
-                            <div
-                                style="display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; padding: 8px;">
-                                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-                                    <circle cx="9" cy="9" r="2" />
-                                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                                </svg>
-                                <span style="font-size: 11px; font-weight: 600; margin-top: 4px;">Sin imagen</span>
-                            </div>
-                        @endif
-                    </td>
-                </tr>
-                <tr>
-                    <th class="tech-label-cell">MARCA:</th>
-                    <td class="tech-val-cell">
-                        <div class="tech-val-static">{{ $equipmentBrand }}</div>
-                    </td>
-                </tr>
-                <tr>
-                    <th class="tech-label-cell">MODELO:</th>
-                    <td class="tech-val-cell">
-                        <div class="tech-val-static tech-val-mono">{{ $equipmentModel }}</div>
-                    </td>
-                </tr>
-                <tr>
-                    <th class="tech-label-cell">SERIE:</th>
-                    <td class="tech-val-cell">
-                        <div class="tech-val-static tech-val-mono" style="color: #0284c7;">{{ $equipmentSerial }}</div>
-                    </td>
-                </tr>
-            </table>
+            <div class="tech-card-body-flex">
+                <table class="tech-table-grid tech-table-equipment">
+                    <tr>
+                        <th class="tech-label-cell" style="width: 36%;">EQUIPO:</th>
+                        <td class="tech-val-cell">
+                            <div class="tech-val-static">{{ $equipmentName }}</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="tech-label-cell">MARCA:</th>
+                        <td class="tech-val-cell">
+                            <div class="tech-val-static">{{ $equipmentBrand }}</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="tech-label-cell">MODELO:</th>
+                        <td class="tech-val-cell">
+                            <div class="tech-val-static tech-val-mono">{{ $equipmentModel }}</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="tech-label-cell">SERIE:</th>
+                        <td class="tech-val-cell">
+                            <div class="tech-val-static tech-val-mono" style="color: #0284c7;">{{ $equipmentSerial }}</div>
+                        </td>
+                    </tr>
+                </table>
+                <div class="tech-eq-photo-container">
+                    @if($equipmentImage)
+                        <img src="{{ $equipmentImage }}" alt="{{ $equipmentName }}"
+                            style="max-width: 100%; max-height: 145px; object-fit: contain; display: block; margin: 0 auto;">
+                    @else
+                        <div
+                            style="display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; padding: 8px;">
+                            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                                <circle cx="9" cy="9" r="2" />
+                                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                            </svg>
+                            <span style="font-size: 11px; font-weight: 600; margin-top: 4px;">Sin imagen</span>
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>

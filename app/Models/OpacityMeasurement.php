@@ -18,6 +18,8 @@ class OpacityMeasurement extends Model
         'point_number',
         'measurement_date',
         'measurement_time',
+        'area',
+        'altitud',
         'tipo_vehiculo',
         'marca',
         'modelo',

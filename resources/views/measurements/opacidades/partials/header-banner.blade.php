@@ -3,14 +3,14 @@
         <h1>
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.2"
                 stroke-linecap="round" stroke-linejoin="round">
-                <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C2.1 10.7 2 10.9 2 11.2V16c0 .6.4 1 1 1h2"/>
-                <circle cx="7" cy="17" r="2"/>
-                <path d="M9 17h6"/>
-                <circle cx="17" cy="17" r="2"/>
+                <path
+                    d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C2.1 10.7 2 10.9 2 11.2V16c0 .6.4 1 1 1h2" />
+                <circle cx="7" cy="17" r="2" />
+                <path d="M9 17h6" />
+                <circle cx="17" cy="17" r="2" />
             </svg>
             <span>Monitoreo de Opacidad</span>
         </h1>
-        <p>Evaluación de emisión de humos y coeficiente de absorción luminosa (k m⁻¹ / %) en fuentes móviles vehiculares.</p>
     </div>
 
     <div class="header-action-group">
@@ -46,18 +46,19 @@
             <span>Exportar</span>
         </button>
 
-        <!-- Botón Ver Tablas (Matriz técnica e informe de evaluación) -->
-        <button type="button" class="btn-secondary-subtle" onclick="openOpacityTablesModal()"
-            title="Ver matriz técnica y límites normativos de emisión">
+        <!-- Botón Informe (Planilla técnica oficial de medición y evaluación de opacidad) -->
+        <a href="{{ route('modules.opacity.report', $module->id) }}" class="btn-secondary-subtle"
+            title="Ver planilla de características y resultados de opacidad en formato horizontal">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.3"
                 stroke-linecap="round" stroke-linejoin="round">
-                <rect width="18" height="18" x="3" y="3" rx="2" />
-                <path d="M3 9h18" />
-                <path d="M3 15h18" />
-                <path d="M9 3v18" />
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <polyline points="10 9 9 9 8 9" />
             </svg>
-            <span>Ver Tablas</span>
-        </button>
+            <span>Informe</span>
+        </a>
 
         <button type="button" class="btn-primary-hero-action" onclick="openCreateMeasurementModal()">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"

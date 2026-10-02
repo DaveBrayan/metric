@@ -1,19 +1,7 @@
     <!-- 3. Tabla Maestra de Mediciones de Estrés por Calor (TGBH / WBGT) -->
     <div class="heat-stress-table-card">
-        <!-- Toolbar & Filtros -->
-        <div class="heat-stress-toolbar">
-            <div class="table-filter-pills" id="heatStressFilterGroup">
-                <button type="button" class="filter-pill-btn active" onclick="filterHeatStress('all', this)">
-                    Todos ({{ $totalMeasurements }})
-                </button>
-                <button type="button" class="filter-pill-btn" onclick="filterHeatStress('Interior', this)">
-                    Interior
-                </button>
-                <button type="button" class="filter-pill-btn" onclick="filterHeatStress('Exterior', this)">
-                    Exterior
-                </button>
-            </div>
-
+        <!-- Toolbar (Buscador a la Derecha) -->
+        <div class="heat-stress-toolbar" style="display: flex; justify-content: flex-end;">
             <div class="search-box-pill">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2"
                     stroke-linecap="round" stroke-linejoin="round" class="search-icon-inside">

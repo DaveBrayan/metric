@@ -38,16 +38,35 @@ class DosimetryController extends Controller
 
         $module = MeasurementModule::with(['project.company', 'equipment', 'fieldStaff'])->findOrFail($moduleId);
 
-        // Resuelve información técnica del encabezado
-        $projectName = $module->project ? $module->project->name : 'Proyecto';
-        $companyName = ($module->project && $module->project->company) ? $module->project->company->name : '';
-        $defaultInstallation = $projectName . ($companyName ? " - {$companyName}" : '');
-        $installationName = $module->installation_name ?: $defaultInstallation;
+        // Resuelve información técnica del encabezado: Razón Social de la empresa o proyecto
+        $project = $module->project;
+        $company = $project ? $project->company : null;
+        $projectName = $project ? $project->name : 'Proyecto General';
+        $companyName = $company ? $company->name : 'Empresa';
+        $razonSocial = '';
+        if ($project) {
+            if (!empty($project->razon_social)) {
+                $razonSocial = $project->razon_social;
+            } elseif ($company && !empty($company->legal_name)) {
+                $razonSocial = $company->legal_name;
+            } elseif ($company && !empty($company->name)) {
+                $razonSocial = $company->name;
+            } else {
+                $razonSocial = $project->name;
+            }
+        }
+
+        $oldDefault = ($project ? $project->name : '') . ($company ? " - {$company->name}" : '');
+        if (empty($module->installation_name) || $module->installation_name === $oldDefault || $module->installation_name === 'PACHABOL - PLANTA CENTRAL EMV') {
+            $installationName = $razonSocial ?: ($module->installation_name ?: 'Instalación');
+        } else {
+            $installationName = $module->installation_name ?: $razonSocial;
+        }
 
         $startDateRaw = $module->start_date ? $module->start_date->format('Y-m-d') : '';
         $endDateRaw = $module->end_date ? $module->end_date->format('Y-m-d') : '';
-        $startDateFormatted = $module->start_date ? $module->start_date->format('d/m/Y') : '';
-        $endDateFormatted = $module->end_date ? $module->end_date->format('d/m/Y') : '';
+        $startDateFormatted = $module->start_date ? $module->start_date->format('d/m/Y') : ($module->created_at ? $module->created_at->format('d/m/Y') : date('d/m/Y'));
+        $endDateFormatted = $module->end_date ? $module->end_date->format('d/m/Y') : ($module->created_at ? $module->created_at->format('d/m/Y') : date('d/m/Y'));
 
         $monitoringType = $module->monitoring_type ?: 'Seguimiento';
 
@@ -389,7 +408,36 @@ class DosimetryController extends Controller
             'photos.*' => 'nullable|image|max:15360',
         ]);
 
-        $existingImages = $request->input('existing_photos', []);
+        $normalizePath = function($url) {
+            if (!$url || !is_string($url)) return '';
+            $parsed = parse_url($url, PHP_URL_PATH);
+            $path = $parsed ?: $url;
+            return ltrim($path, '/\\');
+        };
+
+        // Extraer imágenes existentes de la BD
+        $existingImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
+        if (empty($existingImages) && !empty($measurement->image_path)) {
+            $existingImages = [$measurement->image_path];
+        }
+
+        // Si se envió lista de remaining_images o existing_photos, filtrar
+        if ($request->has('remaining_images') || $request->has('existing_photos')) {
+            $rawRemaining = $request->input('remaining_images') ?? $request->input('existing_photos');
+            $remaining = is_array($rawRemaining) ? $rawRemaining : (json_decode($rawRemaining, true) ?: []);
+            if (is_array($remaining)) {
+                $normalizedRemaining = array_map($normalizePath, $remaining);
+                $filteredExisting = [];
+                foreach ($existingImages as $img) {
+                    $norm = $normalizePath($img);
+                    if (in_array($norm, $normalizedRemaining) || in_array($img, $remaining)) {
+                        $filteredExisting[] = $img;
+                    }
+                }
+                $existingImages = $filteredExisting;
+            }
+        }
+
         $newImages = [];
         if ($request->hasFile('photos')) {
             $destPath = public_path('uploads/measurements/dosimetria/' . $moduleId);
@@ -397,13 +445,15 @@ class DosimetryController extends Controller
                 File::makeDirectory($destPath, 0777, true, true);
             }
             foreach ($request->file('photos') as $photo) {
-                $filename = 'dosi_' . time() . '_' . uniqid() . '.' . $photo->getClientOriginalExtension();
-                $photo->move($destPath, $filename);
-                $newImages[] = 'uploads/measurements/dosimetria/' . $moduleId . '/' . $filename;
+                if ($photo->isValid()) {
+                    $filename = 'dosi_' . time() . '_' . uniqid() . '.' . $photo->getClientOriginalExtension();
+                    $photo->move($destPath, $filename);
+                    $newImages[] = 'uploads/measurements/dosimetria/' . $moduleId . '/' . $filename;
+                }
             }
         }
 
-        $allImages = array_merge($existingImages, $newImages);
+        $allImages = array_values(array_merge($existingImages, $newImages));
 
         $tpe = (float) ($validated['tiempo_expos_h'] ?? 8.0);
         $lmp = self::getLmpForTpe($tpe);
@@ -590,5 +640,253 @@ class DosimetryController extends Controller
         $lon = $lon0 + rad2deg($lon);
 
         return ['lat' => round($lat, 7), 'lng' => round($lon, 7)];
+    }
+
+    /**
+     * Display the official technical report page for noise dosimetry monitoring (Landscape Sheet).
+     */
+    public function showReport($moduleId)
+    {
+        $currentUser = Auth::user();
+        $userName = $currentUser ? $currentUser->name : 'Reynaldo';
+        $userRole = $currentUser ? $currentUser->role : 'Superadministrador';
+
+        $module = MeasurementModule::with(['project.company', 'equipment', 'fieldStaff'])->findOrFail($moduleId);
+
+        // Technical Header Information: Razón Social de la empresa o proyecto para Instalación
+        $project = $module->project;
+        $company = $project ? $project->company : null;
+        $razonSocial = '';
+        if ($project) {
+            if (!empty($project->razon_social)) {
+                $razonSocial = $project->razon_social;
+            } elseif ($company && !empty($company->legal_name)) {
+                $razonSocial = $company->legal_name;
+            } elseif ($company && !empty($company->name)) {
+                $razonSocial = $company->name;
+            } else {
+                $razonSocial = $project->name;
+            }
+        }
+
+        $oldDefault = ($project ? $project->name : '') . ($company ? " - {$company->name}" : '');
+        if (empty($module->installation_name) || $module->installation_name === $oldDefault || $module->installation_name === 'PACHABOL - PLANTA CENTRAL EMV') {
+            $installationName = $razonSocial ?: ($module->installation_name ?: 'Instalación');
+        } else {
+            $installationName = $module->installation_name ?: $razonSocial;
+        }
+
+        $startDateRaw = $module->start_date ? $module->start_date->format('Y-m-d') : '';
+        $endDateRaw = $module->end_date ? $module->end_date->format('Y-m-d') : '';
+        $startDateFormatted = $module->start_date ? $module->start_date->format('d/m/Y') : ($module->created_at ? $module->created_at->format('d/m/Y') : date('d/m/Y'));
+        $endDateFormatted = $module->end_date ? $module->end_date->format('d/m/Y') : ($module->created_at ? $module->created_at->format('d/m/Y') : date('d/m/Y'));
+
+        $monitoringType = $module->monitoring_type ?: 'Seguimiento';
+
+        // Assigned Equipment
+        $equipment = $module->equipment;
+        $reportSettings = $module->photo_report_settings ?: [];
+
+        $equipmentName = !empty($reportSettings['equipment_name']) ? $reportSettings['equipment_name'] : ($equipment ? ($equipment->name ?: 'DOSIMETRO-INLITE-1') : ($module->calibration_equipment ?: 'DOSIMETRO-INLITE-1'));
+        $equipmentBrand = !empty($reportSettings['equipment_brand']) ? $reportSettings['equipment_brand'] : ($equipment ? ($equipment->brand ?: 'INLITE') : 'INLITE');
+        $equipmentModel = !empty($reportSettings['equipment_model']) ? $reportSettings['equipment_model'] : ($equipment ? ($equipment->model ?: 'DoseMax V2') : 'DoseMax V2');
+        $equipmentSerial = !empty($reportSettings['equipment_serial']) ? $reportSettings['equipment_serial'] : ($equipment ? ($equipment->serial_number ?: '2512071420AA') : '2512071420AA');
+
+        // Staff
+        $assignedStaff = $module->getAssignedStaffAttribute();
+        if ($assignedStaff && $assignedStaff->isNotEmpty()) {
+            $registeredByHeader = $assignedStaff->pluck('name')->implode(', ');
+        } else {
+            $registeredByHeader = $currentUser ? $currentUser->name : 'Técnico de Campo';
+        }
+
+        // Measurements List
+        $dbMeasurements = $module->dosimetryMeasurements()->with('staff')->get();
+        $measurementsList = [];
+
+        if ($dbMeasurements->isNotEmpty()) {
+            foreach ($dbMeasurements as $index => $item) {
+                $tpe = (float) ($item->tiempo_expos_h ?? 8.0);
+                $duracionMed = (float) ($item->duracion_medicion_h ?? 0.0);
+                $npsMax = $item->nps_max_db !== null ? (float) $item->nps_max_db : null;
+                $npsMin = $item->nps_min_db !== null ? (float) $item->nps_min_db : null;
+                $leqT = $item->leq_t_db !== null ? (float) $item->leq_t_db : null;
+
+                // 1) Nivel de presión sonora diario equivalente Laeq,d (dBA) = Leq,T + 10 * log10(TPE / 8)
+                $laeqD = null;
+                if ($leqT !== null && $tpe > 0) {
+                    $laeqD = round($leqT + (10.0 * log10($tpe / 8.0)), 2);
+                }
+
+                // 2) Dosis de ruido para estudios a 8 horas = 10^((Laeq,d - 85) / 10)
+                $dosisRuido = null;
+                if ($laeqD !== null) {
+                    $dosisRuido = round(pow(10.0, ($laeqD - 85.0) / 10.0), 2);
+                }
+
+                $acciones = ($item->observations && $item->observations !== 'Sin observaciones') ? $item->observations : '';
+                if (empty($acciones)) {
+                    if ($dosisRuido !== null && $dosisRuido >= 1.0) {
+                        $acciones = 'Uso obligatorio de EPP auditivo y rotación';
+                    } elseif ($dosisRuido !== null && $dosisRuido >= 0.5) {
+                        $acciones = 'Capacitación y monitoreo periódico';
+                    } else {
+                        $acciones = 'Ninguna';
+                    }
+                }
+
+                $measurementsList[] = [
+                    'id' => $item->id,
+                    'num' => $item->point_number ?: ($index + 1),
+                    'area' => $item->area ?: 'Área Operativa',
+                    'punto_medicion' => $item->punto_medicion ?: 'Punto de Medición',
+                    'tipo_ruido' => $item->tipo_ruido ?: 'Fluctuante',
+                    'tiempo_expos_h' => $tpe,
+                    'ponderacion' => $item->ponderacion ?: 'A',
+                    'respuesta' => strtoupper($item->respuesta ?: 'LENTA'),
+                    'duracion_medicion_h' => $duracionMed,
+                    'nps_max_db' => $npsMax,
+                    'nps_min_db' => $npsMin,
+                    'leq_t_db' => $leqT,
+                    'laeq_d_db' => $laeqD,
+                    'dosis_ruido' => $dosisRuido,
+                    'acciones_tomar' => $acciones,
+                ];
+            }
+        } else {
+            // Mock sample rows matching the official dosimetry table
+            $measurementsList = [
+                [
+                    'id' => 1,
+                    'num' => 1,
+                    'area' => 'Materia Prima',
+                    'punto_medicion' => 'Pala frontal',
+                    'tipo_ruido' => 'Fluctuante',
+                    'tiempo_expos_h' => 4.0,
+                    'ponderacion' => 'A',
+                    'respuesta' => 'LENTA',
+                    'duracion_medicion_h' => 0.50,
+                    'nps_max_db' => 100.00,
+                    'nps_min_db' => 80.00,
+                    'leq_t_db' => 72.00,
+                    'laeq_d_db' => 68.99,
+                    'dosis_ruido' => 0.03,
+                    'acciones_tomar' => 'Usos de EPP',
+                ],
+                [
+                    'id' => 2,
+                    'num' => 2,
+                    'area' => 'Dosificación - Carguio',
+                    'punto_medicion' => 'Operario',
+                    'tipo_ruido' => 'Fluctuante',
+                    'tiempo_expos_h' => 6.0,
+                    'ponderacion' => 'A',
+                    'respuesta' => 'LENTA',
+                    'duracion_medicion_h' => 3.00,
+                    'nps_max_db' => 85.70,
+                    'nps_min_db' => 82.10,
+                    'leq_t_db' => 84.60,
+                    'laeq_d_db' => 83.35,
+                    'dosis_ruido' => 0.68,
+                    'acciones_tomar' => 'Capacitación',
+                ],
+                [
+                    'id' => 3,
+                    'num' => 3,
+                    'area' => 'Molienda y Trituración',
+                    'punto_medicion' => 'Operador de Molino',
+                    'tipo_ruido' => 'Continuo',
+                    'tiempo_expos_h' => 8.0,
+                    'ponderacion' => 'A',
+                    'respuesta' => 'LENTA',
+                    'duracion_medicion_h' => 4.00,
+                    'nps_max_db' => 92.40,
+                    'nps_min_db' => 86.20,
+                    'leq_t_db' => 88.50,
+                    'laeq_d_db' => 88.50,
+                    'dosis_ruido' => 2.24,
+                    'acciones_tomar' => 'Uso obligatorio de EPP tipo copa y rotación de personal',
+                ],
+                [
+                    'id' => 4,
+                    'num' => 4,
+                    'area' => 'Taller de Mantenimiento',
+                    'punto_medicion' => 'Mecánico',
+                    'tipo_ruido' => 'Intermitente',
+                    'tiempo_expos_h' => 8.0,
+                    'ponderacion' => 'A',
+                    'respuesta' => 'LENTA',
+                    'duracion_medicion_h' => 2.50,
+                    'nps_max_db' => 95.80,
+                    'nps_min_db' => 78.30,
+                    'leq_t_db' => 82.10,
+                    'laeq_d_db' => 82.10,
+                    'dosis_ruido' => 0.51,
+                    'acciones_tomar' => 'Inspección periódica y uso de tapones auditivos',
+                ],
+            ];
+        }
+
+        return view('measurements.dosimetrias.report', compact(
+            'module',
+            'installationName',
+            'startDateRaw',
+            'endDateRaw',
+            'startDateFormatted',
+            'endDateFormatted',
+            'monitoringType',
+            'equipmentName',
+            'equipmentBrand',
+            'equipmentModel',
+            'equipmentSerial',
+            'registeredByHeader',
+            'measurementsList',
+            'reportSettings',
+            'userName',
+            'userRole'
+        ));
+    }
+
+    /**
+     * Save/autosave report header settings or overrides for dosimetry.
+     */
+    public function saveReportData(Request $request, $moduleId)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+
+        if ($request->has('installation_name')) {
+            $module->installation_name = $request->input('installation_name');
+        }
+        if ($request->has('start_date')) {
+            $module->start_date = $request->input('start_date') ?: null;
+        }
+        if ($request->has('end_date')) {
+            $module->end_date = $request->input('end_date') ?: null;
+        }
+        if ($request->has('monitoring_type')) {
+            $module->monitoring_type = $request->input('monitoring_type');
+        }
+
+        // Custom equipment overrides in photo_report_settings if provided
+        $settings = $module->photo_report_settings ?: [];
+        if ($request->has('equipment_name')) {
+            $settings['equipment_name'] = $request->input('equipment_name');
+        }
+        if ($request->has('equipment_brand')) {
+            $settings['equipment_brand'] = $request->input('equipment_brand');
+        }
+        if ($request->has('equipment_model')) {
+            $settings['equipment_model'] = $request->input('equipment_model');
+        }
+        if ($request->has('equipment_serial')) {
+            $settings['equipment_serial'] = $request->input('equipment_serial');
+        }
+        $module->photo_report_settings = $settings;
+        $module->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Informe de dosimetría guardado correctamente.',
+        ]);
     }
 }

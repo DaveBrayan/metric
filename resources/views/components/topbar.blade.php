@@ -8,22 +8,6 @@
                 <line x1="3" y1="18" x2="21" y2="18"/>
             </svg>
         </button>
-
-        <!-- Global Search Pill -->
-        <div class="search-container">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="search-icon-pos">
-                <circle cx="11" cy="11" r="8"/>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <input 
-                type="text" 
-                class="search-input-pill" 
-                placeholder="Buscar métricas, reportes, proyectos..." 
-                oninput="if(typeof searchLiveTable === 'function') searchLiveTable()"
-                autocomplete="off"
-                aria-label="Búsqueda global"
-            />
-        </div>
     </div>
     
     <div class="topbar-right">

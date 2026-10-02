@@ -471,14 +471,6 @@ textarea.custom-form-input {
             <p>Monitoreo integral de avances, módulos de medición ambiental vinculados y sedes asignadas.</p>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <a href="{{ route('modules.index') }}" class="date-capsule" style="text-decoration: none;">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="12 2 2 7 12 12 22 7 12 2"/>
-                    <polyline points="2 17 12 22 22 17"/>
-                    <polyline points="2 12 12 17 22 12"/>
-                </svg>
-                <span>Módulos de Monitoreo Ambiental</span>
-            </a>
             <button type="button" class="btn-primary-hero-action" onclick="openCreateProjectModal()">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19"/>
@@ -780,6 +772,35 @@ textarea.custom-form-input {
                         ></textarea>
                     </div>
 
+                    <!-- 2.1 RAZÓN SOCIAL & DIRECCIÓN DE LA EMPRESA -->
+                    <div class="form-row-grid-2col">
+                        <div class="form-field-group">
+                            <label class="form-field-label" for="create_razon_social">
+                                Razón Social
+                            </label>
+                            <input 
+                                type="text" 
+                                name="razon_social" 
+                                id="create_razon_social" 
+                                class="custom-form-input" 
+                                placeholder="Nombre o Razón Social legal de la empresa"
+                            >
+                        </div>
+
+                        <div class="form-field-group">
+                            <label class="form-field-label" for="create_direccion">
+                                Dirección de la empresa o establecimiento laboral
+                            </label>
+                            <input 
+                                type="text" 
+                                name="direccion" 
+                                id="create_direccion" 
+                                class="custom-form-input" 
+                                placeholder="Dirección completa del establecimiento laboral"
+                            >
+                        </div>
+                    </div>
+
                     <!-- 3. EMPRESA & RESPONSABLE (Auto-trae el responsable) -->
                     <div class="form-row-grid-2col">
                         <div class="form-field-group">
@@ -789,7 +810,7 @@ textarea.custom-form-input {
                             <select name="company_id" id="create_company_id" class="custom-form-select" onchange="onCompanySelectChange(this.value)" required>
                                 <option value="">-- Seleccionar Empresa --</option>
                                 @foreach($companies as $company)
-                                    <option value="{{ $company->id }}" data-sigla="{{ strtoupper($company->code) }}">
+                                    <option value="{{ $company->id }}" data-sigla="{{ strtoupper($company->code) }}" data-legal="{{ $company->legal_name ?: $company->name }}" data-address="{{ $company->address ?? '' }}">
                                         {{ $company->name }} ({{ strtoupper($company->code) }})
                                     </option>
                                 @endforeach
@@ -942,6 +963,35 @@ textarea.custom-form-input {
                         ></textarea>
                     </div>
 
+                    <!-- 2.1 Razón Social & Dirección -->
+                    <div class="form-row-grid-2col">
+                        <div class="form-field-group">
+                            <label class="form-field-label" for="edit_razon_social">
+                                Razón Social
+                            </label>
+                            <input 
+                                type="text" 
+                                name="razon_social" 
+                                id="edit_razon_social" 
+                                class="custom-form-input" 
+                                placeholder="Nombre o Razón Social legal de la empresa"
+                            >
+                        </div>
+
+                        <div class="form-field-group">
+                            <label class="form-field-label" for="edit_direccion">
+                                Dirección de la empresa o establecimiento laboral
+                            </label>
+                            <input 
+                                type="text" 
+                                name="direccion" 
+                                id="edit_direccion" 
+                                class="custom-form-input" 
+                                placeholder="Dirección completa del establecimiento laboral"
+                            >
+                        </div>
+                    </div>
+
                     <!-- 3. Empresa & Responsable -->
                     <div class="form-row-grid-2col">
                         <div class="form-field-group">
@@ -951,7 +1001,7 @@ textarea.custom-form-input {
                             <select name="company_id" id="edit_company_id" class="custom-form-select" onchange="onEditCompanySelectChange(this.value)" required>
                                 <option value="">-- Seleccionar Empresa --</option>
                                 @foreach($companies as $company)
-                                    <option value="{{ $company->id }}" data-sigla="{{ strtoupper($company->code) }}">{{ $company->name }}</option>
+                                    <option value="{{ $company->id }}" data-sigla="{{ strtoupper($company->code) }}" data-legal="{{ $company->legal_name ?: $company->name }}" data-address="{{ $company->address ?? '' }}">{{ $company->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -1130,7 +1180,25 @@ function onCompanySelectChange(companyId) {
     // 1. Auto-cargar Responsable asignado a esta empresa en campo solo lectura
     updateManagerForCompany(companyId, 'create_manager_name_display', 'create_manager_id');
 
-    // 2. Recalcular código de proyecto con la nueva sigla de empresa
+    // 2. Auto-sugerir Razón Social y Dirección si están vacías
+    const companySelect = document.getElementById('create_company_id');
+    if (companySelect && companySelect.selectedIndex > 0) {
+        const opt = companySelect.options[companySelect.selectedIndex];
+        const legal = opt.getAttribute('data-legal') || '';
+        const address = opt.getAttribute('data-address') || '';
+        const razonInput = document.getElementById('create_razon_social');
+        const dirInput = document.getElementById('create_direccion');
+        if (razonInput && (!razonInput.value || razonInput.getAttribute('data-autofilled') === 'true')) {
+            razonInput.value = legal;
+            razonInput.setAttribute('data-autofilled', 'true');
+        }
+        if (dirInput && (!dirInput.value || dirInput.getAttribute('data-autofilled') === 'true')) {
+            dirInput.value = address;
+            dirInput.setAttribute('data-autofilled', 'true');
+        }
+    }
+
+    // 3. Recalcular código de proyecto con la nueva sigla de empresa
     updateAutoProjectCode();
 }
 
@@ -1177,6 +1245,8 @@ function openEditProjectModal(project) {
     form.action = `/proyectos/${project.id}`;
 
     document.getElementById('edit_project_name').value = project.name || '';
+    document.getElementById('edit_razon_social').value = project.razon_social || '';
+    document.getElementById('edit_direccion').value = project.direccion || '';
     document.getElementById('edit_description').value = project.description && project.description !== 'Sin descripción registrada.' ? project.description : '';
     document.getElementById('edit_company_id').value = project.client_id || '';
     

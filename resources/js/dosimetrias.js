@@ -433,6 +433,117 @@ function slidePhotoNav(prefix, dir) {
     renderModalPhotoSlider(prefix);
 }
 
+function syncEditRemainingImages() {
+    const remInput = document.getElementById('edit_remaining_images');
+    if (remInput && modalPhotoStore.edit) {
+        remInput.value = JSON.stringify(modalPhotoStore.edit.remainingUrls || []);
+    }
+    const delBtn = document.getElementById('edit_slider_del_btn');
+    if (delBtn && modalPhotoStore.edit) {
+        const hasPhotos = (modalPhotoStore.edit.remainingUrls.length + modalPhotoStore.edit.urls.length) > 0;
+        delBtn.style.display = (isEditUnlocked && hasPhotos) ? 'inline-flex' : 'none';
+    }
+}
+
+function deleteActiveSlidePhoto(prefix) {
+    if (prefix !== 'edit') return;
+    const store = modalPhotoStore.edit;
+    const totalExisting = store.remainingUrls.length;
+    const totalNew = store.urls.length;
+    const total = totalExisting + totalNew;
+    if (total === 0) return;
+
+    if (store.activeIndex < totalExisting) {
+        store.remainingUrls.splice(store.activeIndex, 1);
+        syncEditRemainingImages();
+    } else {
+        const newIdx = store.activeIndex - totalExisting;
+        store.urls.splice(newIdx, 1);
+        store.files.splice(newIdx, 1);
+    }
+
+    store.activeIndex = Math.max(0, store.activeIndex - 1);
+    renderModalPhotoSlider('edit');
+    syncEditRemainingImages();
+}
+
+let isEditUnlocked = false;
+
+function toggleModalEditMode() {
+    applyEditModeState(!isEditUnlocked);
+}
+
+function setModalReadOnlyMode(isReadOnly) {
+    applyEditModeState(!isReadOnly);
+}
+
+function applyEditModeState(isEditing) {
+    isEditUnlocked = isEditing;
+
+    const form = document.getElementById('editMeasurementForm');
+    if (form) {
+        if (isEditing) {
+            form.classList.remove('modal-view-mode');
+        } else {
+            form.classList.add('modal-view-mode');
+        }
+    }
+
+    const badge = document.getElementById('modalModeStatusBadge');
+    if (badge) {
+        badge.textContent = isEditing ? 'Modo Edición' : 'Solo Lectura';
+        badge.style.background = isEditing ? '#dcfce7' : '#f1f5f9';
+        badge.style.color = isEditing ? '#15803d' : '#475569';
+        badge.style.borderColor = isEditing ? '#86efac' : '#cbd5e1';
+    }
+
+    const btnText = document.getElementById('btnToggleEditModeText');
+    const footerBtnText = document.getElementById('footerBtnToggleEditText');
+    const btnIcon = document.getElementById('btnToggleEditModeIcon');
+    const toggleBtn = document.getElementById('btnToggleEditMode');
+
+    if (btnText) btnText.textContent = isEditing ? 'Lectura' : 'Editar';
+    if (footerBtnText) footerBtnText.textContent = isEditing ? 'Ver Solo Lectura' : 'Editar Punto';
+
+    if (btnIcon) {
+        if (isEditing) {
+            btnIcon.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`;
+        } else {
+            btnIcon.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`;
+        }
+    }
+
+    if (toggleBtn) {
+        toggleBtn.style.background = isEditing ? '#fef3c7' : '#f0f9ff';
+        toggleBtn.style.borderColor = isEditing ? '#f59e0b' : '#0284c7';
+        toggleBtn.style.color = isEditing ? '#b45309' : '#0284c7';
+    }
+
+    const fields = [
+        'edit_measurement_date', 'edit_measurement_time', 'edit_staff_id', 'edit_area',
+        'edit_punto_medicion', 'edit_tipo_ruido', 'edit_tiempo_expos_h', 'edit_ponderacion',
+        'edit_respuesta', 'edit_duracion_medicion_h', 'edit_leq_t_db', 'edit_nps_max_db',
+        'edit_nps_min_db', 'edit_utm_easting', 'edit_utm_northing', 'edit_utm_zone',
+        'edit_observations'
+    ];
+
+    fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = !isEditing;
+    });
+
+    const submitBtn = document.getElementById('edit_modal_submit_btn');
+    if (submitBtn) submitBtn.style.display = isEditing ? 'inline-flex' : 'none';
+
+    const addPhotosBtn = document.getElementById('edit_btn_add_photos');
+    if (addPhotosBtn) addPhotosBtn.style.display = isEditing ? 'inline-flex' : 'none';
+
+    const gpsBtn = document.getElementById('edit_btn_gps');
+    if (gpsBtn) gpsBtn.style.display = isEditing ? 'inline-flex' : 'none';
+
+    syncEditRemainingImages();
+}
+
 /* ==========================================================================
    4. MODAL HANDLERS (CREATE, EDIT, VIEW, DELETE)
    ========================================================================== */
@@ -512,9 +623,28 @@ function openViewMeasurementModal(data) {
         editUtmDisp.textContent = (easting && northing) ? `E: ${easting}, N: ${northing}, Z: ${zone}` : 'E: —, N: —, Z: 20K';
     }
 
-    if (data.staff_id && document.getElementById('edit_staff_id')) {
-        document.getElementById('edit_staff_id').value = data.staff_id;
+    const staffEl = document.getElementById('edit_modal_registered_by');
+    const staffSelect = document.getElementById('edit_staff_id');
+    if (staffSelect) {
+        if (data.staff_id) {
+            staffSelect.value = data.staff_id;
+        } else if (data.registered_by) {
+            for (let i = 0; i < staffSelect.options.length; i++) {
+                if (staffSelect.options[i].text.toLowerCase().includes(data.registered_by.toLowerCase())) {
+                    staffSelect.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+        if (staffEl && staffSelect.selectedIndex >= 0 && staffSelect.options[staffSelect.selectedIndex]) {
+            staffEl.textContent = staffSelect.options[staffSelect.selectedIndex].text.split('—')[0].trim();
+        } else if (staffEl) {
+            staffEl.textContent = data.registered_by || 'Técnico de Campo';
+        }
+    } else if (staffEl) {
+        staffEl.textContent = data.registered_by || 'Técnico de Campo';
     }
+
     if (document.getElementById('edit_registered_by_disp')) {
         document.getElementById('edit_registered_by_disp').textContent = data.registered_by;
     }
@@ -531,9 +661,13 @@ function openViewMeasurementModal(data) {
         activeIndex: 0
     };
     renderModalPhotoSlider('edit');
+    syncEditRemainingImages();
 
     // Inicializar mini-mapa
     initLeafletMiniMap('edit', data.latitude, data.longitude);
+
+    // Iniciar en modo Solo Lectura por defecto
+    applyEditModeState(false);
 
     modal.classList.add('open');
 }
@@ -1465,6 +1599,11 @@ window.syncUtmToMap = syncUtmToMap;
 window.getCurrentGpsPosition = getCurrentGpsPosition;
 window.handleMultipleImagesSelected = handleMultipleImagesSelected;
 window.slidePhotoNav = slidePhotoNav;
+window.deleteActiveSlidePhoto = deleteActiveSlidePhoto;
+window.syncEditRemainingImages = syncEditRemainingImages;
+window.toggleModalEditMode = toggleModalEditMode;
+window.setModalReadOnlyMode = setModalReadOnlyMode;
+window.applyEditModeState = applyEditModeState;
 
 // Inicialización en DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {

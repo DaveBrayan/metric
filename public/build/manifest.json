@@ -20,22 +20,42 @@
     "isEntry": true
   },
   "resources/css/dosimetrias.css": {
-    "file": "assets/dosimetrias-CV4XqBJC.css",
+    "file": "assets/dosimetrias-BF7vJxaX.css",
     "src": "resources/css/dosimetrias.css",
     "isEntry": true
   },
+  "resources/css/ergonomia_reba.css": {
+    "file": "assets/ergonomia_reba-DOtU33JB.css",
+    "src": "resources/css/ergonomia_reba.css",
+    "isEntry": true
+  },
+  "resources/css/ergonomia_rosa.css": {
+    "file": "assets/ergonomia_rosa-BvBzJrb7.css",
+    "src": "resources/css/ergonomia_rosa.css",
+    "isEntry": true
+  },
   "resources/css/estres_calores.css": {
-    "file": "assets/estres_calores-CsYyVP-n.css",
+    "file": "assets/estres_calores-BOVCoXvH.css",
     "src": "resources/css/estres_calores.css",
     "isEntry": true
   },
   "resources/css/estres_frios.css": {
-    "file": "assets/estres_frios-BIW8f_EA.css",
+    "file": "assets/estres_frios-Zc3kSX9J.css",
     "src": "resources/css/estres_frios.css",
     "isEntry": true
   },
+  "resources/css/fuego_actividades.css": {
+    "file": "assets/fuego_actividades-BLaJDyV_.css",
+    "src": "resources/css/fuego_actividades.css",
+    "isEntry": true
+  },
+  "resources/css/fuego_pesos.css": {
+    "file": "assets/fuego_pesos-BQDgovQF.css",
+    "src": "resources/css/fuego_pesos.css",
+    "isEntry": true
+  },
   "resources/css/iluminaciones.css": {
-    "file": "assets/iluminaciones-CkvAhS3X.css",
+    "file": "assets/iluminaciones-nxIK8oNy.css",
     "src": "resources/css/iluminaciones.css",
     "isEntry": true
   },
@@ -50,12 +70,12 @@
     "isEntry": true
   },
   "resources/css/opacidades.css": {
-    "file": "assets/opacidades-DPpC3NTv.css",
+    "file": "assets/opacidades-9Ws1omh8.css",
     "src": "resources/css/opacidades.css",
     "isEntry": true
   },
   "resources/css/ruido_ambientales.css": {
-    "file": "assets/ruido_ambientales-CKT4AuI3.css",
+    "file": "assets/ruido_ambientales-BqYre7R3.css",
     "src": "resources/css/ruido_ambientales.css",
     "isEntry": true
   },
@@ -70,7 +90,7 @@
     "isEntry": true
   },
   "resources/css/ventilaciones.css": {
-    "file": "assets/ventilaciones-DZE7gd94.css",
+    "file": "assets/ventilaciones-wdlxnEIY.css",
     "src": "resources/css/ventilaciones.css",
     "isEntry": true
   },
@@ -104,16 +124,40 @@
     "src": "resources/js/dosimetrias.js",
     "isEntry": true
   },
+  "resources/js/ergonomia_reba.js": {
+    "file": "assets/ergonomia_reba-Dy6dFCI6.js",
+    "name": "ergonomia_reba",
+    "src": "resources/js/ergonomia_reba.js",
+    "isEntry": true
+  },
+  "resources/js/ergonomia_rosa.js": {
+    "file": "assets/ergonomia_rosa-B8QvZTZj.js",
+    "name": "ergonomia_rosa",
+    "src": "resources/js/ergonomia_rosa.js",
+    "isEntry": true
+  },
   "resources/js/estres_calores.js": {
-    "file": "assets/estres_calores-GRKxZI52.js",
+    "file": "assets/estres_calores-BeFR-4Zk.js",
     "name": "estres_calores",
     "src": "resources/js/estres_calores.js",
     "isEntry": true
   },
   "resources/js/estres_frios.js": {
-    "file": "assets/estres_frios-D0PJkTLr.js",
+    "file": "assets/estres_frios-BXAcwLCl.js",
     "name": "estres_frios",
     "src": "resources/js/estres_frios.js",
+    "isEntry": true
+  },
+  "resources/js/fuego_actividades.js": {
+    "file": "assets/fuego_actividades-HKm924GH.js",
+    "name": "fuego_actividades",
+    "src": "resources/js/fuego_actividades.js",
+    "isEntry": true
+  },
+  "resources/js/fuego_pesos.js": {
+    "file": "assets/fuego_pesos-C4nJ3Z8H.js",
+    "name": "fuego_pesos",
+    "src": "resources/js/fuego_pesos.js",
     "isEntry": true
   },
   "resources/js/iluminaciones.js": {

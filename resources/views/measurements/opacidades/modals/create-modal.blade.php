@@ -29,6 +29,37 @@
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px;">
                         <div class="form-field-group">
+                            <label class="form-field-label">Área / Sector</label>
+                            <input type="text" name="area" id="create_area" class="custom-form-input" placeholder="Ej: Área Operativa, Taller de Mantenimiento">
+                        </div>
+
+                        <div class="form-field-group">
+                            <label class="form-field-label">Altitud (msnm) <span class="req">*</span></label>
+                            <select name="altitud" id="create_altitud" class="custom-form-select" onchange="onAltitudeChange('create')">
+                                <option value="0-1500">0 - 1500 msnm (Límite: 2,44 m⁻¹)</option>
+                                <option value="1500-3000" selected>1500 - 3000 msnm (Límite: 2,80 m⁻¹)</option>
+                                <option value="3000-4500">3000 - 4500 msnm (Límite: 3,22 m⁻¹)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Leyenda informativa de altitud y límite normativo -->
+                    <div id="create_altitud_legend" style="background: #eef2ff; border: 1.5px solid #c7d2fe; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4338ca" stroke-width="2.2"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
+                            <div>
+                                <div style="font-size: 11px; font-weight: 700; color: #6366f1; text-transform: uppercase;">Norma NB 62002 / Límite Aplicable</div>
+                                <div style="font-size: 13px; font-weight: 800; color: #312e81;" id="create_altitud_text">Altitud: 1500-3000 msnm</div>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 11px; font-weight: 700; color: #4338ca;">Opacidad Límite:</span>
+                            <span style="font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 900; color: #3730a3; margin-left: 4px;" id="create_altitud_limit_text">2,80 m⁻¹</span>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px;">
+                        <div class="form-field-group">
                             <label class="form-field-label">Tipo de Vehículo <span class="req">*</span></label>
                             <input type="text" name="tipo_vehiculo" id="create_tipo_vehiculo" class="custom-form-input" required placeholder="Ej: Camión Volqueta, Camioneta, Generador">
                         </div>
@@ -69,8 +100,8 @@
                         </div>
 
                         <div class="form-field-group">
-                            <label class="form-field-label">Límite Normativo LMP (%)</label>
-                            <input type="number" step="0.1" name="limite_normativa" id="create_limite_normativa" class="custom-form-input" value="50.0" oninput="recalcOpacidad('create')">
+                            <label class="form-field-label">Opacidad Límite Normativo (m⁻¹)</label>
+                            <input type="number" step="0.01" name="limite_normativa" id="create_limite_normativa" class="custom-form-input" value="2.80" oninput="recalcOpacidad('create')">
                         </div>
                     </div>
 

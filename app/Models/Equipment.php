@@ -27,9 +27,38 @@ class Equipment extends Model
         'model',
         'serial_number',
         'description',
+        'calibration_date',
+        'next_recalibration_date',
+        'recalibration_observation',
         'image',
         'status',
     ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'calibration_date' => 'date:Y-m-d',
+        'next_recalibration_date' => 'date:Y-m-d',
+    ];
+
+    /**
+     * Calibration history records.
+     */
+    public function calibrations()
+    {
+        return $this->hasMany(EquipmentCalibration::class, 'equipment_id')->orderBy('calibration_date', 'desc')->orderBy('id', 'desc');
+    }
+
+    /**
+     * Latest calibration history record.
+     */
+    public function latestCalibration()
+    {
+        return $this->hasOne(EquipmentCalibration::class, 'equipment_id')->latestOfMany('calibration_date');
+    }
 
     /**
      * Scope for filtering by query.
@@ -44,7 +73,8 @@ class Equipment extends Model
             $q->where('name', 'LIKE', "%{$term}%")
               ->orWhere('model', 'LIKE', "%{$term}%")
               ->orWhere('serial_number', 'LIKE', "%{$term}%")
-              ->orWhere('description', 'LIKE', "%{$term}%");
+              ->orWhere('description', 'LIKE', "%{$term}%")
+              ->orWhere('recalibration_observation', 'LIKE', "%{$term}%");
         });
     }
 }

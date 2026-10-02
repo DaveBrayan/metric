@@ -3,16 +3,15 @@
         <h1>
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.2"
                 stroke-linecap="round" stroke-linejoin="round">
-                <path d="M2 10v4"/>
-                <path d="M6 6v12"/>
-                <path d="M10 3v18"/>
-                <path d="M14 7v10"/>
-                <path d="M18 5v14"/>
-                <path d="M22 10v4"/>
+                <path d="M2 10v4" />
+                <path d="M6 6v12" />
+                <path d="M10 3v18" />
+                <path d="M14 7v10" />
+                <path d="M18 5v14" />
+                <path d="M22 10v4" />
             </svg>
             <span>Monitoreo de Ruido Ambiental</span>
         </h1>
-        <p>Evaluación acústica perimetral en linderos (N, S, E, O), normativa RASIM / RMCA y georreferenciación GPS.</p>
     </div>
 
     <div class="header-action-group">

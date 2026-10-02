@@ -1,28 +1,7 @@
     <!-- 3. Tabla Maestra de Mediciones de Estrés por Frío (WCI / Sensación Térmica) -->
     <div class="cold-stress-table-card illumination-table-card">
-        <!-- Toolbar & Filtros -->
-        <div class="cold-stress-toolbar illumination-toolbar">
-            <div class="table-filter-pills" id="coldStressFilterGroup">
-                <button type="button" class="filter-pill-btn active" onclick="filterColdStress('all', this)">
-                    Todos ({{ $totalMeasurements }})
-                </button>
-                <button type="button" class="filter-pill-btn" onclick="filterColdStress('Bajo', this)">
-                    Riesgo Bajo
-                </button>
-                <button type="button" class="filter-pill-btn" onclick="filterColdStress('Moderado', this)">
-                    Riesgo Moderado
-                </button>
-                <button type="button" class="filter-pill-btn" onclick="filterColdStress('Alto', this)">
-                    Riesgo Alto / Crítico
-                </button>
-                <button type="button" class="filter-pill-btn" onclick="filterColdStress('compliant', this)">
-                    Conformes ({{ $compliantCount }})
-                </button>
-                <button type="button" class="filter-pill-btn" onclick="filterColdStress('non-compliant', this)">
-                    No Conformes ({{ $nonCompliantCount }})
-                </button>
-            </div>
-
+        <!-- Toolbar (Buscador a la Derecha) -->
+        <div class="cold-stress-toolbar illumination-toolbar" style="display: flex; justify-content: flex-end;">
             <div class="search-box-pill">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2"
                     stroke-linecap="round" stroke-linejoin="round" class="search-icon-inside">

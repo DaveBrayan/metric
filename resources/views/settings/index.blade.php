@@ -23,7 +23,7 @@
         </button>
     </div>
 
-    <!-- Navigation Tabs Bar (3 Clean Tabs) -->
+    <!-- Navigation Tabs Bar (4 Clean Tabs) -->
     <div class="settings-tabs-bar">
         <button type="button" class="tab-nav-btn active" onclick="switchSettingsTab('tab-general', this)">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -39,6 +39,15 @@
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
             </svg>
             <span>Seguridad & Acceso</span>
+        </button>
+
+        <button type="button" class="tab-nav-btn" onclick="switchSettingsTab('tab-ai', this)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>
+                <path d="M18 15h6"/>
+                <path d="M21 12v6"/>
+            </svg>
+            <span>Inteligencia Artificial</span>
         </button>
 
         <button type="button" class="tab-nav-btn" onclick="switchSettingsTab('tab-api', this)">
@@ -75,7 +84,7 @@
                         <div class="form-row-grid">
                             <div class="form-field-group">
                                 <label class="form-field-label">Nombre de la Empresa</label>
-                                <input type="text" name="org_name" class="custom-form-input" value="{{ $settings['general']['org_name'] ?? 'Pachabol S.A.' }}">
+                                <input type="text" name="org_name" class="custom-form-input" value="{{ $settings['general']['org_name'] ?? 'Pachabol S.R.L.' }}">
                             </div>
 
                             <div class="form-field-group">
@@ -84,34 +93,25 @@
                             </div>
                         </div>
 
-                        <div class="form-row-grid">
-                            <div class="form-field-group">
+                        <div class="form-row-grid" style="margin-bottom: 0;">
+                            <div class="form-field-group" style="margin-bottom: 0;">
                                 <label class="form-field-label">Zona Horaria de Operaciones</label>
                                 <select name="timezone" class="custom-form-select">
-                                    <option value="America/La_Paz" selected>America/La_Paz (GMT-4, Bolivia)</option>
-                                    <option value="America/Santiago">America/Santiago (GMT-3)</option>
-                                    <option value="America/Lima">America/Lima (GMT-5)</option>
-                                    <option value="America/Argentina/Buenos_Aires">America/Buenos Aires (GMT-3)</option>
+                                    <option value="America/La_Paz" {{ ($settings['general']['timezone'] ?? 'America/La_Paz') == 'America/La_Paz' ? 'selected' : '' }}>America/La_Paz (GMT-4, Bolivia)</option>
+                                    <option value="America/Santiago" {{ ($settings['general']['timezone'] ?? '') == 'America/Santiago' ? 'selected' : '' }}>America/Santiago (GMT-3)</option>
+                                    <option value="America/Lima" {{ ($settings['general']['timezone'] ?? '') == 'America/Lima' ? 'selected' : '' }}>America/Lima (GMT-5)</option>
+                                    <option value="America/Argentina/Buenos_Aires" {{ ($settings['general']['timezone'] ?? '') == 'America/Argentina/Buenos_Aires' ? 'selected' : '' }}>America/Buenos Aires (GMT-3)</option>
                                 </select>
                             </div>
 
-                            <div class="form-field-group">
+                            <div class="form-field-group" style="margin-bottom: 0;">
                                 <label class="form-field-label">Idioma Predeterminado</label>
                                 <select name="language" class="custom-form-select">
-                                    <option value="es_BO" selected>Español (Bolivia)</option>
-                                    <option value="es_ES">Español (Internacional)</option>
-                                    <option value="en_US">English (US)</option>
+                                    <option value="es_BO" {{ ($settings['general']['language'] ?? 'es_BO') == 'es_BO' ? 'selected' : '' }}>Español (Bolivia)</option>
+                                    <option value="es_ES" {{ ($settings['general']['language'] ?? '') == 'es_ES' ? 'selected' : '' }}>Español (Internacional)</option>
+                                    <option value="en_US" {{ ($settings['general']['language'] ?? '') == 'en_US' ? 'selected' : '' }}>English (US)</option>
                                 </select>
                             </div>
-                        </div>
-
-                        <div class="form-field-group">
-                            <label class="form-field-label">Frecuencia de Actualización en Vivo</label>
-                            <select name="auto_refresh" class="custom-form-select">
-                                <option value="10s">Cada 10 segundos (Alta resolución)</option>
-                                <option value="30s" selected>Cada 30 segundos (Recomendado)</option>
-                                <option value="60s">Cada 1 minuto (Ahorro de ancho de banda)</option>
-                            </select>
                         </div>
                     </div>
                 </div>
@@ -247,7 +247,169 @@
             </div>
         </div>
 
-        <!-- Tab 3: API & Integraciones -->
+        <!-- Tab 3: Inteligencia Artificial (Google Gemini) -->
+        <div class="settings-tab-pane" id="tab-ai">
+            <div class="settings-form-layout">
+                <div>
+                    <!-- Tarjeta: Configuración de Google Gemini -->
+                    <div class="glass-card settings-card" style="border: 1.5px solid rgba(2, 132, 199, 0.35); background: linear-gradient(180deg, #ffffff 0%, #f0f9ff 100%);">
+                        <div class="settings-section-head">
+                            <div class="kpi-icon-glow" style="background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%); color: #ffffff; width: 44px; height: 44px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>
+                                    <path d="M18 15h6"/>
+                                    <path d="M21 12v6"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <h2 style="margin: 0; font-size: 16px; color: #0f172a;">Inteligencia Artificial — Google Gemini API</h2>
+                                    <span style="font-size: 11px; font-weight: 700; background: #e0f2fe; color: #0284c7; padding: 2px 8px; border-radius: 999px; border: 1px solid #bae6fd;">
+                                        {{ !empty($settings['ai']['gemini_api_key']) ? 'CONFIGURADO' : 'PENDIENTE' }}
+                                    </span>
+                                </div>
+                                <p style="margin: 3px 0 0 0; color: #64748b; font-size: 12.5px;">
+                                    Configuración del motor de Inteligencia Artificial para la redacción técnica biomecánica, observaciones críticas y recomendaciones ergonómicas automáticas.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Campo 1: Clave de API de Gemini -->
+                        <div class="form-field-group" style="margin-top: 16px;">
+                            <label class="form-field-label" style="font-weight: 700; color: #0f172a;">Clave de API de Gemini (API Key)</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="password" id="geminiApiKeyInput" name="gemini_api_key" class="custom-form-input" 
+                                    style="font-family: monospace; font-size: 13.5px; font-weight: 600; color: #0f172a; background: #ffffff;"
+                                    value="{{ $settings['ai']['gemini_api_key'] ?? '' }}"
+                                    placeholder="AQ.Ab8RN6lr7Gd-... o AIzaSy..." autocomplete="off">
+                                <button type="button" class="btn-copy-code" style="height: 42px; border-radius: 10px; padding: 0 14px;" 
+                                    onclick="toggleApiKeyVisibility()" title="Mostrar / Ocultar Clave">
+                                    <span id="geminiEyeIcon">👁️</span>
+                                </button>
+                                <button type="button" class="btn-copy-code" style="height: 42px; border-radius: 10px; padding: 0 14px;" 
+                                    onclick="pasteFromClipboard('geminiApiKeyInput')" title="Pegar del portapapeles">
+                                    <span>📋 Pegar</span>
+                                </button>
+                            </div>
+                            <div class="form-field-hint" style="margin-top: 6px; font-size: 12px; color: #64748b;">
+                                🔑 Obtenida en <b>Google AI Studio</b> o Google Cloud Console. Permite generar reportes técnicos con modelos LLM de última generación.
+                            </div>
+                        </div>
+
+                        <!-- Fila 2: Modelo de IA & Nombre Proyecto -->
+                        <div class="form-row-grid" style="margin-top: 16px;">
+                            <div class="form-field-group">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <label class="form-field-label" style="font-weight: 700; color: #0f172a; margin-bottom: 0;">Modelo de Gemini</label>
+                                    <button type="button" onclick="fetchGeminiModelsAjax()" title="Obtener lista de modelos en tiempo real desde Google AI" 
+                                        style="background: transparent; border: none; color: #0284c7; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 2px 4px; border-radius: 4px;">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                                        <span id="btnSyncModelsText">Actualizar Modelos</span>
+                                    </button>
+                                </div>
+                                <select name="gemini_model" id="geminiModelSelect" class="custom-form-select" style="font-weight: 600; color: #0f172a;">
+                                    @php
+                                        $curModel = $settings['ai']['gemini_model'] ?? 'gemini-3.8-flash';
+                                        if (in_array($curModel, ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro', 'gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-2.5-pro'])) {
+                                            $curModel = 'gemini-3.8-flash';
+                                        }
+                                    @endphp
+                                    <option value="gemini-3.8-flash" {{ $curModel == 'gemini-3.8-flash' ? 'selected' : '' }}>
+                                        gemini-3.8-flash (Recomendado — Última Generación, Ultra Rápido)
+                                    </option>
+                                    <option value="gemini-3.7-flash" {{ $curModel == 'gemini-3.7-flash' ? 'selected' : '' }}>
+                                        gemini-3.7-flash (Multimodal y Gran Capacidad)
+                                    </option>
+                                    <option value="gemini-3.6-flash" {{ $curModel == 'gemini-3.6-flash' ? 'selected' : '' }}>
+                                        gemini-3.6-flash (Estable y Rápido)
+                                    </option>
+                                    <option value="gemini-3.5-flash" {{ $curModel == 'gemini-3.5-flash' ? 'selected' : '' }}>
+                                        gemini-3.5-flash (Equilibrado)
+                                    </option>
+                                    <option value="gemini-3.5-flash-lite" {{ $curModel == 'gemini-3.5-flash-lite' ? 'selected' : '' }}>
+                                        gemini-3.5-flash-lite (Ultraliviano y Eficiente)
+                                    </option>
+                                    <option value="gemini-3.1-pro-preview" {{ $curModel == 'gemini-3.1-pro-preview' ? 'selected' : '' }}>
+                                        gemini-3.1-pro-preview (Razonamiento Complejo y Análisis Profundo)
+                                    </option>
+                                    <option value="gemini-flash-latest" {{ $curModel == 'gemini-flash-latest' ? 'selected' : '' }}>
+                                        gemini-flash-latest (Alias — Siempre Última Versión Flash)
+                                    </option>
+                                    <option value="gemini-pro-latest" {{ $curModel == 'gemini-pro-latest' ? 'selected' : '' }}>
+                                        gemini-pro-latest (Alias — Siempre Última Versión Pro)
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="form-field-group">
+                                <label class="form-field-label">Nombre del Proyecto (Opcional)</label>
+                                <input type="text" name="gemini_project_name" class="custom-form-input" 
+                                    value="{{ $settings['ai']['project_name'] ?? 'projects/4377299858' }}" 
+                                    placeholder="projects/4377299858">
+                            </div>
+                        </div>
+
+                        <!-- Fila 3: Número de Proyecto & Botón de Prueba -->
+                        <div class="form-row-grid" style="margin-top: 8px; margin-bottom: 0; align-items: flex-end;">
+                            <div class="form-field-group" style="margin-bottom: 0;">
+                                <label class="form-field-label">Número del Proyecto (Opcional)</label>
+                                <input type="text" name="gemini_project_number" class="custom-form-input" 
+                                    value="{{ $settings['ai']['project_number'] ?? '4377299858' }}" 
+                                    placeholder="4377299858">
+                            </div>
+
+                            <div class="form-field-group" style="margin-bottom: 0; display: flex; align-items: flex-end;">
+                                <button type="button" id="btnTestGemini" onclick="testGeminiConnectionAjax()" 
+                                    style="width: 100%; height: 42px; border-radius: 8px; border: 1.5px solid #0284c7; background: #0284c7; color: #ffffff; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; box-shadow: 0 2px 4px rgba(2, 132, 199, 0.25); transition: all 0.2s ease;">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+                                    <span id="btnTestGeminiText">Probar Conexión con Gemini</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="geminiTestResult" style="display: none; margin-top: 14px; padding: 12px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 600; line-height: 1.45;"></div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Capacidades & Estado IA -->
+                <div>
+                    <div class="glass-card settings-card">
+                        <div class="settings-section-head">
+                            <div class="kpi-icon-glow" style="background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); color: #0284c7; width: 40px; height: 40px;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h2>Capacidades de IA Activas</h2>
+                                <p>Módulos conectados al motor generativo</p>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 14px; font-size: 13px;">
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                                <span style="color: #64748b;">Ergonomía ROSA (Paso 3)</span>
+                                <span style="color: #0284c7; font-weight: 700;">● Habilitado</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                                <span style="color: #64748b;">Análisis Biomecánico</span>
+                                <b style="color: #0f172a;">Automático</b>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                                <span style="color: #64748b;">Recomendaciones SySO</span>
+                                <b style="color: #0f172a;">Normativo ISO</b>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: #64748b;">Proveedor de IA</span>
+                                <span style="color: #0284c7; font-weight: 700;">Google Gemini API</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: API & Integraciones -->
         <div class="settings-tab-pane" id="tab-api">
             <div class="settings-form-layout">
                 <div>
@@ -433,6 +595,142 @@
                 qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=110x110&margin=4&data=' + encodeURIComponent(url);
             }
         }
+
+        function toggleApiKeyVisibility() {
+            const input = document.getElementById('geminiApiKeyInput');
+            const icon = document.getElementById('geminiEyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                icon.textContent = '👁️';
+            }
+        }
+
+        async function pasteFromClipboard(targetId) {
+            try {
+                const text = await navigator.clipboard.readText();
+                const input = document.getElementById(targetId);
+                if (input && text) {
+                    input.value = text.trim();
+                    triggerToast('Clave pegada correctamente', '📋');
+                }
+            } catch (err) {
+                const manual = prompt('Pega aquí tu clave de API de Gemini:', '');
+                if (manual) {
+                    const input = document.getElementById(targetId);
+                    if (input) input.value = manual.trim();
+                }
+            }
+        }
+
+        async function fetchGeminiModelsAjax() {
+            const btnText = document.getElementById('btnSyncModelsText');
+            const apiKey = document.getElementById('geminiApiKeyInput').value.trim();
+            const select = document.getElementById('geminiModelSelect');
+            const resultBox = document.getElementById('geminiTestResult');
+
+            if (!apiKey) {
+                alert('Por favor ingresa tu clave de API de Gemini para obtener los modelos.');
+                return;
+            }
+
+            const origText = btnText.textContent;
+            btnText.textContent = 'Consultando...';
+
+            try {
+                const resp = await fetch("{{ route('settings.gemini-models') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ gemini_api_key: apiKey })
+                });
+                const data = await resp.json();
+                if (data.success && data.models && data.models.length > 0) {
+                    const currentVal = select.value;
+                    select.innerHTML = '';
+                    data.models.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m.id;
+                        opt.textContent = `${m.id} (${m.name})`;
+                        if (m.id === currentVal || (currentVal === 'gemini-3.8-flash' && m.id === 'gemini-3.8-flash')) {
+                            opt.selected = true;
+                        }
+                        select.appendChild(opt);
+                    });
+                    resultBox.style.display = 'block';
+                    resultBox.style.background = '#ecfdf5';
+                    resultBox.style.color = '#065f46';
+                    resultBox.style.border = '1px solid #a7f3d0';
+                    resultBox.innerHTML = `✓ <strong>Modelos actualizados:</strong> Se encontraron ${data.models.length} modelos compatibles con tu API Key.`;
+                } else {
+                    alert(data.message || 'No se pudieron recuperar los modelos.');
+                }
+            } catch (err) {
+                alert('Error al consultar los modelos de Google Gemini.');
+            } finally {
+                btnText.textContent = origText;
+            }
+        }
+
+        async function testGeminiConnectionAjax() {
+            const btn = document.getElementById('btnTestGemini');
+            const btnText = document.getElementById('btnTestGeminiText');
+            const resultBox = document.getElementById('geminiTestResult');
+            const apiKey = document.getElementById('geminiApiKeyInput').value.trim();
+            const model = document.getElementById('geminiModelSelect').value;
+
+            if (!apiKey) {
+                alert('Por favor introduce la clave de API antes de probar la conexión.');
+                return;
+            }
+
+            btn.disabled = true;
+            btnText.textContent = 'Probando conexión...';
+            resultBox.style.display = 'none';
+
+            try {
+                const resp = await fetch("{{ route('settings.test-gemini') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        gemini_api_key: apiKey,
+                        gemini_model: model
+                    })
+                });
+                const data = await resp.json();
+                resultBox.style.display = 'block';
+                if (data.success) {
+                    resultBox.style.background = '#ecfdf5';
+                    resultBox.style.color = '#065f46';
+                    resultBox.style.border = '1px solid #a7f3d0';
+                    resultBox.innerHTML = `✓ <strong>${data.message}</strong>`;
+                } else {
+                    resultBox.style.background = '#fef2f2';
+                    resultBox.style.color = '#991b1b';
+                    resultBox.style.border = '1px solid #fecaca';
+                    resultBox.innerHTML = `✕ <strong>Error:</strong> ${data.message}`;
+                }
+            } catch (e) {
+                resultBox.style.display = 'block';
+                resultBox.style.background = '#fef2f2';
+                resultBox.style.color = '#991b1b';
+                resultBox.style.border = '1px solid #fecaca';
+                resultBox.innerHTML = `✕ <strong>Error de red:</strong> No se pudo comunicar con el servidor`;
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Probar Conexión con Gemini';
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             const input = document.getElementById('appApiUrlInput');
             if (input) {
