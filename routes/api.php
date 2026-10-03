@@ -23,6 +23,7 @@ Route::post('/change-password', [MobileApiController::class, 'changePassword']);
 // Gestión de Proyectos y Módulos de Monitoreo
 Route::get('/projects', [MobileApiController::class, 'projects']);
 Route::get('/projects/{projectId}/modules', [MobileApiController::class, 'projectModules']);
+Route::get('/projects/{projectId}/live-measurements', [MobileApiController::class, 'projectLiveMeasurements']);
 
 // Monitoreo de Iluminación Ocupacional
 Route::get('/modules/{moduleId}/illumination', [MobileApiController::class, 'getIlluminationMeasurements']);
@@ -91,6 +92,20 @@ Route::post('/modules/{moduleId}/opacity', [MobileApiController::class, 'storeOp
 Route::post('/modules/{moduleId}/opacidad', [MobileApiController::class, 'storeOpacityMeasurement']);
 Route::delete('/modules/{moduleId}/opacity/{id}', [MobileApiController::class, 'destroyOpacityMeasurement']);
 Route::delete('/modules/{moduleId}/opacidad/{id}', [MobileApiController::class, 'destroyOpacityMeasurement']);
+
+// Monitoreo de Gases Ocupacionales y Ambientales
+Route::get('/modules/{moduleId}/gases', [MobileApiController::class, 'getGasesMeasurements']);
+Route::post('/modules/{moduleId}/gases', [MobileApiController::class, 'storeGasesMeasurement']);
+Route::delete('/modules/{moduleId}/gases/{id}', [MobileApiController::class, 'destroyGasesMeasurement']);
+
+// Monitoreo de Inspección Fotográfica
+Route::get('/modules/{moduleId}/inspeccion-fotografica', [MobileApiController::class, 'getPhotographicInspectionMeasurements']);
+Route::get('/modules/{moduleId}/photographic-inspection', [MobileApiController::class, 'getPhotographicInspectionMeasurements']);
+Route::post('/modules/{moduleId}/inspeccion-fotografica', [MobileApiController::class, 'storePhotographicInspectionMeasurement']);
+Route::post('/modules/{moduleId}/photographic-inspection', [MobileApiController::class, 'storePhotographicInspectionMeasurement']);
+Route::delete('/modules/{moduleId}/inspeccion-fotografica/{id}', [MobileApiController::class, 'destroyPhotographicInspectionMeasurement']);
+Route::delete('/modules/{moduleId}/photographic-inspection/{id}', [MobileApiController::class, 'destroyPhotographicInspectionMeasurement']);
+
 
 
 

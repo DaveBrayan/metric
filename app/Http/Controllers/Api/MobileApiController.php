@@ -17,12 +17,15 @@ use App\Models\RosaMeasurement;
 use App\Models\FireActivityMeasurement;
 use App\Models\FireWeightMeasurement;
 use App\Models\OpacityMeasurement;
+use App\Models\GasMeasurement;
+use App\Models\PhotographicInspection;
 use App\Http\Controllers\VentilationController;
 use App\Http\Controllers\HeatStressController;
 use App\Http\Controllers\ColdStressController;
 use App\Http\Controllers\DosimetryController;
 use App\Http\Controllers\ErgonomiaRebaController;
 use App\Http\Controllers\ErgonomiaRosaController;
+use App\Http\Controllers\GasesController;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -356,6 +359,8 @@ class MobileApiController extends Controller
             'carga_fuego_actividad' => 'Carga de Fuego por Actividad',
             'fuego_peso' => 'Carga de Fuego por Peso',
             'carga_fuego_peso' => 'Carga de Fuego por Peso',
+            'inspeccion_fotografica' => 'Inspección Fotográfica',
+            'fotografica' => 'Inspección Fotográfica',
         ];
 
         $modules = $project->modules
@@ -401,6 +406,8 @@ class MobileApiController extends Controller
                     $measurementsCount = $mod->illuminationMeasurements()->count();
                 } elseif ($isDosi || $moduleKey === 'dosimetria' || $moduleKey === 'dosimetry') {
                     $measurementsCount = $mod->dosimetryMeasurements()->count();
+                } elseif ($moduleKey === 'inspeccion_fotografica' || $moduleKey === 'fotografica') {
+                    $measurementsCount = $mod->photographicInspections()->count();
                 } elseif ($moduleKey === 'ergonomia' || $moduleKey === 'ergonomia_reba') {
                     $measurementsCount = $mod->rebaMeasurements()->count();
                 } elseif ($moduleKey === 'ergonomia_rosa' || $moduleKey === 'rosa') {
@@ -415,6 +422,8 @@ class MobileApiController extends Controller
                     $measurementsCount = $mod->heatStressMeasurements()->count();
                 } elseif ($moduleKey === 'estres_frio') {
                     $measurementsCount = $mod->coldStressMeasurements()->count();
+                } elseif ($moduleKey === 'gases' || $moduleKey === 'gas') {
+                    $measurementsCount = $mod->gasMeasurements()->count();
                 } else {
                     $measurementsCount = (int) ($mod->points_completed ?? 0);
                 }
@@ -472,6 +481,14 @@ class MobileApiController extends Controller
             ],
             'modules' => $modules,
         ]);
+    }
+
+    /**
+     * Obtener puntos de medición en tiempo real de todos los módulos de un proyecto.
+     */
+    public function projectLiveMeasurements(Request $request, $projectId)
+    {
+        return app(\App\Http\Controllers\ProjectController::class)->liveMonitoringData($request, $projectId);
     }
 
     /**
@@ -3755,26 +3772,546 @@ class MobileApiController extends Controller
     }
 
     /**
-     * Eliminar una medición de opacidad vehicular.
+     * Listar mediciones de gases de un módulo para la app móvil.
      */
-    public function destroyOpacityMeasurement($moduleId, $id)
+    public function getGasesMeasurements($moduleId)
     {
         $module = MeasurementModule::findOrFail($moduleId);
-        $measurement = $module->opacityMeasurements()->find($id);
+        $measurements = $module->gasMeasurements()->orderBy('id', 'asc')->get()->map(function ($item) {
+            $rawImages = is_array($item->images) ? $item->images : (json_decode($item->images, true) ?: []);
+            if (empty($rawImages) && !empty($item->image_path)) {
+                $rawImages = [$item->image_path];
+            }
+            $imagesUrls = array_values(array_filter(array_map(function ($p) {
+                if (!$p) return null;
+                if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+                return asset($p);
+            }, $rawImages)));
+
+            return [
+                'id' => (string) $item->id,
+                'local_uuid' => $item->local_uuid,
+                'remote_id' => (string) $item->id,
+                'point_number' => $item->point_number,
+                'measurement_date' => $item->measurement_date ? $item->measurement_date->format('Y-m-d') : null,
+                'measurement_time' => $item->measurement_time,
+                'area' => $item->area,
+                'workstation' => $item->workstation,
+                'measurement_point' => $item->measurement_point,
+                'activity_description' => $item->activity_description,
+                'temperatura' => $item->temperatura !== null ? (float)$item->temperatura : null,
+                'presion_atm' => $item->presion_atm !== null ? (float)$item->presion_atm : null,
+                'vel_aire' => $item->vel_aire !== null ? (float)$item->vel_aire : null,
+                'selected_gases' => is_array($item->selected_gases) ? $item->selected_gases : json_decode($item->selected_gases, true),
+                'gases_readings' => is_array($item->gases_readings) ? $item->gases_readings : json_decode($item->gases_readings, true),
+                'o2_values' => is_array($item->o2_values) ? $item->o2_values : json_decode($item->o2_values, true),
+                'o2_prom' => $item->o2_prom !== null ? (float)$item->o2_prom : null,
+                'h2s_values' => is_array($item->h2s_values) ? $item->h2s_values : json_decode($item->h2s_values, true),
+                'h2s_prom' => $item->h2s_prom !== null ? (float)$item->h2s_prom : null,
+                'co_values' => is_array($item->co_values) ? $item->co_values : json_decode($item->co_values, true),
+                'co_prom' => $item->co_prom !== null ? (float)$item->co_prom : null,
+                'lel_values' => is_array($item->lel_values) ? $item->lel_values : json_decode($item->lel_values, true),
+                'lel_prom' => $item->lel_prom !== null ? (float)$item->lel_prom : null,
+                'hcho_values' => is_array($item->hcho_values) ? $item->hcho_values : json_decode($item->hcho_values, true),
+                'hcho_prom' => $item->hcho_prom !== null ? (float)$item->hcho_prom : null,
+                'tvoc_values' => is_array($item->tvoc_values) ? $item->tvoc_values : json_decode($item->tvoc_values, true),
+                'tvoc_prom' => $item->tvoc_prom !== null ? (float)$item->tvoc_prom : null,
+                'co2_values' => is_array($item->co2_values) ? $item->co2_values : json_decode($item->co2_values, true),
+                'co2_prom' => $item->co2_prom !== null ? (float)$item->co2_prom : null,
+                'as_values' => is_array($item->as_values) ? $item->as_values : json_decode($item->as_values, true),
+                'as_prom' => $item->as_prom !== null ? (float)$item->as_prom : null,
+                'so2_values' => is_array($item->so2_values) ? $item->so2_values : json_decode($item->so2_values, true),
+                'so2_prom' => $item->so2_prom !== null ? (float)$item->so2_prom : null,
+                'nh3_values' => is_array($item->nh3_values) ? $item->nh3_values : json_decode($item->nh3_values, true),
+                'nh3_prom' => $item->nh3_prom !== null ? (float)$item->nh3_prom : null,
+                'cl2_values' => is_array($item->cl2_values) ? $item->cl2_values : json_decode($item->cl2_values, true),
+                'cl2_prom' => $item->cl2_prom !== null ? (float)$item->cl2_prom : null,
+                'tcov_values' => is_array($item->tcov_values) ? $item->tcov_values : json_decode($item->tcov_values, true),
+                'tcov_prom' => $item->tcov_prom !== null ? (float)$item->tcov_prom : null,
+                'no2_values' => is_array($item->no2_values) ? $item->no2_values : json_decode($item->no2_values, true),
+                'no2_prom' => $item->no2_prom !== null ? (float)$item->no2_prom : null,
+                'location' => $item->location,
+                'latitude' => $item->latitude !== null ? (float)$item->latitude : null,
+                'longitude' => $item->longitude !== null ? (float)$item->longitude : null,
+                'utm_zone' => $item->utm_zone,
+                'utm_easting' => $item->utm_easting !== null ? (float)$item->utm_easting : null,
+                'utm_northing' => $item->utm_northing !== null ? (float)$item->utm_northing : null,
+                'image_urls' => $imagesUrls,
+                'observations' => $item->observations,
+                'registered_by' => $item->registered_by,
+                'staff_id' => $item->staff_id,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'measurements' => $measurements,
+            'points_completed' => $measurements->count(),
+        ]);
+    }
+
+    /**
+     * Registrar o actualizar una medición de gases desde la app móvil.
+     */
+    public function storeGasesMeasurement(Request $request, $moduleId)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+
+        $localUuid = $request->input('local_uuid');
+        $id = $request->input('id');
+
+        $measurement = null;
+        if (!empty($localUuid)) {
+            $measurement = $module->gasMeasurements()->where('local_uuid', $localUuid)->first();
+        }
+        if (!$measurement && !empty($id)) {
+            $measurement = $module->gasMeasurements()->find($id);
+        }
+
+        $date = $request->input('measurement_date') ?? $request->input('date') ?? $request->input('measured_at') ?? Carbon::now()->format('Y-m-d');
+        if (str_contains($date, 'T')) {
+            $date = explode('T', $date)[0];
+        }
+
+        $time = $request->input('measurement_time') ?? $request->input('time') ?? Carbon::now()->format('H:i');
+
+        $area = $request->input('area') ?? 'Área de Trabajo';
+        $workstation = $request->input('workstation') ?? $request->input('puesto_trabajo') ?? 'Puesto General';
+        $pointNumber = $request->input('point_number');
+        if (empty($pointNumber)) {
+            $count = $module->gasMeasurements()->count();
+            $pointNumber = str_pad($count + 1, 2, '0', STR_PAD_LEFT);
+        }
+
+        $temp = $request->filled('temperatura') ? (float)$request->input('temperatura') : null;
+        $presion = $request->filled('presion_atm') ? (float)$request->input('presion_atm') : null;
+        $velAire = $request->filled('vel_aire') ? (float)$request->input('vel_aire') : null;
+
+        $rawSelectedGases = $request->input('selected_gases');
+        $selectedGases = is_array($rawSelectedGases) ? $rawSelectedGases : (json_decode($rawSelectedGases, true) ?: []);
+        if (is_string($selectedGases)) {
+            $selectedGases = json_decode($selectedGases, true) ?: [];
+        }
+
+        $rawGasesReadings = $request->input('gases_readings');
+        $gasesReadings = is_array($rawGasesReadings) ? $rawGasesReadings : (json_decode($rawGasesReadings, true) ?: []);
+        if (is_string($gasesReadings)) {
+            $gasesReadings = json_decode($gasesReadings, true) ?: [];
+        }
+
+        if (empty($selectedGases) && is_array($gasesReadings) && !empty($gasesReadings)) {
+            $selectedGases = array_keys($gasesReadings);
+        }
+
+        // Subida de imágenes
+        $uploadedImages = [];
+        $uploadDir = public_path('uploads/measurements');
+        if (!File::isDirectory($uploadDir)) {
+            File::makeDirectory($uploadDir, 0755, true, true);
+        }
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                if ($file->isValid()) {
+                    $ext = strtolower($file->getClientOriginalExtension());
+                    $safeExt = in_array($ext, ['jpeg', 'jpg', 'png', 'webp']) ? $ext : 'jpg';
+                    $fname = 'gas_' . time() . '_' . uniqid() . '.' . $safeExt;
+                    $file->move($uploadDir, $fname);
+                    $uploadedImages[] = 'uploads/measurements/' . $fname;
+                }
+            }
+        }
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            if ($file->isValid()) {
+                $ext = strtolower($file->getClientOriginalExtension());
+                $safeExt = in_array($ext, ['jpeg', 'jpg', 'png', 'webp']) ? $ext : 'jpg';
+                $fname = 'gas_' . time() . '_' . uniqid() . '.' . $safeExt;
+                $file->move($uploadDir, $fname);
+                array_unshift($uploadedImages, 'uploads/measurements/' . $fname);
+            }
+        }
+
+        // Si se enviaron URLs remotas o preexistentes
+        if ($request->filled('image_urls')) {
+            $rawUrls = $request->input('image_urls');
+            $decodedUrls = is_array($rawUrls) ? $rawUrls : json_decode($rawUrls, true);
+            if (is_array($decodedUrls)) {
+                foreach ($decodedUrls as $u) {
+                    if ($u && !in_array($u, $uploadedImages)) {
+                        $uploadedImages[] = $u;
+                    }
+                }
+            }
+        }
+
+        $lat = $request->filled('latitude') ? (float)$request->input('latitude') : null;
+        $lng = $request->filled('longitude') ? (float)$request->input('longitude') : null;
+        $utmZone = $request->input('utm_zone');
+        $utmE = $request->filled('utm_easting') ? (float)$request->input('utm_easting') : null;
+        $utmN = $request->filled('utm_northing') ? (float)$request->input('utm_northing') : null;
+
+        $locInput = $request->input('location');
+        if (is_string($locInput) && (str_starts_with($locInput, '{') || str_starts_with($locInput, '['))) {
+            $locDecoded = json_decode($locInput, true);
+            if (is_array($locDecoded)) {
+                if ($utmZone === null && !empty($locDecoded['utm_zone'])) $utmZone = $locDecoded['utm_zone'];
+                if ($utmE === null && !empty($locDecoded['easting'])) $utmE = (float)$locDecoded['easting'];
+                if ($utmN === null && !empty($locDecoded['northing'])) $utmN = (float)$locDecoded['northing'];
+                if ($lat === null && !empty($locDecoded['latitude'])) $lat = (float)$locDecoded['latitude'];
+                if ($lng === null && !empty($locDecoded['longitude'])) $lng = (float)$locDecoded['longitude'];
+            }
+        }
+
+        $staffId = $request->input('staff_id');
+        $registeredBy = $request->input('registered_by') ?? $request->input('created_by');
+        if (!empty($staffId)) {
+            $st = Staff::find($staffId);
+            if ($st) $registeredBy = $st->full_name ?: $st->name;
+        }
+
+        $data = [
+            'point_number' => $pointNumber,
+            'measurement_date' => $date,
+            'measurement_time' => $time,
+            'area' => $area,
+            'workstation' => $workstation,
+            'measurement_point' => $request->input('measurement_point') ?? $workstation,
+            'activity_description' => $request->input('activity_description') ?? 'Operaciones generales',
+            'temperatura' => $temp,
+            'presion_atm' => $presion,
+            'vel_aire' => $velAire,
+            'selected_gases' => $selectedGases,
+            'gases_readings' => $gasesReadings,
+            'latitude' => $lat,
+            'longitude' => $lng,
+            'utm_zone' => $utmZone,
+            'utm_easting' => $utmE,
+            'utm_northing' => $utmN,
+            'location' => $request->input('location'),
+            'observations' => $request->input('observations') ?? $request->input('observaciones'),
+            'registered_by' => $registeredBy,
+            'staff_id' => $staffId,
+            'local_uuid' => $localUuid ?? ($measurement ? $measurement->local_uuid : Str::uuid()->toString()),
+        ];
+
+        // Columnas de respaldo por gas si vienen
+        $gasesDefs = GasesController::getGasesDefinitions();
+        foreach ($gasesDefs as $gDef) {
+            $gk = $gDef['key'];
+            if (is_array($gasesReadings) && isset($gasesReadings[$gk])) {
+                $gData = $gasesReadings[$gk];
+                $vals = [];
+                if (isset($gData['values']) && is_array($gData['values'])) {
+                    $vals = array_values(array_map('floatval', array_filter($gData['values'], 'is_numeric')));
+                } elseif (isset($gData['med1']) || isset($gData['med2']) || isset($gData['med3'])) {
+                    $m1 = isset($gData['med1']) && is_numeric($gData['med1']) ? (float)$gData['med1'] : null;
+                    $m2 = isset($gData['med2']) && is_numeric($gData['med2']) ? (float)$gData['med2'] : null;
+                    $m3 = isset($gData['med3']) && is_numeric($gData['med3']) ? (float)$gData['med3'] : null;
+                    $vals = array_values(array_filter([$m1, $m2, $m3], fn($x) => $x !== null));
+                }
+                $data["{$gk}_values"] = !empty($vals) ? $vals : null;
+                $data["{$gk}_prom"] = isset($gData['prom']) && is_numeric($gData['prom']) ? (float)$gData['prom'] : (!empty($vals) ? array_sum($vals) / count($vals) : null);
+            }
+        }
+
+        if (!empty($uploadedImages)) {
+            $data['images'] = $uploadedImages;
+            $data['image_path'] = $uploadedImages[0];
+        }
+
+        if ($measurement) {
+            $measurement->update($data);
+            $statusCode = 200;
+        } else {
+            $measurement = $module->gasMeasurements()->create($data);
+            $statusCode = 201;
+        }
+
+        $module->points_completed = $module->gasMeasurements()->count();
+        $module->save();
+
+        $finalImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
+        $finalUrls = array_values(array_filter(array_map(function ($p) {
+            if (!$p) return null;
+            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+            return asset($p);
+        }, $finalImages)));
+
+        return response()->json([
+            'success' => true,
+            'message' => "Punto de medición de gases #{$measurement->point_number} guardado exitosamente.",
+            'id' => (string) $measurement->id,
+            'remote_id' => (string) $measurement->id,
+            'point_number' => $measurement->point_number,
+            'area' => $measurement->area,
+            'workstation' => $measurement->workstation,
+            'local_uuid' => $measurement->local_uuid,
+            'image_urls' => $finalUrls,
+            'points_completed' => $module->points_completed,
+        ], $statusCode);
+    }
+
+    /**
+     * Eliminar una medición de gases desde la app móvil.
+     */
+    public function destroyGasesMeasurement($moduleId, $id)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+        $measurement = $module->gasMeasurements()->find($id);
 
         if ($measurement) {
             $measurement->delete();
-            $module->points_completed = $module->opacityMeasurements()->count();
+            $module->points_completed = $module->gasMeasurements()->count();
             $module->save();
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Medición de opacidad eliminada correctamente.',
+            'message' => 'Medición de gases eliminada correctamente.',
+            'points_completed' => $module->points_completed,
+        ]);
+    }
+
+    /**
+     * Obtener puntos de inspección fotográfica para la app móvil.
+     */
+    public function getPhotographicInspectionMeasurements($moduleId)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+
+        $measurements = $module->photographicInspections()
+            ->orderBy('id', 'asc')
+            ->get()
+            ->map(function ($item, $index) {
+                $images = is_array($item->images) ? $item->images : (json_decode($item->images, true) ?: []);
+                if (empty($images) && !empty($item->image_path)) {
+                    $images = [$item->image_path];
+                }
+
+                $imageUrls = array_values(array_filter(array_map(function ($p) {
+                    if (!$p) return null;
+                    if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+                    return asset($p);
+                }, $images)));
+
+                return [
+                    'id' => $item->id,
+                    'remote_id' => (string) $item->id,
+                    'module_id' => (string) $item->module_id,
+                    'monitoreo_id' => (string) $item->module_id,
+                    'point_number' => $item->point_number ?: str_pad($index + 1, 2, '0', STR_PAD_LEFT),
+                    'inspection_date' => $item->inspection_date ? $item->inspection_date->format('Y-m-d') : null,
+                    'inspection_time' => $item->inspection_time,
+                    'measured_at' => $item->inspection_date 
+                        ? ($item->inspection_date->format('Y-m-d') . ' ' . ($item->inspection_time ?: '00:00:00'))
+                        : null,
+                    'area' => $item->area,
+                    'observation' => $item->observation,
+                    'observacion' => $item->observation,
+                    'description' => $item->description,
+                    'descripcion' => $item->description,
+                    'image_urls' => $imageUrls,
+                    'images' => $imageUrls,
+                    'location' => $item->location,
+                    'latitude' => $item->latitude !== null ? (float)$item->latitude : null,
+                    'longitude' => $item->longitude !== null ? (float)$item->longitude : null,
+                    'utm_zone' => $item->utm_zone ?: '20K',
+                    'utm_easting' => $item->utm_easting !== null ? (float)$item->utm_easting : null,
+                    'utm_northing' => $item->utm_northing !== null ? (float)$item->utm_northing : null,
+                    'gps_accuracy' => $item->gps_accuracy !== null ? (float)$item->gps_accuracy : null,
+                    'registered_by' => $item->registered_by,
+                    'created_by' => $item->registered_by,
+                    'staff_id' => $item->staff_id,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'module_id' => (string) $module->id,
+            'module_name' => $module->name,
+            'measurements' => $measurements,
+        ]);
+    }
+
+    /**
+     * Guardar un punto de inspección fotográfica desde la aplicación móvil.
+     */
+    public function storePhotographicInspectionMeasurement(Request $request, $moduleId)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+
+        $pointNumber = $request->input('point_number') ?? $request->input('punto_numero');
+        $area = $request->input('area') ?? 'Área General';
+        $observation = $request->input('category') ?? $request->input('categoria') ?? $request->input('observation') ?? $request->input('observacion') ?? 'Inspección visual';
+        $description = $request->input('description') ?? $request->input('descripcion');
+        $location = $request->input('location') ?? $request->input('ubicacion');
+        $latitude = $request->input('latitude') ?? $request->input('latitud');
+        $longitude = $request->input('longitude') ?? $request->input('longitud');
+        $utmZone = $request->input('utm_zone') ?? $request->input('zona_utm') ?? '20K';
+        $utmEasting = $request->input('utm_easting') ?? $request->input('este_utm');
+        $utmNorthing = $request->input('utm_northing') ?? $request->input('norte_utm');
+        $gpsAccuracy = $request->input('gps_accuracy') ?? $request->input('precision_gps');
+
+        $measuredAt = $request->input('measured_at') ?? $request->input('inspection_date');
+        $inspectionDate = date('Y-m-d');
+        $inspectionTime = date('H:i');
+        if (!empty($measuredAt)) {
+            try {
+                $c = Carbon::parse($measuredAt);
+                $inspectionDate = $c->format('Y-m-d');
+                $inspectionTime = $c->format('H:i');
+            } catch (\Exception $e) {}
+        }
+        if ($request->filled('inspection_time')) {
+            $inspectionTime = $request->input('inspection_time');
+        }
+
+        // Subida de imágenes (multipart o base64)
+        $uploadedImages = [];
+        $uploadDir = public_path('uploads/inspecciones_fotograficas');
+        if (!File::isDirectory($uploadDir)) {
+            File::makeDirectory($uploadDir, 0755, true, true);
+        }
+
+        $files = [];
+        if ($request->hasFile('photos')) {
+            $f = $request->file('photos');
+            $files = is_array($f) ? $f : [$f];
+        } elseif ($request->hasFile('images')) {
+            $f = $request->file('images');
+            $files = is_array($f) ? $f : [$f];
+        } elseif ($request->hasFile('image')) {
+            $files = [$request->file('image')];
+        } elseif ($request->hasFile('photo')) {
+            $files = [$request->file('photo')];
+        }
+
+        foreach ($files as $photo) {
+            if ($photo && $photo->isValid() && count($uploadedImages) < 3) {
+                $filename = 'insp_' . $moduleId . '_' . time() . '_' . Str::random(6) . '.' . $photo->getClientOriginalExtension();
+                $photo->move($uploadDir, $filename);
+                $uploadedImages[] = '/uploads/inspecciones_fotograficas/' . $filename;
+            }
+        }
+
+        // Base64 photos support
+        $base64Photos = $request->input('base64_photos') ?? $request->input('photos_base64');
+        if (is_array($base64Photos)) {
+            foreach ($base64Photos as $b64) {
+                if (count($uploadedImages) >= 3) break;
+                if (!empty($b64) && is_string($b64)) {
+                    $cleanB64 = preg_replace('/^data:image\/\w+;base64,/', '', $b64);
+                    $decoded = base64_decode($cleanB64);
+                    if ($decoded) {
+                        $filename = 'insp_' . $moduleId . '_' . time() . '_' . Str::random(6) . '.jpg';
+                        file_put_contents($uploadDir . '/' . $filename, $decoded);
+                        $uploadedImages[] = '/uploads/inspecciones_fotograficas/' . $filename;
+                    }
+                }
+            }
+        }
+
+        // Si ya tenía imágenes remotas pasadas en el payload
+        $existingImages = $request->input('image_urls') ?? $request->input('images');
+        if (is_array($existingImages) && empty($uploadedImages)) {
+            $uploadedImages = array_slice($existingImages, 0, 3);
+        }
+
+        if (empty($pointNumber)) {
+            $count = $module->photographicInspections()->count();
+            $pointNumber = str_pad($count + 1, 2, '0', STR_PAD_LEFT);
+        }
+
+        $remoteId = $request->input('id') ?? $request->input('remote_id');
+        $measurement = null;
+        if ($remoteId && is_numeric($remoteId)) {
+            $measurement = $module->photographicInspections()->find($remoteId);
+        }
+
+        $data = [
+            'point_number' => $pointNumber,
+            'inspection_date' => $inspectionDate,
+            'inspection_time' => $inspectionTime,
+            'area' => $area,
+            'observation' => $observation,
+            'description' => $description,
+            'location' => $location,
+            'latitude' => $latitude !== null ? (float)$latitude : null,
+            'longitude' => $longitude !== null ? (float)$longitude : null,
+            'utm_zone' => $utmZone,
+            'utm_easting' => $utmEasting !== null ? (float)$utmEasting : null,
+            'utm_northing' => $utmNorthing !== null ? (float)$utmNorthing : null,
+            'gps_accuracy' => $gpsAccuracy !== null ? (float)$gpsAccuracy : null,
+            'registered_by' => $request->input('registered_by') ?? $request->input('created_by'),
+            'staff_id' => $request->input('staff_id'),
+        ];
+
+        if (!empty($uploadedImages)) {
+            $data['images'] = $uploadedImages;
+            $data['image_path'] = $uploadedImages[0];
+        }
+
+        if ($measurement) {
+            $measurement->update($data);
+            $statusCode = 200;
+        } else {
+            $measurement = $module->photographicInspections()->create($data);
+            $statusCode = 201;
+        }
+
+        $completedCount = $module->photographicInspections()->count();
+        $module->points_completed = $completedCount;
+        if ($module->points_total < $completedCount) {
+            $module->points_total = $completedCount;
+        }
+        $module->status = ($module->points_total > 0 && $completedCount >= $module->points_total) ? 'Completado' : 'En Progreso';
+        $module->status_theme = ($module->status === 'Completado') ? 'done' : 'in_progress';
+        $module->save();
+
+        $finalImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
+        $finalUrls = array_values(array_filter(array_map(function ($p) {
+            if (!$p) return null;
+            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+            return asset($p);
+        }, $finalImages)));
+
+        return response()->json([
+            'success' => true,
+            'message' => "Punto de inspección fotográfica #{$measurement->point_number} guardado exitosamente.",
+            'id' => (string) $measurement->id,
+            'remote_id' => (string) $measurement->id,
+            'point_number' => $measurement->point_number,
+            'area' => $measurement->area,
+            'observation' => $measurement->observation,
+            'description' => $measurement->description,
+            'image_urls' => $finalUrls,
+            'points_completed' => $module->points_completed,
+        ], $statusCode);
+    }
+
+    /**
+     * Eliminar un punto de inspección fotográfica desde la app móvil.
+     */
+    public function destroyPhotographicInspectionMeasurement($moduleId, $id)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+        $measurement = $module->photographicInspections()->find($id);
+
+        if ($measurement) {
+            $measurement->delete();
+            $module->points_completed = $module->photographicInspections()->count();
+            $module->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Punto de inspección fotográfica eliminado correctamente.',
             'points_completed' => $module->points_completed,
         ]);
     }
 }
+
+
 
 
 

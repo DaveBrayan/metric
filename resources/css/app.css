@@ -1382,6 +1382,18 @@ table.modern-table tr:last-child td {
     transform: scale(1.15);
 }
 
+.btn-admin-icon-action.theme-live {
+    color: #059669;
+    background: rgba(16, 185, 129, 0.08);
+    border-color: rgba(16, 185, 129, 0.35);
+}
+.btn-admin-icon-action.theme-live:hover {
+    border-color: #10b981;
+    background: #ecfdf5;
+    color: #047857;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+}
+
 .btn-admin-icon-action.theme-cyan {
     color: var(--cyan-dark);
 }

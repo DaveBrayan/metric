@@ -963,13 +963,23 @@ table#modulesMasterTable td {
                     </div>
                 </div>
             </div>
-            <a href="{{ route('modules.index') }}" class="btn-clear-project-filter" title="Quitar filtro y ver todos los módulos">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/>
-                    <line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-                <span>Ver Todos los Módulos</span>
-            </a>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <a href="{{ route('projects.live_monitoring', $activeProject->id) }}" class="btn-primary" style="display: inline-flex; align-items: center; gap: 7px; background: linear-gradient(135deg, #059669, #10b981); border: 1px solid #059669; padding: 7px 14px; font-size: 12.5px; font-weight: 700; border-radius: 10px; color: white; text-decoration: none; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.28);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
+                        <path d="M2 12h20"/>
+                    </svg>
+                    <span>Radar en Tiempo Real</span>
+                </a>
+                <a href="{{ route('modules.index') }}" class="btn-clear-project-filter" title="Quitar filtro y ver todos los módulos">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                    <span>Ver Todos los Módulos</span>
+                </a>
+            </div>
         </div>
     @endif
 
@@ -1032,7 +1042,7 @@ table#modulesMasterTable td {
                         </div>
                         <div class="dropdown-option-item" data-value="ergonomia_rosa" onclick="selectCustomModuleFilter('ergonomia_rosa', 'Ergonomía ROSA')">
                             <div class="option-item-left">
-                                <span class="option-item-dot" style="background: #e11d48;"></span>
+                                <span class="option-item-dot" style="background: #0284c7;"></span>
                                 <span>Ergonomía ROSA</span>
                             </div>
                             <svg class="option-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1062,6 +1072,13 @@ table#modulesMasterTable td {
                             <div class="option-item-left">
                                 <span class="option-item-dot" style="background: #eab308;"></span>
                                 <span>Iluminación</span>
+                            </div>
+                            <svg class="option-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div class="dropdown-option-item" data-value="inspeccion_fotografica" onclick="selectCustomModuleFilter('inspeccion_fotografica', 'Inspección Fotográfica')">
+                            <div class="option-item-left">
+                                <span class="option-item-dot" style="background: #0284c7;"></span>
+                                <span>Inspección Fotográfica</span>
                             </div>
                             <svg class="option-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         </div>
@@ -1225,13 +1242,27 @@ table#modulesMasterTable td {
                                     </a>
                                 @elseif($item['module_key'] === 'ergonomia_rosa' || $item['module_key'] === 'rosa')
                                     <a href="{{ route('modules.ergonomia_rosa', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Ergonomía ROSA">
-                                        <div style="font-weight: 800; color: #e11d48; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
+                                        <div style="font-weight: 800; color: #0284c7; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
+                                            <span>{{ $item['module_name'] }}</span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                        </div>
+                                    </a>
+                                @elseif($item['module_key'] === 'gases' || $item['module_key'] === 'gas')
+                                    <a href="{{ route('modules.gases', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Monitoreo de Gases">
+                                        <div style="font-weight: 800; color: #0284c7; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
+                                            <span>{{ $item['module_name'] }}</span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                        </div>
+                                    </a>
+                                @elseif($item['module_key'] === 'inspeccion_fotografica' || $item['module_key'] === 'fotografica')
+                                    <a href="{{ route('modules.photographic_inspection', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Inspección Fotográfica">
+                                        <div style="font-weight: 800; color: #0284c7; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
                                             <span>{{ $item['module_name'] }}</span>
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                                         </div>
                                     </a>
                                 @else
-                                    <div style="font-weight: 800; color: var(--ink); font-size: 13.5px; margin-bottom: 4px;">
+                                    <div style="font-weight: 800; color: #0284c7; font-size: 13.5px; margin-bottom: 4px;">
                                         {{ $item['module_name'] }}
                                     </div>
                                 @endif
@@ -1426,10 +1457,25 @@ table#modulesMasterTable td {
                                     @elseif($item['module_key'] === 'ergonomia_rosa' || $item['module_key'] === 'rosa')
                                         <!-- Ver Evaluaciones de Ergonomía ROSA -->
                                         <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.ergonomia_rosa', $item['id']) }}'" title="Ergonomía ROSA (Ver Evaluaciones)" aria-label="Ver Evaluaciones de Ergonomía ROSA">
-                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                                 <rect width="20" height="14" x="2" y="3" rx="2"/>
                                                 <line x1="8" x2="16" y1="21" y2="21"/>
                                                 <line x1="12" x2="12" y1="17" y2="21"/>
+                                            </svg>
+                                        </button>
+                                    @elseif($item['module_key'] === 'gases' || $item['module_key'] === 'gas')
+                                        <!-- Ver Mediciones de Gases -->
+                                        <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.gases', $item['id']) }}'" title="Monitoreo de Gases (Ver Mediciones)" aria-label="Ver Mediciones de Gases">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3.5z"/>
+                                            </svg>
+                                        </button>
+                                    @elseif($item['module_key'] === 'inspeccion_fotografica' || $item['module_key'] === 'fotografica')
+                                        <!-- Ver Inspección Fotográfica -->
+                                        <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.photographic_inspection', $item['id']) }}'" title="Inspección Fotográfica (Ver Puntos)" aria-label="Ver Puntos de Inspección">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                                                <circle cx="12" cy="13" r="3"/>
                                             </svg>
                                         </button>
                                     @endif
@@ -1529,14 +1575,15 @@ table#modulesMasterTable td {
                                     <option value="carga_fuego_peso">Carga de Fuego por Peso</option>
                                     <option value="estres_calor">Estrés Térmico (Calor)</option>
                                     <option value="estres_frio">Estrés Térmico (Frío)</option>
-                                    <option value="gases" disabled>Gases (En construcción)</option>
+                                    <option value="gases">Gases</option>
                                     <option value="iluminacion">Iluminación</option>
+                                    <option value="inspeccion_fotografica">Inspección Fotográfica</option>
                                     <option value="opacidad">Opacidad</option>
-                                    <option value="particulas" disabled>Partículas (En construcción)</option>
+                                    <option value="particulas">Partículas</option>
                                     <option value="ruido_ambiental">Ruido Ambiental</option>
                                     <option value="ruido">Ruido Ocupacional</option>
                                     <option value="ventilacion">Ventilación</option>
-                                    <option value="vibracion" disabled>Vibración (En construcción)</option>
+                                    <option value="vibracion">Vibración</option>
                                 </select>
                             </div>
 
@@ -1744,14 +1791,15 @@ table#modulesMasterTable td {
                                     <option value="carga_fuego_peso">Carga de Fuego por Peso</option>
                                     <option value="estres_calor">Estrés Térmico (Calor)</option>
                                     <option value="estres_frio">Estrés Térmico (Frío)</option>
-                                    <option value="gases" disabled>Gases (En construcción)</option>
+                                    <option value="gases">Gases</option>
                                     <option value="iluminacion">Iluminación</option>
+                                    <option value="inspeccion_fotografica">Inspección Fotográfica</option>
                                     <option value="opacidad">Opacidad</option>
-                                    <option value="particulas" disabled>Partículas (En construcción)</option>
+                                    <option value="particulas">Partículas</option>
                                     <option value="ruido_ambiental">Ruido Ambiental</option>
                                     <option value="ruido">Ruido Ocupacional</option>
                                     <option value="ventilacion">Ventilación</option>
-                                    <option value="vibracion" disabled>Vibración (En construcción)</option>
+                                    <option value="vibracion">Vibración</option>
                                 </select>
                             </div>
 

@@ -661,6 +661,15 @@ textarea.custom-form-input {
                             <!-- 8. Acciones -->
                             <td>
                                 <div class="admin-actions-cell">
+                                    <!-- Monitoreo en Tiempo Real (Live Radar) -->
+                                    <button type="button" class="btn-admin-icon-action theme-live" onclick="window.location.href='{{ route('projects.live_monitoring', $project['id']) }}'" title="Monitoreo en Tiempo Real (Radar GPS y Mediciones en Vivo)" aria-label="Monitoreo en Tiempo Real">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
+                                            <path d="M2 12h20"/>
+                                        </svg>
+                                    </button>
+
                                     <!-- Ver Módulos del Proyecto -->
                                     <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.index', ['proyecto' => $project['id']]) }}'" title="Ver Módulos de Medición de este Proyecto" aria-label="Ver Módulos">
                                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">

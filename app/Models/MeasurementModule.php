@@ -122,9 +122,19 @@ class MeasurementModule extends Model
         return $this->hasOne(FireWeightReport::class, 'module_id');
     }
 
+    public function gasMeasurements(): HasMany
+    {
+        return $this->hasMany(GasMeasurement::class, 'module_id')->orderBy('id', 'asc');
+    }
+
     public function readings(): HasMany
     {
         return $this->hasMany(TelemetryReading::class, 'module_id');
+    }
+
+    public function photographicInspections(): HasMany
+    {
+        return $this->hasMany(PhotographicInspection::class, 'module_id')->orderBy('id', 'asc');
     }
 
     public function getAssignedStaffAttribute()

@@ -21,6 +21,8 @@ use App\Http\Controllers\FireActivityController;
 use App\Http\Controllers\FireWeightController;
 use App\Http\Controllers\ErgonomiaRebaController;
 use App\Http\Controllers\ErgonomiaRosaController;
+use App\Http\Controllers\GasesController;
+use App\Http\Controllers\PhotographicInspectionController;
 
 // 0. Live Zero-Build Asset Fallback (Automatic Dynamic Serving & Sync)
 Route::get('/css/{file}', function ($file) {
@@ -91,6 +93,8 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/proyectos/{id}', [ProjectController::class, 'update'])->name('projects.update');
     Route::match(['delete', 'post'], '/proyectos/{id}/delete', [ProjectController::class, 'destroy'])->name('projects.destroy.post');
     Route::match(['delete', 'post'], '/proyectos/{id}', [ProjectController::class, 'destroy'])->name('projects.destroy');
+    Route::get('/proyectos/{id}/tiempo-real', [ProjectController::class, 'liveMonitoring'])->name('projects.live_monitoring');
+    Route::get('/proyectos/{id}/tiempo-real/data', [ProjectController::class, 'liveMonitoringData'])->name('projects.live_monitoring.data');
 
     Route::get('/modulos', [ProjectController::class, 'modules'])->name('modules.index');
     Route::post('/modulos', [ProjectController::class, 'storeModule'])->name('modules.store');
@@ -217,6 +221,28 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/modulos/{id}/ergonomia-rosa/prompts', [ErgonomiaRosaController::class, 'savePrompts'])->name('modules.ergonomia_rosa.prompts.save');
     Route::post('/modulos/{id}/ergonomia-rosa/generate-ai', [ErgonomiaRosaController::class, 'generateAiContent'])->name('modules.ergonomia_rosa.generate-ai');
 
+    // Monitoreo de Gases Ocupacionales y Ambientales
+    Route::get('/modulos/{id}/gases', [GasesController::class, 'index'])->name('modules.gases');
+    Route::get('/modulos/{id}/gases/informe', [GasesController::class, 'showReport'])->name('modules.gases.report');
+    Route::post('/modulos/{id}/gases/informe/save', [GasesController::class, 'saveReportData'])->name('modules.gases.report.save');
+    Route::post('/modulos/{id}/gases/mediciones', [GasesController::class, 'storeMeasurement'])->name('modules.gases.measurements.store');
+    Route::put('/modulos/{id}/gases/mediciones/{measurementId}', [GasesController::class, 'updateMeasurement'])->name('modules.gases.measurements.update');
+    Route::match(['delete', 'post'], '/modulos/{id}/gases/mediciones/{measurementId}/delete', [GasesController::class, 'destroyMeasurement'])->name('modules.gases.measurements.destroy.post');
+    Route::match(['delete', 'post'], '/modulos/{id}/gases/mediciones/{measurementId}', [GasesController::class, 'destroyMeasurement'])->name('modules.gases.measurements.destroy');
+    Route::post('/modulos/{id}/gases/header', [GasesController::class, 'updateHeader'])->name('modules.gases.header.update');
+    Route::post('/modulos/{id}/gases/photo-report-settings', [GasesController::class, 'savePhotoReportSettings'])->name('modules.gases.photo-report-settings.save');
+
+    // Monitoreo de Inspección Fotográfica
+    Route::get('/modulos/{id}/inspeccion-fotografica', [PhotographicInspectionController::class, 'index'])->name('modules.photographic_inspection');
+    Route::get('/modulos/{id}/inspeccion-fotografica/informe', [PhotographicInspectionController::class, 'showReport'])->name('modules.photographic_inspection.report');
+    Route::post('/modulos/{id}/inspeccion-fotografica/informe/save', [PhotographicInspectionController::class, 'saveReportData'])->name('modules.photographic_inspection.report.save');
+    Route::post('/modulos/{id}/inspeccion-fotografica/mediciones', [PhotographicInspectionController::class, 'storeMeasurement'])->name('modules.photographic_inspection.measurements.store');
+    Route::put('/modulos/{id}/inspeccion-fotografica/mediciones/{measurementId}', [PhotographicInspectionController::class, 'updateMeasurement'])->name('modules.photographic_inspection.measurements.update');
+    Route::match(['delete', 'post'], '/modulos/{id}/inspeccion-fotografica/mediciones/{measurementId}/delete', [PhotographicInspectionController::class, 'destroyMeasurement'])->name('modules.photographic_inspection.measurements.destroy.post');
+    Route::match(['delete', 'post'], '/modulos/{id}/inspeccion-fotografica/mediciones/{measurementId}', [PhotographicInspectionController::class, 'destroyMeasurement'])->name('modules.photographic_inspection.measurements.destroy');
+    Route::post('/modulos/{id}/inspeccion-fotografica/header', [PhotographicInspectionController::class, 'updateHeader'])->name('modules.photographic_inspection.header.update');
+    Route::post('/modulos/{id}/inspeccion-fotografica/photo-report-settings', [PhotographicInspectionController::class, 'savePhotoReportSettings'])->name('modules.photographic_inspection.photo-report-settings.save');
+
     // Equipos: Inventario, altas, edición, eliminación y calibraciones
     Route::get('/equipos', [EquipmentController::class, 'index'])->name('equipment.index');
     Route::post('/equipos', [EquipmentController::class, 'store'])->name('equipment.store');
@@ -249,6 +275,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/modulos/{id}/carga-fuego-peso/export', function ($id) { return redirect()->route('modules.fire_weight', $id); })->name('modules.fire_weight.export');
     Route::get('/modulos/{id}/ergonomia-reba/export', function ($id) { return redirect()->route('modules.ergonomia_reba', $id); })->name('modules.ergonomia_reba.export');
     Route::get('/modulos/{id}/ergonomia-rosa/export', function ($id) { return redirect()->route('modules.ergonomia_rosa', $id); })->name('modules.ergonomia_rosa.export');
+    Route::get('/modulos/{id}/gases/export', function ($id) { return redirect()->route('modules.gases', $id); })->name('modules.gases.export');
+    Route::get('/modulos/{id}/inspeccion-fotografica/export', function ($id) { return redirect()->route('modules.photographic_inspection', $id); })->name('modules.photographic_inspection.export');
 
     Route::get('/configuracion', [SettingsController::class, 'index'])->name('settings.index');
     Route::post('/configuracion', [SettingsController::class, 'update'])->name('settings.update');
