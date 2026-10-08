@@ -137,6 +137,46 @@ class MeasurementModule extends Model
         return $this->hasMany(PhotographicInspection::class, 'module_id')->orderBy('id', 'asc');
     }
 
+    public function particulasMeasurements(): HasMany
+    {
+        return $this->hasMany(ParticulasMeasurement::class, 'module_id')->orderBy('id', 'asc');
+    }
+
+    public function particlesMeasurements(): HasMany
+    {
+        return $this->hasMany(ParticulasMeasurement::class, 'module_id')->orderBy('id', 'asc');
+    }
+
+    public function particulasAmbientalesMeasurements(): HasMany
+    {
+        return $this->hasMany(ParticulasAmbientalesMeasurement::class, 'module_id')->orderBy('id', 'asc');
+    }
+
+    public function ambientParticlesMeasurements(): HasMany
+    {
+        return $this->hasMany(ParticulasAmbientalesMeasurement::class, 'module_id')->orderBy('id', 'asc');
+    }
+
+    public function vibracionMeasurements(): HasMany
+    {
+        return $this->hasMany(VibracionMeasurement::class, 'module_id')->orderBy('id', 'asc');
+    }
+
+    public function vibrationMeasurements(): HasMany
+    {
+        return $this->hasMany(VibracionMeasurement::class, 'module_id')->orderBy('id', 'asc');
+    }
+
+    public function contaminantesQuimicosMeasurements(): HasMany
+    {
+        return $this->hasMany(ContaminantesQuimicosMeasurement::class, 'module_id')->orderBy('id', 'asc');
+    }
+
+    public function quimicosMeasurements(): HasMany
+    {
+        return $this->hasMany(ContaminantesQuimicosMeasurement::class, 'module_id')->orderBy('id', 'asc');
+    }
+
     public function getAssignedStaffAttribute()
     {
         if (!empty($this->field_staff_ids) && is_array($this->field_staff_ids)) {

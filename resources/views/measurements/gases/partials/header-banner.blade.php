@@ -42,9 +42,9 @@
             <span>Exportar</span>
         </button>
 
-        <!-- Botón Informe (Planilla técnica oficial de gases) -->
+        <!-- Botón Informe (Planilla técnica oficial de gases con Stepper) -->
         <a href="{{ route('modules.gases.report', $module->id) }}" class="btn-secondary-subtle"
-            title="Ver planilla técnica de medición y evaluación de gases en formato horizontal">
+            title="Ver informe técnico de evaluación de gases en formato carta vertical con Stepper dinámico">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.3"
                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />

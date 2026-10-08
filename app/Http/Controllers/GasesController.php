@@ -617,7 +617,160 @@ class GasesController extends Controller
     }
 
     /**
-     * Vista de reporte técnico / informe oficial de monitoreo de gases.
+     * Definición canónica y estándares normativos TLV ACGIH para gases de monitoreo.
+     */
+    public static function getGasesStandards()
+    {
+        return [
+            'o2' => [
+                'key' => 'o2',
+                'name' => 'Oxígeno',
+                'formula' => 'O2',
+                'unit' => '%Vol.',
+                'tlv' => '19,5',
+                'tlv_range' => '19,5 - 23,5',
+                'tlv_min' => 19.5,
+                'tlv_max' => 23.5,
+                'eval_title' => 'EVALUACIÓN DE %O2 EN EL AMBIENTE',
+                'rule' => 'range', // >= 19.5 && <= 23.5 (o >= 19.5)
+            ],
+            'h2s' => [
+                'key' => 'h2s',
+                'name' => 'Ácido Sulfhídrico',
+                'formula' => 'H2S',
+                'unit' => 'ppm',
+                'tlv' => '1',
+                'tlv_range' => '1',
+                'tlv_max' => 1.0,
+                'eval_title' => 'EVALUACIÓN DE H2S EN EL AMBIENTE',
+                'rule' => 'max',
+            ],
+            'co' => [
+                'key' => 'co',
+                'name' => 'Monóxido de Carbono',
+                'formula' => 'CO',
+                'unit' => 'ppm',
+                'tlv' => '25',
+                'tlv_range' => '25',
+                'tlv_max' => 25.0,
+                'eval_title' => 'EVALUACIÓN DE CO EN EL AMBIENTE',
+                'rule' => 'max',
+            ],
+            'lel' => [
+                'key' => 'lel',
+                'name' => 'Gases Combustibles',
+                'formula' => 'LEL',
+                'unit' => '% LEL',
+                'tlv' => '10',
+                'tlv_range' => '10',
+                'tlv_max' => 10.0,
+                'eval_title' => 'EVALUACIÓN DE %LEL EN EL AMBIENTE',
+                'rule' => 'max',
+            ],
+            'hcho' => [
+                'key' => 'hcho',
+                'name' => 'Formaldehído',
+                'formula' => 'HCHO',
+                'unit' => 'mg/m3',
+                'tlv' => '0,1 (0,12 mg/m3)',
+                'tlv_range' => '0,1 (0,12 mg/m3)',
+                'tlv_max' => 0.1,
+                'eval_title' => 'EVALUACIÓN DE FORMALDEHÍDO (HCHO) EN EL AMBIENTE',
+                'rule' => 'max',
+            ],
+            'tvoc' => [
+                'key' => 'tvoc',
+                'name' => 'Compuestos Orgánicos Volátiles',
+                'formula' => 'T-COV',
+                'unit' => 'mg/m3',
+                'tlv' => '3',
+                'tlv_range' => '3',
+                'tlv_max' => 3.0,
+                'eval_title' => 'EVALUACIÓN DE COMPUESTOS ORGÁNICOS VOLÁTILES (T-COV) EN EL AMBIENTE',
+                'rule' => 'max',
+            ],
+            'tcov' => [
+                'key' => 'tcov',
+                'name' => 'Compuestos Orgánicos Volátiles',
+                'formula' => 'T-COV',
+                'unit' => 'mg/m3',
+                'tlv' => '3',
+                'tlv_range' => '3',
+                'tlv_max' => 3.0,
+                'eval_title' => 'EVALUACIÓN DE COMPUESTOS ORGÁNICOS VOLÁTILES (T-COV) EN EL AMBIENTE',
+                'rule' => 'max',
+            ],
+            'co2' => [
+                'key' => 'co2',
+                'name' => 'Dióxido de Carbono',
+                'formula' => 'CO2',
+                'unit' => 'ppm',
+                'tlv' => '5000',
+                'tlv_range' => '5000',
+                'tlv_max' => 5000.0,
+                'eval_title' => 'EVALUACIÓN DE CO2 EN EL AMBIENTE',
+                'rule' => 'max',
+            ],
+            'nh3' => [
+                'key' => 'nh3',
+                'name' => 'Amoníaco',
+                'formula' => 'NH3',
+                'unit' => 'ppm',
+                'tlv' => '25',
+                'tlv_range' => '25',
+                'tlv_max' => 25.0,
+                'eval_title' => 'EVALUACIÓN DE AMONÍACO (NH3) EN EL AMBIENTE',
+                'rule' => 'max',
+            ],
+            'cl2' => [
+                'key' => 'cl2',
+                'name' => 'Cloro Gaseoso',
+                'formula' => 'Cl2',
+                'unit' => 'ppm',
+                'tlv' => '0,1',
+                'tlv_range' => '0,1',
+                'tlv_max' => 0.1,
+                'eval_title' => 'EVALUACIÓN DE CLORO GASEOSO (Cl2) EN EL AMBIENTE',
+                'rule' => 'max',
+            ],
+            'no2' => [
+                'key' => 'no2',
+                'name' => 'Dióxido de Nitrógeno',
+                'formula' => 'NO2',
+                'unit' => 'ppm',
+                'tlv' => '0,2',
+                'tlv_range' => '0,2',
+                'tlv_max' => 0.2,
+                'eval_title' => 'EVALUACIÓN DE DIÓXIDO DE NITRÓGENO (NO2) EN EL AMBIENTE',
+                'rule' => 'max',
+            ],
+            'so2' => [
+                'key' => 'so2',
+                'name' => 'Dióxido de Azufre',
+                'formula' => 'SO2',
+                'unit' => 'ppm',
+                'tlv' => '0,25 (STEL) / 2 (TWA ref.)',
+                'tlv_range' => '0,25 (STEL) / 2 (TWA ref.)',
+                'tlv_max' => 0.25,
+                'eval_title' => 'EVALUACIÓN DE DIÓXIDO DE AZUFRE (SO2) EN EL AMBIENTE',
+                'rule' => 'max',
+            ],
+            'as' => [
+                'key' => 'as',
+                'name' => 'Arsénico Inorgánico',
+                'formula' => 'As',
+                'unit' => 'mg/m3',
+                'tlv' => '0,01',
+                'tlv_range' => '0,01',
+                'tlv_max' => 0.01,
+                'eval_title' => 'EVALUACIÓN DE ARSÉNICO (As) EN EL AMBIENTE',
+                'rule' => 'max',
+            ],
+        ];
+    }
+
+    /**
+     * Vista de reporte técnico / informe oficial de monitoreo de gases en formato vertical Carta con Stepper dinámico.
      */
     public function showReport($moduleId)
     {
@@ -670,6 +823,138 @@ class GasesController extends Controller
 
         $measurementsList = $module->gasMeasurements()->with('staff')->get();
         $gasesDefs = self::getGasesDefinitions();
+        $gasesStandards = self::getGasesStandards();
+
+        // 1. Detectar dinámicamente qué tipos de gases tienen mediciones en este módulo
+        $detectedGasKeys = [];
+        foreach ($measurementsList as $m) {
+            $gr = is_array($m->gases_readings) ? $m->gases_readings : (json_decode($m->gases_readings, true) ?: []);
+            $sg = is_array($m->selected_gases) ? $m->selected_gases : (json_decode($m->selected_gases, true) ?: []);
+
+            foreach ($gasesStandards as $gKey => $std) {
+                $promCol = "{$gKey}_prom";
+                $valCol = "{$gKey}_values";
+                $hasVal = false;
+
+                if ($m->$promCol !== null && is_numeric($m->$promCol)) {
+                    $hasVal = true;
+                } elseif (isset($gr[$gKey]) && is_array($gr[$gKey])) {
+                    if (isset($gr[$gKey]['prom']) && is_numeric($gr[$gKey]['prom'])) $hasVal = true;
+                    elseif (!empty($gr[$gKey]['values'])) $hasVal = true;
+                    elseif (isset($gr[$gKey]['med1']) || isset($gr[$gKey]['med2']) || isset($gr[$gKey]['med3']) || isset($gr[$gKey]['m1']) || isset($gr[$gKey]['m2']) || isset($gr[$gKey]['m3'])) $hasVal = true;
+                } elseif (!empty($m->$valCol)) {
+                    $vArr = is_array($m->$valCol) ? $m->$valCol : json_decode($m->$valCol, true);
+                    if (is_array($vArr) && count(array_filter($vArr, 'is_numeric')) > 0) $hasVal = true;
+                }
+
+                if ($hasVal && !in_array($gKey, $detectedGasKeys)) {
+                    $detectedGasKeys[] = $gKey;
+                }
+            }
+
+            foreach ($sg as $gk) {
+                $k = strtolower(trim((string)$gk));
+                if ($k && !in_array($k, $detectedGasKeys) && isset($gasesStandards[$k])) {
+                    $detectedGasKeys[] = $k;
+                }
+            }
+        }
+
+        // Si no hay gases registrados aún, ofrecer O2 por defecto
+        if (empty($detectedGasKeys)) {
+            $detectedGasKeys = ['o2'];
+        }
+
+        // 2. Construir reporte de gases filtrando SOLO los puntos medidos para cada tipo de gas
+        $gasReports = [];
+        foreach ($detectedGasKeys as $gKey) {
+            $std = $gasesStandards[$gKey] ?? [
+                'key' => $gKey,
+                'name' => strtoupper($gKey),
+                'formula' => strtoupper($gKey),
+                'unit' => 'ppm',
+                'tlv' => '—',
+                'tlv_range' => '—',
+                'tlv_min' => null,
+                'tlv_max' => 999999,
+                'eval_title' => 'EVALUACIÓN DE ' . strtoupper($gKey) . ' EN EL AMBIENTE',
+                'rule' => 'max',
+            ];
+
+            $gasPoints = [];
+            $pointIdx = 1;
+
+            foreach ($measurementsList as $m) {
+                $avg = null;
+                $promCol = "{$gKey}_prom";
+                $valCol = "{$gKey}_values";
+                $gr = is_array($m->gases_readings) ? $m->gases_readings : (json_decode($m->gases_readings, true) ?: []);
+
+                if ($m->$promCol !== null && is_numeric($m->$promCol)) {
+                    $avg = (float)$m->$promCol;
+                } elseif (isset($gr[$gKey]) && is_array($gr[$gKey])) {
+                    if (isset($gr[$gKey]['prom']) && is_numeric($gr[$gKey]['prom'])) {
+                        $avg = (float)$gr[$gKey]['prom'];
+                    } elseif (isset($gr[$gKey]['values']) && is_array($gr[$gKey]['values'])) {
+                        $nums = array_values(array_filter($gr[$gKey]['values'], 'is_numeric'));
+                        if (!empty($nums)) $avg = array_sum($nums) / count($nums);
+                    } elseif (isset($gr[$gKey]['med1']) || isset($gr[$gKey]['med2']) || isset($gr[$gKey]['med3']) || isset($gr[$gKey]['m1']) || isset($gr[$gKey]['m2']) || isset($gr[$gKey]['m3'])) {
+                        $m1 = $gr[$gKey]['med1'] ?? ($gr[$gKey]['m1'] ?? null);
+                        $m2 = $gr[$gKey]['med2'] ?? ($gr[$gKey]['m2'] ?? null);
+                        $m3 = $gr[$gKey]['med3'] ?? ($gr[$gKey]['m3'] ?? null);
+                        $nums = array_values(array_filter([$m1, $m2, $m3], 'is_numeric'));
+                        if (!empty($nums)) $avg = array_sum($nums) / count($nums);
+                    }
+                } elseif (!empty($m->$valCol)) {
+                    $vArr = is_array($m->$valCol) ? $m->$valCol : json_decode($m->$valCol, true);
+                    if (is_array($vArr)) {
+                        $nums = array_values(array_filter($vArr, 'is_numeric'));
+                        if (!empty($nums)) $avg = array_sum($nums) / count($nums);
+                    }
+                }
+
+                $sg = is_array($m->selected_gases) ? $m->selected_gases : (json_decode($m->selected_gases, true) ?: []);
+                $isSelected = in_array($gKey, $sg) || in_array(strtoupper($gKey), $sg);
+
+                // Solo incluir en la tabla de este gas si tiene lecturas o fue evaluado para este gas
+                if ($avg !== null || $isSelected) {
+                    $cumple = '—';
+                    if ($avg !== null) {
+                        if ($gKey === 'o2') {
+                            $cumple = ($avg >= 19.5 && $avg <= 23.5) ? 'SI' : 'NO';
+                        } else {
+                            $maxLimit = $std['tlv_max'] ?? 999999;
+                            $cumple = ($avg <= $maxLimit) ? 'SI' : 'NO';
+                        }
+                    }
+
+                    $formattedAvg = '—';
+                    if ($avg !== null) {
+                        $decimals = (round($avg, 1) == round($avg, 2)) ? 1 : 2;
+                        if (round($avg, 0) == round($avg, 2) && $avg >= 10 && $gKey !== 'o2') $decimals = 0;
+                        $formattedAvg = number_format($avg, $decimals, ',', '');
+                    }
+
+                    $gasPoints[] = [
+                        'num' => $pointIdx++,
+                        'original_num' => $m->point_number,
+                        'area' => $m->area ?: '—',
+                        'measurement_point' => $m->measurement_point ?: ($m->workstation ?: '—'),
+                        'avg_val' => $avg,
+                        'formatted_avg' => $formattedAvg,
+                        'tlv' => $std['tlv'],
+                        'cumple' => $cumple,
+                    ];
+                }
+            }
+
+            if (!empty($gasPoints) || count($detectedGasKeys) === 1) {
+                $gasReports[$gKey] = [
+                    'info' => $std,
+                    'points' => $gasPoints,
+                ];
+            }
+        }
 
         return view('measurements.gases.report', compact(
             'module',
@@ -684,6 +969,8 @@ class GasesController extends Controller
             'registeredByHeader',
             'measurementsList',
             'gasesDefs',
+            'gasesStandards',
+            'gasReports',
             'reportSettings',
             'userName',
             'userRole'

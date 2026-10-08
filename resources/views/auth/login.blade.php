@@ -170,6 +170,12 @@
                         <span id="btnSubmitSpinner" style="display: none;">⏳ Verificando credenciales...</span>
                         <span class="arrow-icon">→</span>
                     </button>
+
+                    <!-- Public Privacy Policy Link -->
+                    <div style="text-align: center; margin-top: 18px; font-size: 11.5px; color: #64748b;">
+                        <span>Al iniciar sesión aceptas los </span>
+                        <a href="{{ url('/privacidad') }}" target="_blank" style="color: var(--cyan); text-decoration: none; font-weight: 700;">Términos & Política de Privacidad</a>
+                    </div>
                 </form>
             </div>
         </section>

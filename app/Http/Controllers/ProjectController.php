@@ -329,9 +329,13 @@ class ProjectController extends Controller
             'estres_calor' => 'Estrés Térmico (Calor)',
             'estres_frio' => 'Estrés Térmico (Frío)',
             'ventilacion' => 'Ventilación',
-            'particulas' => 'Partículas',
+            'particulas' => 'Partículas Ocupacionales',
+            'particulas_ambientales' => 'Partículas Ambientales',
+            'particulas_amb' => 'Partículas Ambientales',
             'gases' => 'Gases',
             'vibracion' => 'Vibración',
+            'contaminantes_quimicos' => 'Contaminantes Químicos',
+            'quimicos' => 'Contaminantes Químicos',
             'ergonomia' => 'Ergonomía REBA',
             'ergonomia_reba' => 'Ergonomía REBA',
             'ergonomia_rosa' => 'Ergonomía ROSA',
@@ -428,9 +432,13 @@ class ProjectController extends Controller
             'estres_calor' => 'Estrés Térmico (Calor)',
             'estres_frio' => 'Estrés Térmico (Frío)',
             'ventilacion' => 'Ventilación',
-            'particulas' => 'Partículas',
+            'particulas' => 'Partículas Ocupacionales',
+            'particulas_ambientales' => 'Partículas Ambientales',
+            'particulas_amb' => 'Partículas Ambientales',
             'gases' => 'Gases',
             'vibracion' => 'Vibración',
+            'contaminantes_quimicos' => 'Contaminantes Químicos',
+            'quimicos' => 'Contaminantes Químicos',
             'ergonomia' => 'Ergonomía REBA',
             'ergonomia_reba' => 'Ergonomía REBA',
             'ergonomia_rosa' => 'Ergonomía ROSA',
@@ -645,6 +653,20 @@ class ProjectController extends Controller
                 'border' => '#fef08a',
                 'icon' => 'radio',
             ],
+            'contaminantes_quimicos' => [
+                'name' => 'Contaminantes Químicos',
+                'color' => '#0d9488',
+                'bg' => '#f0fdfa',
+                'border' => '#ccfbf1',
+                'icon' => 'flask-conical',
+            ],
+            'quimicos' => [
+                'name' => 'Contaminantes Químicos',
+                'color' => '#0d9488',
+                'bg' => '#f0fdfa',
+                'border' => '#ccfbf1',
+                'icon' => 'flask-conical',
+            ],
         ];
 
         // Recolectar módulos creados para el proyecto
@@ -725,6 +747,8 @@ class ProjectController extends Controller
             'rosa' => '#d946ef',
             'opacidad' => '#64748b',
             'vibracion' => '#eab308',
+            'contaminantes_quimicos' => '#0d9488',
+            'quimicos' => '#0d9488',
         ];
 
         foreach ($project->modules as $mod) {

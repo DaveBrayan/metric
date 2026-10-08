@@ -106,6 +106,41 @@ Route::post('/modules/{moduleId}/photographic-inspection', [MobileApiController:
 Route::delete('/modules/{moduleId}/inspeccion-fotografica/{id}', [MobileApiController::class, 'destroyPhotographicInspectionMeasurement']);
 Route::delete('/modules/{moduleId}/photographic-inspection/{id}', [MobileApiController::class, 'destroyPhotographicInspectionMeasurement']);
 
+// Monitoreo de Partículas Ocupacionales
+Route::get('/modules/{moduleId}/particles', [MobileApiController::class, 'getParticlesMeasurements']);
+Route::get('/modules/{moduleId}/particulas', [MobileApiController::class, 'getParticlesMeasurements']);
+Route::post('/modules/{moduleId}/particles', [MobileApiController::class, 'storeParticlesMeasurement']);
+Route::post('/modules/{moduleId}/particulas', [MobileApiController::class, 'storeParticlesMeasurement']);
+Route::delete('/modules/{moduleId}/particles/{id}', [MobileApiController::class, 'destroyParticlesMeasurement']);
+Route::delete('/modules/{moduleId}/particulas/{id}', [MobileApiController::class, 'destroyParticlesMeasurement']);
+
+// Monitoreo de Partículas Ambientales (Calidad de Aire)
+Route::get('/modules/{moduleId}/ambient-particles', [MobileApiController::class, 'getAmbientParticlesMeasurements']);
+Route::get('/modules/{moduleId}/particulas-ambientales', [MobileApiController::class, 'getAmbientParticlesMeasurements']);
+Route::post('/modules/{moduleId}/ambient-particles', [MobileApiController::class, 'storeAmbientParticlesMeasurement']);
+Route::post('/modules/{moduleId}/particulas-ambientales', [MobileApiController::class, 'storeAmbientParticlesMeasurement']);
+Route::delete('/modules/{moduleId}/ambient-particles/{id}', [MobileApiController::class, 'destroyAmbientParticlesMeasurement']);
+Route::delete('/modules/{moduleId}/particulas-ambientales/{id}', [MobileApiController::class, 'destroyAmbientParticlesMeasurement']);
+
+// Monitoreo de Vibración Ocupacional (Cuerpo Entero y Mano - Brazo)
+Route::get('/modules/{moduleId}/vibration', [MobileApiController::class, 'getVibracionMeasurements']);
+Route::get('/modules/{moduleId}/vibracion', [MobileApiController::class, 'getVibracionMeasurements']);
+Route::post('/modules/{moduleId}/vibration', [MobileApiController::class, 'storeVibracionMeasurement']);
+Route::post('/modules/{moduleId}/vibracion', [MobileApiController::class, 'storeVibracionMeasurement']);
+Route::delete('/modules/{moduleId}/vibration/{id}', [MobileApiController::class, 'destroyVibracionMeasurement']);
+Route::delete('/modules/{moduleId}/vibracion/{id}', [MobileApiController::class, 'destroyVibracionMeasurement']);
+
+// Monitoreo de Contaminantes Químicos
+Route::get('/modules/{moduleId}/contaminantes-quimicos', [MobileApiController::class, 'getContaminantesQuimicosMeasurements']);
+Route::get('/modules/{moduleId}/quimicos', [MobileApiController::class, 'getContaminantesQuimicosMeasurements']);
+Route::post('/modules/{moduleId}/contaminantes-quimicos', [MobileApiController::class, 'storeContaminantesQuimicosMeasurement']);
+Route::post('/modules/{moduleId}/quimicos', [MobileApiController::class, 'storeContaminantesQuimicosMeasurement']);
+Route::delete('/modules/{moduleId}/contaminantes-quimicos/{id}', [MobileApiController::class, 'destroyContaminantesQuimicosMeasurement']);
+Route::delete('/modules/{moduleId}/quimicos/{id}', [MobileApiController::class, 'destroyContaminantesQuimicosMeasurement']);
+
+
+
+
 
 
 

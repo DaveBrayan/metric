@@ -19,6 +19,10 @@ use App\Models\FireWeightMeasurement;
 use App\Models\OpacityMeasurement;
 use App\Models\GasMeasurement;
 use App\Models\PhotographicInspection;
+use App\Models\ParticulasMeasurement;
+use App\Models\ParticulasAmbientalesMeasurement;
+use App\Models\VibracionMeasurement;
+use App\Models\ContaminantesQuimicosMeasurement;
 use App\Http\Controllers\VentilationController;
 use App\Http\Controllers\HeatStressController;
 use App\Http\Controllers\ColdStressController;
@@ -350,6 +354,8 @@ class MobileApiController extends Controller
             'particulas' => 'Partículas',
             'gases' => 'Gases',
             'vibracion' => 'Vibración',
+            'contaminantes_quimicos' => 'Contaminantes Químicos',
+            'quimicos' => 'Contaminantes Químicos',
             'ergonomia' => 'Ergonomía REBA',
             'ergonomia_reba' => 'Ergonomía REBA',
             'ergonomia_rosa' => 'Ergonomía ROSA',
@@ -4309,7 +4315,1214 @@ class MobileApiController extends Controller
             'points_completed' => $module->points_completed,
         ]);
     }
+
+    /**
+     * Listar puntos de medición de partículas ocupacionales.
+     */
+    public function getParticlesMeasurements($moduleId)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+        $measurements = $module->particulasMeasurements()->with('staff')->get()->map(function ($item) {
+            $imagesList = is_array($item->images) ? $item->images : (json_decode($item->images, true) ?: []);
+            if (empty($imagesList) && !empty($item->image_urls)) {
+                $imagesList = is_array($item->image_urls) ? $item->image_urls : (json_decode($item->image_urls, true) ?: []);
+            }
+            $imagesUrls = array_values(array_filter(array_map(function ($p) {
+                if (!$p) return null;
+                if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+                return asset($p);
+            }, $imagesList)));
+
+            return [
+                'id' => (string) $item->id,
+                'remote_id' => (string) $item->id,
+                'local_uuid' => $item->local_uuid,
+                'point_number' => $item->point_number,
+                'measurement_date' => $item->measurement_date ? $item->measurement_date->format('Y-m-d') : null,
+                'measured_at' => $item->measurement_date ? $item->measurement_date->format('Y-m-d') : null,
+                'measurement_time' => $item->measurement_time,
+                'area' => $item->area,
+                'workstation' => $item->workstation ?: $item->punto_medicion,
+                'punto_medicion' => $item->punto_medicion ?: $item->workstation,
+                'puesto_trabajo' => $item->punto_medicion ?: $item->workstation,
+                'temperatura' => $item->temperatura !== null ? (float)$item->temperatura : null,
+                'temperatura_c' => $item->temperatura !== null ? (float)$item->temperatura : null,
+                'hr_percent' => $item->hr_percent !== null ? (float)$item->hr_percent : null,
+                'pm10_values' => is_array($item->pm10_values) ? $item->pm10_values : json_decode($item->pm10_values, true),
+                'pm10_prom' => $item->pm10_prom !== null ? (float)$item->pm10_prom : null,
+                'pm25_values' => is_array($item->pm25_values) ? $item->pm25_values : json_decode($item->pm25_values, true),
+                'pm25_prom' => $item->pm25_prom !== null ? (float)$item->pm25_prom : null,
+                'pts_values' => is_array($item->pts_values) ? $item->pts_values : json_decode($item->pts_values, true),
+                'pts_prom' => $item->pts_prom !== null ? (float)$item->pts_prom : null,
+                'location' => $item->location,
+                'latitude' => $item->latitude !== null ? (float)$item->latitude : null,
+                'longitude' => $item->longitude !== null ? (float)$item->longitude : null,
+                'utm_zone' => $item->utm_zone,
+                'utm_easting' => $item->utm_easting !== null ? (float)$item->utm_easting : null,
+                'utm_northing' => $item->utm_northing !== null ? (float)$item->utm_northing : null,
+                'image_urls' => $imagesUrls,
+                'observations' => $item->observations,
+                'observaciones' => $item->observations,
+                'registered_by' => $item->registered_by ?: $item->created_by,
+                'created_by' => $item->created_by ?: $item->registered_by,
+                'staff_id' => $item->staff_id,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'measurements' => $measurements,
+            'points_completed' => $measurements->count(),
+        ]);
+    }
+
+    /**
+     * Registrar o actualizar una medición de partículas ocupacionales desde la app móvil.
+     */
+    public function storeParticlesMeasurement(Request $request, $moduleId)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+
+        $localUuid = $request->input('local_uuid');
+        $id = $request->input('id');
+
+        $measurement = null;
+        if (!empty($localUuid)) {
+            $measurement = $module->particulasMeasurements()->where('local_uuid', $localUuid)->first();
+        }
+        if (!$measurement && !empty($id)) {
+            $measurement = $module->particulasMeasurements()->find($id);
+        }
+
+        $date = $request->input('measurement_date') ?? $request->input('date') ?? $request->input('measured_at') ?? Carbon::now()->format('Y-m-d');
+        if (str_contains($date, 'T')) {
+            $date = explode('T', $date)[0];
+        }
+
+        $time = $request->input('measurement_time') ?? $request->input('time') ?? Carbon::now()->format('H:i');
+
+        $area = $request->input('area') ?? 'Área de Trabajo';
+        $puntoMedicion = $request->input('punto_medicion') ?? $request->input('puesto_trabajo') ?? $request->input('workstation') ?? 'Punto de Medición';
+        
+        $pointNumber = $request->input('point_number');
+        if (empty($pointNumber)) {
+            $count = $module->particulasMeasurements()->count();
+            $pointNumber = str_pad($count + 1, 2, '0', STR_PAD_LEFT);
+        }
+
+        $temp = $request->filled('temperatura') ? (float)$request->input('temperatura') : ($request->filled('temperatura_c') ? (float)$request->input('temperatura_c') : null);
+        $hr = $request->filled('hr_percent') ? (float)$request->input('hr_percent') : null;
+
+        // PM10 readings
+        $rawPm10 = $request->input('pm10_values');
+        $pm10Values = is_array($rawPm10) ? $rawPm10 : (json_decode($rawPm10, true) ?: []);
+        if (is_string($pm10Values)) {
+            $pm10Values = json_decode($pm10Values, true) ?: [];
+        }
+        $pm10Nums = array_values(array_filter(array_map(fn($v) => is_numeric($v) ? (float)$v : null, (array)$pm10Values), fn($v) => $v !== null));
+        $pm10Prom = $request->filled('pm10_prom') ? (float)$request->input('pm10_prom') : (!empty($pm10Nums) ? array_sum($pm10Nums) / count($pm10Nums) : null);
+
+        // PM2.5 readings
+        $rawPm25 = $request->input('pm25_values');
+        $pm25Values = is_array($rawPm25) ? $rawPm25 : (json_decode($rawPm25, true) ?: []);
+        if (is_string($pm25Values)) {
+            $pm25Values = json_decode($pm25Values, true) ?: [];
+        }
+        $pm25Nums = array_values(array_filter(array_map(fn($v) => is_numeric($v) ? (float)$v : null, (array)$pm25Values), fn($v) => $v !== null));
+        $pm25Prom = $request->filled('pm25_prom') ? (float)$request->input('pm25_prom') : (!empty($pm25Nums) ? array_sum($pm25Nums) / count($pm25Nums) : null);
+
+        // PTS readings (optional/legacy)
+        $rawPts = $request->input('pts_values');
+        $ptsValues = is_array($rawPts) ? $rawPts : (json_decode($rawPts, true) ?: []);
+        if (is_string($ptsValues)) {
+            $ptsValues = json_decode($ptsValues, true) ?: [];
+        }
+        $ptsNums = array_values(array_filter(array_map(fn($v) => is_numeric($v) ? (float)$v : null, (array)$ptsValues), fn($v) => $v !== null));
+        $ptsProm = $request->filled('pts_prom') ? (float)$request->input('pts_prom') : (!empty($ptsNums) ? array_sum($ptsNums) / count($ptsNums) : null);
+
+        // Subida de imágenes
+        $uploadedImages = [];
+        $uploadDir = public_path('uploads/measurements');
+        if (!File::isDirectory($uploadDir)) {
+            File::makeDirectory($uploadDir, 0755, true, true);
+        }
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                if ($file->isValid()) {
+                    $ext = strtolower($file->getClientOriginalExtension());
+                    $safeExt = in_array($ext, ['jpeg', 'jpg', 'png', 'webp']) ? $ext : 'jpg';
+                    $fname = 'part_' . time() . '_' . uniqid() . '.' . $safeExt;
+                    $file->move($uploadDir, $fname);
+                    $uploadedImages[] = 'uploads/measurements/' . $fname;
+                }
+            }
+        }
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            if ($file->isValid()) {
+                $ext = strtolower($file->getClientOriginalExtension());
+                $safeExt = in_array($ext, ['jpeg', 'jpg', 'png', 'webp']) ? $ext : 'jpg';
+                $fname = 'part_' . time() . '_' . uniqid() . '.' . $safeExt;
+                $file->move($uploadDir, $fname);
+                array_unshift($uploadedImages, 'uploads/measurements/' . $fname);
+            }
+        }
+
+        // Si se enviaron URLs remotas o preexistentes
+        if ($request->filled('image_urls')) {
+            $rawUrls = $request->input('image_urls');
+            $decodedUrls = is_array($rawUrls) ? $rawUrls : json_decode($rawUrls, true);
+            if (is_array($decodedUrls)) {
+                foreach ($decodedUrls as $u) {
+                    if ($u && !in_array($u, $uploadedImages)) {
+                        $uploadedImages[] = $u;
+                    }
+                }
+            }
+        }
+
+        $lat = $request->filled('latitude') ? (float)$request->input('latitude') : null;
+        $lng = $request->filled('longitude') ? (float)$request->input('longitude') : null;
+        $utmZone = $request->input('utm_zone');
+        $utmE = $request->filled('utm_easting') ? (float)$request->input('utm_easting') : null;
+        $utmN = $request->filled('utm_northing') ? (float)$request->input('utm_northing') : null;
+
+        $locInput = $request->input('location');
+        if (is_string($locInput) && (str_starts_with($locInput, '{') || str_starts_with($locInput, '['))) {
+            $locDecoded = json_decode($locInput, true);
+            if (is_array($locDecoded)) {
+                if ($utmZone === null && !empty($locDecoded['utm_zone'])) $utmZone = $locDecoded['utm_zone'];
+                if ($utmE === null && !empty($locDecoded['easting'])) $utmE = (float)$locDecoded['easting'];
+                if ($utmN === null && !empty($locDecoded['northing'])) $utmN = (float)$locDecoded['northing'];
+                if ($lat === null && !empty($locDecoded['latitude'])) $lat = (float)$locDecoded['latitude'];
+                if ($lng === null && !empty($locDecoded['longitude'])) $lng = (float)$locDecoded['longitude'];
+            }
+        }
+
+        $staffId = $request->input('staff_id');
+        $registeredBy = $request->input('registered_by') ?? $request->input('created_by');
+        if (!empty($staffId)) {
+            $st = Staff::find($staffId);
+            if ($st) $registeredBy = $st->full_name ?: $st->name;
+        }
+
+        $data = [
+            'point_number' => $pointNumber,
+            'measurement_date' => $date,
+            'measurement_time' => $time,
+            'area' => $area,
+            'workstation' => $puntoMedicion,
+            'punto_medicion' => $puntoMedicion,
+            'temperatura' => $temp,
+            'hr_percent' => $hr,
+            'pm10_values' => !empty($pm10Nums) ? $pm10Nums : null,
+            'pm10_prom' => $pm10Prom,
+            'pm25_values' => !empty($pm25Nums) ? $pm25Nums : null,
+            'pm25_prom' => $pm25Prom,
+            'pts_values' => !empty($ptsNums) ? $ptsNums : null,
+            'pts_prom' => $ptsProm,
+            'latitude' => $lat,
+            'longitude' => $lng,
+            'utm_zone' => $utmZone,
+            'utm_easting' => $utmE,
+            'utm_northing' => $utmN,
+            'location' => $request->input('location'),
+            'observations' => $request->input('observations') ?? $request->input('observaciones'),
+            'registered_by' => $registeredBy,
+            'created_by' => $registeredBy,
+            'staff_id' => $staffId,
+            'local_uuid' => $localUuid ?? ($measurement ? $measurement->local_uuid : Str::uuid()->toString()),
+        ];
+
+        if (!empty($uploadedImages)) {
+            $data['images'] = $uploadedImages;
+            $data['image_urls'] = $uploadedImages;
+            $data['image_path'] = $uploadedImages[0];
+        }
+
+        if ($measurement) {
+            $measurement->update($data);
+            $statusCode = 200;
+        } else {
+            $measurement = $module->particulasMeasurements()->create($data);
+            $statusCode = 201;
+        }
+
+        $module->points_completed = $module->particulasMeasurements()->count();
+        $module->save();
+
+        $finalImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
+        $finalUrls = array_values(array_filter(array_map(function ($p) {
+            if (!$p) return null;
+            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+            return asset($p);
+        }, $finalImages)));
+
+        return response()->json([
+            'success' => true,
+            'message' => "Punto de medición de partículas #{$measurement->point_number} guardado exitosamente.",
+            'id' => (string) $measurement->id,
+            'remote_id' => (string) $measurement->id,
+            'point_number' => $measurement->point_number,
+            'area' => $measurement->area,
+            'punto_medicion' => $measurement->punto_medicion,
+            'local_uuid' => $measurement->local_uuid,
+            'image_urls' => $finalUrls,
+            'points_completed' => $module->points_completed,
+        ], $statusCode);
+    }
+
+    /**
+     * Eliminar una medición de partículas ocupacionales desde la app móvil.
+     */
+    public function destroyParticlesMeasurement($moduleId, $id)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+        $measurement = $module->particulasMeasurements()->find($id);
+
+        if ($measurement) {
+            $measurement->delete();
+            $module->points_completed = $module->particulasMeasurements()->count();
+            $module->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Punto de medición de partículas eliminado correctamente.',
+            'points_completed' => $module->points_completed,
+        ]);
+    }
+
+    /**
+     * Obtener mediciones de partículas ambientales (calidad de aire) para la app móvil.
+     */
+    public function getAmbientParticlesMeasurements($moduleId)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+
+        $measurements = $module->particulasAmbientalesMeasurements()
+            ->with('staff')
+            ->orderBy('id', 'desc')
+            ->get()
+            ->map(function ($item) {
+                $rawImages = is_array($item->images) ? $item->images : (json_decode($item->images, true) ?: []);
+                if (empty($rawImages) && !empty($item->image_urls)) {
+                    $rawImages = is_array($item->image_urls) ? $item->image_urls : (json_decode($item->image_urls, true) ?: []);
+                }
+                if (empty($rawImages) && !empty($item->image_path)) {
+                    $rawImages = [$item->image_path];
+                }
+                $imagesUrls = array_values(array_filter(array_map(function ($p) {
+                    if (!$p) return null;
+                    if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+                    return asset($p);
+                }, $rawImages)));
+
+                return [
+                    'id' => (string) $item->id,
+                    'remote_id' => (string) $item->id,
+                    'module_id' => (string) $item->module_id,
+                    'local_uuid' => $item->local_uuid,
+                    'point_number' => $item->point_number,
+                    'measurement_date' => $item->measurement_date ? $item->measurement_date->format('Y-m-d') : null,
+                    'measurement_time' => $item->measurement_time,
+                    'area' => $item->area,
+                    'punto_medicion' => $item->punto_medicion ?: $item->workstation,
+                    'workstation' => $item->punto_medicion ?: $item->workstation,
+                    'fecha_inicio' => $item->fecha_inicio ? $item->fecha_inicio->format('Y-m-d') : null,
+                    'hora_inicio' => $item->hora_inicio,
+                    'fecha_fin' => $item->fecha_fin ? $item->fecha_fin->format('Y-m-d') : null,
+                    'hora_fin' => $item->hora_fin,
+                    'diferencia_horas' => $item->diferencia_horas !== null ? (float)$item->diferencia_horas : null,
+                    'temp_max' => $item->temp_max !== null ? (float)$item->temp_max : null,
+                    'temp_min' => $item->temp_min !== null ? (float)$item->temp_min : null,
+                    'temperatura' => $item->temperatura !== null ? (float)$item->temperatura : null,
+                    'presion_atm' => $item->presion_atm !== null ? (float)$item->presion_atm : null,
+                    'vel_viento' => $item->vel_viento !== null ? (float)$item->vel_viento : null,
+                    'dir_viento' => $item->dir_viento,
+                    'hr_percent' => $item->hr_percent !== null ? (float)$item->hr_percent : null,
+                    'pm10_filtro_inicial' => $item->pm10_filtro_inicial !== null ? (float)$item->pm10_filtro_inicial : null,
+                    'pm10_filtro_final' => $item->pm10_filtro_final !== null ? (float)$item->pm10_filtro_final : null,
+                    'pm10_prom' => $item->pm10_prom !== null ? (float)$item->pm10_prom : null,
+                    'pst_filtro_inicial' => $item->pst_filtro_inicial !== null ? (float)$item->pst_filtro_inicial : null,
+                    'pst_filtro_final' => $item->pst_filtro_final !== null ? (float)$item->pst_filtro_final : null,
+                    'pst_prom' => $item->pst_prom !== null ? (float)$item->pst_prom : null,
+                    'pm25_filtro_inicial' => $item->pm25_filtro_inicial !== null ? (float)$item->pm25_filtro_inicial : null,
+                    'pm25_filtro_final' => $item->pm25_filtro_final !== null ? (float)$item->pm25_filtro_final : null,
+                    'pm25_prom' => $item->pm25_prom !== null ? (float)$item->pm25_prom : null,
+                    'caudal' => $item->caudal !== null ? (float)$item->caudal : null,
+                    'location' => $item->location,
+                    'latitude' => $item->latitude !== null ? (float)$item->latitude : null,
+                    'longitude' => $item->longitude !== null ? (float)$item->longitude : null,
+                    'utm_zone' => $item->utm_zone,
+                    'utm_easting' => $item->utm_easting !== null ? (float)$item->utm_easting : null,
+                    'utm_northing' => $item->utm_northing !== null ? (float)$item->utm_northing : null,
+                    'image_urls' => $imagesUrls,
+                    'observations' => $item->observations,
+                    'observaciones' => $item->observations,
+                    'registered_by' => $item->registered_by ?: $item->created_by,
+                    'created_by' => $item->created_by ?: $item->registered_by,
+                    'staff_id' => $item->staff_id,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'measurements' => $measurements,
+            'points_completed' => $measurements->count(),
+        ]);
+    }
+
+    /**
+     * Registrar o actualizar una medición de partículas ambientales desde la app móvil.
+     */
+    public function storeAmbientParticlesMeasurement(Request $request, $moduleId)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+
+        $localUuid = $request->input('local_uuid');
+        $id = $request->input('id');
+
+        $measurement = null;
+        if (!empty($localUuid)) {
+            $measurement = $module->particulasAmbientalesMeasurements()->where('local_uuid', $localUuid)->first();
+        }
+        if (!$measurement && !empty($id)) {
+            $measurement = $module->particulasAmbientalesMeasurements()->find($id);
+        }
+
+        $date = $request->input('measurement_date') ?? $request->input('date') ?? $request->input('fecha_inicio') ?? $request->input('measured_at') ?? Carbon::now()->format('Y-m-d');
+        if (str_contains($date, 'T')) {
+            $date = explode('T', $date)[0];
+        }
+
+        $time = $request->input('measurement_time') ?? $request->input('time') ?? $request->input('hora_inicio') ?? Carbon::now()->format('H:i');
+
+        $area = $request->input('area') ?? 'Área Ambiental';
+        $puntoMedicion = $request->input('punto_medicion') ?? $request->input('puesto_trabajo') ?? $request->input('workstation') ?? 'Estación de Muestreo';
+        
+        $pointNumber = $request->input('point_number');
+        if (empty($pointNumber)) {
+            $count = $module->particulasAmbientalesMeasurements()->count();
+            $pointNumber = 'PA-' . ($count + 1);
+        } elseif (!str_starts_with(strtoupper($pointNumber), 'PA-')) {
+            $pointNumber = 'PA-' . ltrim($pointNumber, '0');
+        }
+
+        // Fechas y Horas
+        $fechaInicio = $request->input('fecha_inicio') ?? $date;
+        if ($fechaInicio && str_contains($fechaInicio, 'T')) $fechaInicio = explode('T', $fechaInicio)[0];
+        $horaInicio = $request->input('hora_inicio') ?? $time;
+        $fechaFin = $request->input('fecha_fin') ?? $date;
+        if ($fechaFin && str_contains($fechaFin, 'T')) $fechaFin = explode('T', $fechaFin)[0];
+        $horaFin = $request->input('hora_fin') ?? $time;
+        $difHoras = $request->filled('diferencia_horas') ? (float)$request->input('diferencia_horas') : null;
+
+        // Si no vino diferencia de horas, intentar calcularla
+        if ($difHoras === null && !empty($fechaInicio) && !empty($horaInicio) && !empty($fechaFin) && !empty($horaFin)) {
+            try {
+                $startDt = Carbon::parse("$fechaInicio $horaInicio");
+                $endDt = Carbon::parse("$fechaFin $horaFin");
+                $difHoras = round($endDt->diffInMinutes($startDt) / 60.0, 2);
+            } catch (\Throwable $e) {}
+        }
+
+        // Meteorología
+        $tempMax = $request->filled('temp_max') ? (float)$request->input('temp_max') : null;
+        $tempMin = $request->filled('temp_min') ? (float)$request->input('temp_min') : null;
+        $temp = $request->filled('temperatura') ? (float)$request->input('temperatura') : ($tempMax && $tempMin ? ($tempMax + $tempMin) / 2 : null);
+        $presionAtm = $request->filled('presion_atm') ? (float)$request->input('presion_atm') : null;
+        $velViento = $request->filled('vel_viento') ? (float)$request->input('vel_viento') : null;
+        $dirViento = $request->input('dir_viento');
+        $hr = $request->filled('hr_percent') ? (float)$request->input('hr_percent') : null;
+
+        // PM10 Gravimétrico
+        $pm10Ini = $request->filled('pm10_filtro_inicial') ? (float)$request->input('pm10_filtro_inicial') : null;
+        $pm10Fin = $request->filled('pm10_filtro_final') ? (float)$request->input('pm10_filtro_final') : null;
+        $pm10Prom = $request->filled('pm10_prom') ? (float)$request->input('pm10_prom') : null;
+
+        // PST Gravimétrico
+        $pstIni = $request->filled('pst_filtro_inicial') ? (float)$request->input('pst_filtro_inicial') : null;
+        $pstFin = $request->filled('pst_filtro_final') ? (float)$request->input('pst_filtro_final') : null;
+        $pstProm = $request->filled('pst_prom') ? (float)$request->input('pst_prom') : null;
+
+        // PM2.5 Gravimétrico
+        $pm25Ini = $request->filled('pm25_filtro_inicial') ? (float)$request->input('pm25_filtro_inicial') : null;
+        $pm25Fin = $request->filled('pm25_filtro_final') ? (float)$request->input('pm25_filtro_final') : null;
+        $pm25Prom = $request->filled('pm25_prom') ? (float)$request->input('pm25_prom') : null;
+
+        $caudal = $request->filled('caudal') ? (float)$request->input('caudal') : null;
+
+        // Cálculo de concentración gravimétrica si faltase
+        if ($caudal !== null && $caudal > 0 && $difHoras !== null && $difHoras > 0) {
+            $volumenM3 = ($caudal / 1000.0) * ($difHoras * 60.0);
+            if ($volumenM3 > 0) {
+                if ($pm10Prom === null && $pm10Ini !== null && $pm10Fin !== null && $pm10Fin >= $pm10Ini) {
+                    $deltaGramos = $pm10Fin - $pm10Ini;
+                    $pm10Prom = round(($deltaGramos * 1000000.0) / $volumenM3, 3);
+                }
+                if ($pstProm === null && $pstIni !== null && $pstFin !== null && $pstFin >= $pstIni) {
+                    $deltaGramos = $pstFin - $pstIni;
+                    $pstProm = round(($deltaGramos * 1000000.0) / $volumenM3, 3);
+                }
+                if ($pm25Prom === null && $pm25Ini !== null && $pm25Fin !== null && $pm25Fin >= $pm25Ini) {
+                    $deltaGramos = $pm25Fin - $pm25Ini;
+                    $pm25Prom = round(($deltaGramos * 1000000.0) / $volumenM3, 3);
+                }
+            }
+        }
+
+        // Subida de imágenes
+        $uploadedImages = [];
+        $uploadDir = public_path('uploads/measurements');
+        if (!File::isDirectory($uploadDir)) {
+            File::makeDirectory($uploadDir, 0755, true, true);
+        }
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                if ($file->isValid()) {
+                    $ext = strtolower($file->getClientOriginalExtension());
+                    $safeExt = in_array($ext, ['jpeg', 'jpg', 'png', 'webp']) ? $ext : 'jpg';
+                    $fname = 'part_amb_' . time() . '_' . uniqid() . '.' . $safeExt;
+                    $file->move($uploadDir, $fname);
+                    $uploadedImages[] = 'uploads/measurements/' . $fname;
+                }
+            }
+        }
+        if ($request->hasFile('photos')) {
+            foreach ($request->file('photos') as $file) {
+                if ($file->isValid()) {
+                    $ext = strtolower($file->getClientOriginalExtension());
+                    $safeExt = in_array($ext, ['jpeg', 'jpg', 'png', 'webp']) ? $ext : 'jpg';
+                    $fname = 'part_amb_' . time() . '_' . uniqid() . '.' . $safeExt;
+                    $file->move($uploadDir, $fname);
+                    $uploadedImages[] = 'uploads/measurements/' . $fname;
+                }
+            }
+        }
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            if ($file->isValid()) {
+                $ext = strtolower($file->getClientOriginalExtension());
+                $safeExt = in_array($ext, ['jpeg', 'jpg', 'png', 'webp']) ? $ext : 'jpg';
+                $fname = 'part_amb_' . time() . '_' . uniqid() . '.' . $safeExt;
+                $file->move($uploadDir, $fname);
+                array_unshift($uploadedImages, 'uploads/measurements/' . $fname);
+            }
+        }
+
+        if ($request->filled('image_urls')) {
+            $rawUrls = $request->input('image_urls');
+            $decodedUrls = is_array($rawUrls) ? $rawUrls : json_decode($rawUrls, true);
+            if (is_array($decodedUrls)) {
+                foreach ($decodedUrls as $u) {
+                    if ($u && !in_array($u, $uploadedImages)) {
+                        $uploadedImages[] = $u;
+                    }
+                }
+            }
+        }
+
+        $lat = $request->filled('latitude') ? (float)$request->input('latitude') : null;
+        $lng = $request->filled('longitude') ? (float)$request->input('longitude') : null;
+        $utmZone = $request->input('utm_zone');
+        $utmE = $request->filled('utm_easting') ? (float)$request->input('utm_easting') : null;
+        $utmN = $request->filled('utm_northing') ? (float)$request->input('utm_northing') : null;
+
+        $locInput = $request->input('location');
+        if (is_string($locInput) && (str_starts_with($locInput, '{') || str_starts_with($locInput, '['))) {
+            $locDecoded = json_decode($locInput, true);
+            if (is_array($locDecoded)) {
+                if ($utmZone === null && !empty($locDecoded['utm_zone'])) $utmZone = $locDecoded['utm_zone'];
+                if ($utmE === null && !empty($locDecoded['easting'])) $utmE = (float)$locDecoded['easting'];
+                if ($utmN === null && !empty($locDecoded['northing'])) $utmN = (float)$locDecoded['northing'];
+                if ($lat === null && !empty($locDecoded['latitude'])) $lat = (float)$locDecoded['latitude'];
+                if ($lng === null && !empty($locDecoded['longitude'])) $lng = (float)$locDecoded['longitude'];
+            }
+        }
+
+        $staffId = $request->input('staff_id');
+        $registeredBy = $request->input('registered_by') ?? $request->input('created_by');
+        if (!empty($staffId)) {
+            $st = Staff::find($staffId);
+            if ($st) $registeredBy = $st->full_name ?: $st->name;
+        }
+
+        $data = [
+            'point_number' => $pointNumber,
+            'measurement_date' => $date,
+            'measurement_time' => $time,
+            'area' => $area,
+            'workstation' => $puntoMedicion,
+            'punto_medicion' => $puntoMedicion,
+            'fecha_inicio' => $fechaInicio,
+            'hora_inicio' => $horaInicio,
+            'fecha_fin' => $fechaFin,
+            'hora_fin' => $horaFin,
+            'diferencia_horas' => $difHoras,
+            'temp_max' => $tempMax,
+            'temp_min' => $tempMin,
+            'temperatura' => $temp,
+            'presion_atm' => $presionAtm,
+            'vel_viento' => $velViento,
+            'dir_viento' => $dirViento,
+            'hr_percent' => $hr,
+            'pm10_filtro_inicial' => $pm10Ini,
+            'pm10_filtro_final' => $pm10Fin,
+            'pm10_prom' => $pm10Prom,
+            'pst_filtro_inicial' => $pstIni,
+            'pst_filtro_final' => $pstFin,
+            'pst_prom' => $pstProm,
+            'pm25_filtro_inicial' => $pm25Ini,
+            'pm25_filtro_final' => $pm25Fin,
+            'pm25_prom' => $pm25Prom,
+            'caudal' => $caudal,
+            'latitude' => $lat,
+            'longitude' => $lng,
+            'utm_zone' => $utmZone,
+            'utm_easting' => $utmE,
+            'utm_northing' => $utmN,
+            'location' => $request->input('location'),
+            'observations' => $request->input('observations') ?? $request->input('observaciones'),
+            'registered_by' => $registeredBy,
+            'created_by' => $registeredBy,
+            'staff_id' => $staffId,
+            'local_uuid' => $localUuid ?? ($measurement ? $measurement->local_uuid : Str::uuid()->toString()),
+        ];
+
+        if (!empty($uploadedImages)) {
+            $data['images'] = $uploadedImages;
+            $data['image_urls'] = $uploadedImages;
+            $data['image_path'] = $uploadedImages[0];
+        }
+
+        if ($measurement) {
+            $measurement->update($data);
+            $statusCode = 200;
+        } else {
+            $measurement = $module->particulasAmbientalesMeasurements()->create($data);
+            $statusCode = 201;
+        }
+
+        $module->points_completed = $module->particulasAmbientalesMeasurements()->count();
+        $module->save();
+
+        $finalImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
+        $finalUrls = array_values(array_filter(array_map(function ($p) {
+            if (!$p) return null;
+            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+            return asset($p);
+        }, $finalImages)));
+
+        return response()->json([
+            'success' => true,
+            'message' => "Punto de muestreo ambiental #{$measurement->point_number} guardado exitosamente.",
+            'id' => (string) $measurement->id,
+            'remote_id' => (string) $measurement->id,
+            'point_number' => $measurement->point_number,
+            'area' => $measurement->area,
+            'punto_medicion' => $measurement->punto_medicion,
+            'local_uuid' => $measurement->local_uuid,
+            'image_urls' => $finalUrls,
+            'points_completed' => $module->points_completed,
+        ], $statusCode);
+    }
+
+    /**
+     * Eliminar una medición de partículas ambientales desde la app móvil.
+     */
+    public function destroyAmbientParticlesMeasurement($moduleId, $id)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+        $measurement = $module->particulasAmbientalesMeasurements()->find($id);
+
+        if ($measurement) {
+            $measurement->delete();
+            $module->points_completed = $module->particulasAmbientalesMeasurements()->count();
+            $module->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Punto de medición ambiental eliminado correctamente.',
+            'points_completed' => $module->points_completed,
+        ]);
+    }
+
+    /**
+     * Obtener mediciones de vibración de un módulo para la app móvil.
+     */
+    public function getVibracionMeasurements($moduleId)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+
+        $measurements = $module->vibracionMeasurements()
+            ->with('staff')
+            ->get()
+            ->map(function ($item) {
+                $images = is_array($item->images) ? $item->images : (json_decode($item->images, true) ?: []);
+                if (empty($images) && !empty($item->image_urls)) {
+                    $images = is_array($item->image_urls) ? $item->image_urls : (json_decode($item->image_urls, true) ?: []);
+                }
+                $imageUrls = array_values(array_filter(array_map(function ($p) {
+                    return $p ? (str_starts_with($p, 'http') ? $p : asset($p)) : null;
+                }, $images)));
+
+                $tipo = strtolower($item->tipo ?? 'cuerpo_entero');
+                $isCE = ($tipo === 'cuerpo_entero' || str_contains($tipo, 'cuerpo'));
+
+                return [
+                    'id' => $item->id,
+                    'remote_id' => (string) $item->id,
+                    'local_uuid' => $item->local_uuid,
+                    'point_number' => $item->point_number,
+                    'codigo' => $item->codigo ?? $item->point_number,
+                    'punto_medicion' => $item->punto_medicion ?? $item->point_number,
+                    'measurement_date' => $item->measurement_date ? $item->measurement_date->format('Y-m-d') : null,
+                    'measurement_time' => $item->measurement_time,
+                    'area' => $item->area,
+                    'area_trabajo' => $item->area,
+                    'puesto_trabajo' => $item->puesto_trabajo ?: $item->workstation,
+                    'workstation' => $item->puesto_trabajo ?: $item->workstation,
+                    'trabajador_evaluado' => $item->trabajador_evaluado,
+                    'maquina_equipo' => $item->maquina_equipo,
+                    'duracion_jornada_h' => (float) ($item->duracion_jornada_h ?? 8.0),
+                    'tiempo_expos_h' => (float) ($item->tiempo_expos_h ?? 8.0),
+                    'duracion_prueba_min' => (int) ($item->duracion_prueba_min ?? 15),
+                    'tipo' => $isCE ? 'cuerpo_entero' : 'mano_brazo',
+                    'ub_acelerometro' => $item->ub_acelerometro,
+                    'mano_afectada' => $item->mano_afectada,
+                    'aeqx_ce' => (float) ($item->aeqx_ce ?? 0),
+                    'aeqy_ce' => (float) ($item->aeqy_ce ?? 0),
+                    'aeqz_ce' => (float) ($item->aeqz_ce ?? 0),
+                    'aeqx_mb' => (float) ($item->aeqx_mb ?? 0),
+                    'aeqy_mb' => (float) ($item->aeqy_mb ?? 0),
+                    'aeqz_mb' => (float) ($item->aeqz_mb ?? 0),
+                    'atotal' => $item->aceleracion_total,
+                    'a8' => $item->a8,
+                    'nivel_accion' => $item->nivel_accion,
+                    'limite_vle' => $item->limite_vle,
+                    'estado_cumplimiento' => $item->estado_cumplimiento,
+                    'observations' => $item->observations,
+                    'image_urls' => $imageUrls,
+                    'location' => $item->location,
+                    'latitude' => $item->latitude !== null ? (float) $item->latitude : null,
+                    'longitude' => $item->longitude !== null ? (float) $item->longitude : null,
+                    'utm_zone' => $item->utm_zone,
+                    'utm_easting' => $item->utm_easting !== null ? (float) $item->utm_easting : null,
+                    'utm_northing' => $item->utm_northing !== null ? (float) $item->utm_northing : null,
+                    'registered_by' => $item->staff ? $item->staff->name : $item->registered_by,
+                    'staff_id' => $item->staff_id,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'module_id' => $module->id,
+            'module_name' => $module->name,
+            'points_total' => $module->points_total,
+            'points_completed' => $module->vibracionMeasurements()->count(),
+            'measurements' => $measurements,
+        ]);
+    }
+
+    /**
+     * Crear o sincronizar una medición de vibración desde la app móvil.
+     */
+    public function storeVibracionMeasurement(Request $request, $moduleId)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+
+        $validated = $request->validate([
+            'id' => 'nullable',
+            'remote_id' => 'nullable',
+            'local_uuid' => 'nullable|string',
+            'point_number' => 'nullable|string|max:50',
+            'codigo' => 'nullable|string|max:50',
+            'punto_medicion' => 'nullable|string|max:255',
+            'measured_at' => 'nullable|string',
+            'measurement_date' => 'nullable|string',
+            'measurement_time' => 'nullable|string|max:20',
+            'area' => 'nullable|string|max:255',
+            'area_trabajo' => 'nullable|string|max:255',
+            'puesto_trabajo' => 'nullable|string|max:255',
+            'workstation' => 'nullable|string|max:255',
+            'trabajador_evaluado' => 'nullable|string|max:255',
+            'maquina_equipo' => 'nullable|string|max:255',
+            'duracion_jornada_h' => 'nullable|numeric',
+            'tiempo_expos_h' => 'nullable|numeric',
+            'duracion_prueba_min' => 'nullable|integer',
+            'tipo' => 'nullable|string|max:50',
+            'ub_acelerometro' => 'nullable|string|max:100',
+            'mano_afectada' => 'nullable|string|max:50',
+            'aeqx_ce' => 'nullable|numeric',
+            'aeqy_ce' => 'nullable|numeric',
+            'aeqz_ce' => 'nullable|numeric',
+            'aeqx_mb' => 'nullable|numeric',
+            'aeqy_mb' => 'nullable|numeric',
+            'aeqz_mb' => 'nullable|numeric',
+            'location' => 'nullable',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'utm_zone' => 'nullable|string|max:20',
+            'utm_easting' => 'nullable|numeric',
+            'utm_northing' => 'nullable|numeric',
+            'observations' => 'nullable|string',
+            'observaciones' => 'nullable|string',
+            'registered_by' => 'nullable|string|max:255',
+            'created_by' => 'nullable|string|max:255',
+            'staff_id' => 'nullable',
+            'image_urls' => 'nullable',
+            'images.*' => 'nullable|image|max:15360',
+            'photos.*' => 'nullable|image|max:15360',
+        ]);
+
+        $localUuid = $validated['local_uuid'] ?? null;
+        $id = $validated['id'] ?? ($validated['remote_id'] ?? null);
+
+        $measurement = null;
+        if (!empty($localUuid)) {
+            $measurement = $module->vibracionMeasurements()->where('local_uuid', $localUuid)->first();
+        }
+        if (!$measurement && !empty($id)) {
+            $measurement = $module->vibracionMeasurements()->find($id);
+        }
+
+        // Manejo de Fotos (soporta tanto 'images' como 'photos')
+        $uploadedImages = [];
+        $filesToProcess = [];
+        if ($request->hasFile('images')) {
+            $imgs = $request->file('images');
+            $filesToProcess = is_array($imgs) ? $imgs : [$imgs];
+        } elseif ($request->hasFile('photos')) {
+            $imgs = $request->file('photos');
+            $filesToProcess = is_array($imgs) ? $imgs : [$imgs];
+        }
+
+        if (!empty($filesToProcess)) {
+            $destPath = public_path('uploads/vibraciones');
+            if (!File::exists($destPath)) {
+                File::makeDirectory($destPath, 0755, true);
+            }
+            foreach ($filesToProcess as $file) {
+                if ($file && $file->isValid()) {
+                    $filename = 'vib_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+                    $file->move($destPath, $filename);
+                    $uploadedImages[] = 'uploads/vibraciones/' . $filename;
+                }
+            }
+        }
+
+        // Determinar fecha y hora
+        $measDate = $validated['measurement_date'] ?? null;
+        $measTime = $validated['measurement_time'] ?? null;
+        if (empty($measDate) && !empty($validated['measured_at'])) {
+            try {
+                $dt = Carbon::parse($validated['measured_at']);
+                $measDate = $dt->toDateString();
+                if (empty($measTime)) {
+                    $measTime = $dt->format('H:i');
+                }
+            } catch (\Exception $e) {
+                $measDate = now()->toDateString();
+            }
+        }
+        if (empty($measDate)) $measDate = now()->toDateString();
+        if (empty($measTime)) $measTime = now()->format('H:i');
+
+        $existingUrls = [];
+        if (!empty($validated['image_urls'])) {
+            $raw = $validated['image_urls'];
+            if (is_string($raw)) {
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded)) {
+                    $existingUrls = $decoded;
+                } else {
+                    $existingUrls = [$raw];
+                }
+            } elseif (is_array($raw)) {
+                $existingUrls = $raw;
+            }
+        }
+
+        $finalUrls = array_values(array_unique(array_merge($existingUrls, $uploadedImages)));
+
+        $pointNum = $validated['codigo'] ?? ($validated['point_number'] ?? null);
+        if (empty($pointNum)) {
+            $count = $module->vibracionMeasurements()->count();
+            $pointNum = 'VIB-' . ($count + 1);
+        }
+
+        $area = $validated['area_trabajo'] ?? ($validated['area'] ?? 'General');
+        $puesto = $validated['puesto_trabajo'] ?? ($validated['workstation'] ?? 'Operador');
+
+        $data = [
+            'module_id' => $module->id,
+            'point_number' => $pointNum,
+            'codigo' => $pointNum,
+            'punto_medicion' => $pointNum,
+            'measurement_date' => $measDate,
+            'measurement_time' => $measTime,
+            'area' => $area,
+            'puesto_trabajo' => $puesto,
+            'workstation' => $puesto,
+            'trabajador_evaluado' => $validated['trabajador_evaluado'] ?? null,
+            'maquina_equipo' => $validated['maquina_equipo'] ?? null,
+            'duracion_jornada_h' => $validated['duracion_jornada_h'] ?? 8.0,
+            'tiempo_expos_h' => $validated['tiempo_expos_h'] ?? 8.0,
+            'duracion_prueba_min' => $validated['duracion_prueba_min'] ?? 15,
+            'tipo' => $validated['tipo'] ?? 'cuerpo_entero',
+            'ub_acelerometro' => $validated['ub_acelerometro'] ?? 'base_asiento',
+            'mano_afectada' => $validated['mano_afectada'] ?? 'derecha',
+            'aeqx_ce' => $validated['aeqx_ce'] ?? 0.0,
+            'aeqy_ce' => $validated['aeqy_ce'] ?? 0.0,
+            'aeqz_ce' => $validated['aeqz_ce'] ?? 0.0,
+            'aeqx_mb' => $validated['aeqx_mb'] ?? 0.0,
+            'aeqy_mb' => $validated['aeqy_mb'] ?? 0.0,
+            'aeqz_mb' => $validated['aeqz_mb'] ?? 0.0,
+            'location' => is_array($validated['location'] ?? null) ? json_encode($validated['location']) : ($validated['location'] ?? null),
+            'latitude' => $validated['latitude'] ?? null,
+            'longitude' => $validated['longitude'] ?? null,
+            'utm_zone' => $validated['utm_zone'] ?? '19K',
+            'utm_easting' => $validated['utm_easting'] ?? null,
+            'utm_northing' => $validated['utm_northing'] ?? null,
+            'image_path' => $finalUrls[0] ?? null,
+            'images' => $finalUrls,
+            'image_urls' => $finalUrls,
+            'observations' => $validated['observations'] ?? ($validated['observaciones'] ?? null),
+            'registered_by' => $validated['registered_by'] ?? ($validated['created_by'] ?? 'App Móvil'),
+            'created_by' => $validated['created_by'] ?? 'App Móvil',
+            'staff_id' => $validated['staff_id'] ?? null,
+            'local_uuid' => $localUuid,
+        ];
+
+        if ($measurement) {
+            $measurement->update($data);
+            $statusCode = 200;
+        } else {
+            $measurement = $module->vibracionMeasurements()->create($data);
+            $statusCode = 201;
+        }
+
+        $module->points_completed = $module->vibracionMeasurements()->count();
+        $module->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Medición de vibración sincronizada correctamente.',
+            'id' => $measurement->id,
+            'remote_id' => (string) $measurement->id,
+            'point_number' => $measurement->point_number,
+            'codigo' => $measurement->codigo,
+            'local_uuid' => $measurement->local_uuid,
+            'image_urls' => $finalUrls,
+            'points_completed' => $module->points_completed,
+        ], $statusCode);
+    }
+
+    /**
+     * Eliminar una medición de vibración desde la app móvil.
+     */
+    public function destroyVibracionMeasurement($moduleId, $id)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+        $measurement = $module->vibracionMeasurements()->find($id);
+
+        if ($measurement) {
+            $measurement->delete();
+            $module->points_completed = $module->vibracionMeasurements()->count();
+            $module->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Punto de medición de vibración eliminado correctamente.',
+            'points_completed' => $module->points_completed,
+        ]);
+    }
+
+    /**
+     * Obtener mediciones de Contaminantes Químicos para la app móvil.
+     */
+    public function getContaminantesQuimicosMeasurements($moduleId)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+
+        $measurements = $module->contaminantesQuimicosMeasurements()
+            ->with('staff')
+            ->orderBy('id', 'asc')
+            ->get()
+            ->map(function ($m) {
+                return [
+                    'id' => $m->id,
+                    'remote_id' => (string) $m->id,
+                    'module_id' => $m->module_id,
+                    'point_number' => $m->point_number,
+                    'codigo' => $m->codigo ?? $m->point_number,
+                    'punto_medicion' => $m->punto_medicion,
+                    'measurement_date' => $m->measurement_date ? $m->measurement_date->toDateString() : null,
+                    'measurement_time' => $m->measurement_time,
+                    'measured_at' => $m->measurement_date ? ($m->measurement_date->toDateString() . ' ' . ($m->measurement_time ?? '08:00:00')) : null,
+                    'area' => $m->area,
+                    'area_trabajo' => $m->area,
+                    'trabajador_nombre' => $m->trabajador_nombre,
+                    'trabajador_evaluado' => $m->trabajador_nombre,
+                    'masa_inicial_filtro_mg' => $m->masa_inicial_filtro_mg !== null ? (float) $m->masa_inicial_filtro_mg : null,
+                    'masa_final_filtro_mg' => $m->masa_final_filtro_mg !== null ? (float) $m->masa_final_filtro_mg : null,
+                    'masa_neta_filtro_mg' => $m->masa_neta_filtro,
+                    'hora_inicio' => $m->hora_inicio,
+                    'hora_final' => $m->hora_final,
+                    't_inicial_c' => $m->t_inicial_c !== null ? (float) $m->t_inicial_c : null,
+                    't_final_c' => $m->t_final_c !== null ? (float) $m->t_final_c : null,
+                    'presion_hpa' => $m->presion_hpa !== null ? (float) $m->presion_hpa : null,
+                    'q_inicial_lmin' => $m->q_inicial_lmin !== null ? (float) $m->q_inicial_lmin : null,
+                    'q_final_lmin' => $m->q_final_lmin !== null ? (float) $m->q_final_lmin : null,
+                    'caudal_promedio_lmin' => $m->caudal_promedio,
+                    'location' => $m->location ? (is_array($m->location) ? $m->location : json_decode($m->location, true)) : null,
+                    'latitude' => $m->latitude !== null ? (float) $m->latitude : null,
+                    'longitude' => $m->longitude !== null ? (float) $m->longitude : null,
+                    'utm_zone' => $m->utm_zone ?? '19K',
+                    'utm_easting' => $m->utm_easting !== null ? (float) $m->utm_easting : null,
+                    'utm_northing' => $m->utm_northing !== null ? (float) $m->utm_northing : null,
+                    'image_path' => $m->image_path ? asset($m->image_path) : null,
+                    'image_urls' => collect($m->image_urls ?: [])->map(fn($url) => str_starts_with($url, 'http') ? $url : asset($url))->toArray(),
+                    'observations' => $m->observations,
+                    'observaciones' => $m->observations,
+                    'registered_by' => $m->registered_by,
+                    'created_by' => $m->created_by,
+                    'staff_id' => $m->staff_id,
+                    'staff_name' => $m->staff ? $m->staff->name : null,
+                    'local_uuid' => $m->local_uuid,
+                    'created_at' => $m->created_at ? $m->created_at->toIso8601String() : null,
+                    'updated_at' => $m->updated_at ? $m->updated_at->toIso8601String() : null,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'module_id' => $module->id,
+            'module_name' => $module->name,
+            'points_total' => $module->points_total,
+            'points_completed' => $module->contaminantesQuimicosMeasurements()->count(),
+            'measurements' => $measurements,
+        ]);
+    }
+
+    /**
+     * Guardar o actualizar una medición de Contaminantes Químicos desde la app móvil.
+     */
+    public function storeContaminantesQuimicosMeasurement(Request $request, $moduleId)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+
+        $validated = $request->validate([
+            'id' => 'nullable',
+            'remote_id' => 'nullable',
+            'local_uuid' => 'nullable|string',
+            'point_number' => 'nullable|string|max:50',
+            'codigo' => 'nullable|string|max:50',
+            'punto_medicion' => 'nullable|string|max:255',
+            'measured_at' => 'nullable|string',
+            'measurement_date' => 'nullable|string',
+            'measurement_time' => 'nullable|string|max:20',
+            'area' => 'nullable|string|max:255',
+            'area_trabajo' => 'nullable|string|max:255',
+            'trabajador_nombre' => 'nullable|string|max:255',
+            'trabajador_evaluado' => 'nullable|string|max:255',
+            'masa_inicial_filtro_mg' => 'nullable|numeric',
+            'masa_inicial_mg' => 'nullable|numeric',
+            'masa_final_filtro_mg' => 'nullable|numeric',
+            'masa_final_mg' => 'nullable|numeric',
+            'hora_inicio' => 'nullable|string|max:20',
+            'hora_final' => 'nullable|string|max:20',
+            't_inicial_c' => 'nullable|numeric',
+            't_final_c' => 'nullable|numeric',
+            'presion_hpa' => 'nullable|numeric',
+            'q_inicial_lmin' => 'nullable|numeric',
+            'q_final_lmin' => 'nullable|numeric',
+            'location' => 'nullable',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'utm_zone' => 'nullable|string|max:20',
+            'utm_easting' => 'nullable|numeric',
+            'utm_northing' => 'nullable|numeric',
+            'observations' => 'nullable|string',
+            'observaciones' => 'nullable|string',
+            'registered_by' => 'nullable|string|max:255',
+            'created_by' => 'nullable|string|max:255',
+            'staff_id' => 'nullable',
+            'image_urls' => 'nullable',
+            'images.*' => 'nullable|image|max:15360',
+            'photos.*' => 'nullable|image|max:15360',
+        ]);
+
+        $localUuid = $validated['local_uuid'] ?? null;
+        $id = $validated['id'] ?? ($validated['remote_id'] ?? null);
+
+        $measurement = null;
+        if (!empty($localUuid)) {
+            $measurement = $module->contaminantesQuimicosMeasurements()->where('local_uuid', $localUuid)->first();
+        }
+        if (!$measurement && !empty($id)) {
+            $measurement = $module->contaminantesQuimicosMeasurements()->find($id);
+        }
+
+        // Manejo de Fotos (soporta tanto 'images' como 'photos')
+        $uploadedImages = [];
+        $filesToProcess = [];
+        if ($request->hasFile('images')) {
+            $imgs = $request->file('images');
+            $filesToProcess = is_array($imgs) ? $imgs : [$imgs];
+        } elseif ($request->hasFile('photos')) {
+            $imgs = $request->file('photos');
+            $filesToProcess = is_array($imgs) ? $imgs : [$imgs];
+        }
+
+        if (!empty($filesToProcess)) {
+            $destPath = public_path('uploads/quimicos');
+            if (!File::exists($destPath)) {
+                File::makeDirectory($destPath, 0755, true);
+            }
+            foreach ($filesToProcess as $file) {
+                if ($file && $file->isValid()) {
+                    $filename = 'cq_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+                    $file->move($destPath, $filename);
+                    $uploadedImages[] = 'uploads/quimicos/' . $filename;
+                }
+            }
+        }
+
+        // Determinar fecha y hora
+        $measDate = $validated['measurement_date'] ?? null;
+        $measTime = $validated['measurement_time'] ?? null;
+        if (empty($measDate) && !empty($validated['measured_at'])) {
+            try {
+                $dt = Carbon::parse($validated['measured_at']);
+                $measDate = $dt->toDateString();
+                if (empty($measTime)) {
+                    $measTime = $dt->format('H:i');
+                }
+            } catch (\Exception $e) {
+                $measDate = now()->toDateString();
+            }
+        }
+        if (empty($measDate)) $measDate = now()->toDateString();
+        if (empty($measTime)) $measTime = now()->format('H:i');
+
+        $existingUrls = [];
+        if (!empty($validated['image_urls'])) {
+            $raw = $validated['image_urls'];
+            if (is_string($raw)) {
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded)) {
+                    $existingUrls = $decoded;
+                } else {
+                    $existingUrls = [$raw];
+                }
+            } elseif (is_array($raw)) {
+                $existingUrls = $raw;
+            }
+        }
+
+        $finalUrls = array_values(array_unique(array_merge($existingUrls, $uploadedImages)));
+
+        $pointNum = $validated['codigo'] ?? ($validated['point_number'] ?? null);
+        if (empty($pointNum)) {
+            $count = $module->contaminantesQuimicosMeasurements()->count();
+            $pointNum = 'CQ-' . ($count + 1);
+        }
+
+        $area = $validated['area_trabajo'] ?? ($validated['area'] ?? null);
+        $trabajador = $validated['trabajador_nombre'] ?? ($validated['trabajador_evaluado'] ?? null);
+        $masaInicial = $validated['masa_inicial_filtro_mg'] ?? ($validated['masa_inicial_mg'] ?? null);
+        $masaFinal = $validated['masa_final_filtro_mg'] ?? ($validated['masa_final_mg'] ?? null);
+        $observaciones = $validated['observaciones'] ?? ($validated['observations'] ?? null);
+
+        $locationVal = $validated['location'] ?? null;
+        if (is_array($locationVal)) {
+            $locationVal = json_encode($locationVal);
+        }
+
+        $data = [
+            'point_number' => $pointNum,
+            'codigo' => $pointNum,
+            'punto_medicion' => $validated['punto_medicion'] ?? null,
+            'measurement_date' => $measDate,
+            'measurement_time' => $measTime,
+            'area' => $area,
+            'trabajador_nombre' => $trabajador,
+            'masa_inicial_filtro_mg' => $masaInicial !== null ? (float)$masaInicial : null,
+            'masa_final_filtro_mg' => $masaFinal !== null ? (float)$masaFinal : null,
+            'hora_inicio' => $validated['hora_inicio'] ?? null,
+            'hora_final' => $validated['hora_final'] ?? null,
+            't_inicial_c' => isset($validated['t_inicial_c']) ? (float)$validated['t_inicial_c'] : null,
+            't_final_c' => isset($validated['t_final_c']) ? (float)$validated['t_final_c'] : null,
+            'presion_hpa' => isset($validated['presion_hpa']) ? (float)$validated['presion_hpa'] : null,
+            'q_inicial_lmin' => isset($validated['q_inicial_lmin']) ? (float)$validated['q_inicial_lmin'] : null,
+            'q_final_lmin' => isset($validated['q_final_lmin']) ? (float)$validated['q_final_lmin'] : null,
+            'location' => $locationVal,
+            'latitude' => $validated['latitude'] ?? null,
+            'longitude' => $validated['longitude'] ?? null,
+            'utm_zone' => $validated['utm_zone'] ?? '19K',
+            'utm_easting' => $validated['utm_easting'] ?? null,
+            'utm_northing' => $validated['utm_northing'] ?? null,
+            'image_urls' => $finalUrls,
+            'images' => $finalUrls,
+            'image_path' => !empty($finalUrls) ? $finalUrls[0] : null,
+            'observations' => $observaciones,
+            'registered_by' => $validated['registered_by'] ?? ($validated['created_by'] ?? 'Técnico'),
+            'created_by' => $validated['created_by'] ?? ($validated['registered_by'] ?? 'Técnico'),
+            'staff_id' => $validated['staff_id'] ?? null,
+            'local_uuid' => $localUuid,
+        ];
+
+        if ($measurement) {
+            $measurement->update($data);
+            $statusCode = 200;
+        } else {
+            $measurement = $module->contaminantesQuimicosMeasurements()->create($data);
+            $statusCode = 201;
+        }
+
+        $module->points_completed = $module->contaminantesQuimicosMeasurements()->count();
+        $module->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Medición de Contaminantes Químicos sincronizada correctamente.',
+            'id' => $measurement->id,
+            'remote_id' => (string) $measurement->id,
+            'point_number' => $measurement->point_number,
+            'codigo' => $measurement->codigo,
+            'local_uuid' => $measurement->local_uuid,
+            'image_urls' => $finalUrls,
+            'points_completed' => $module->points_completed,
+        ], $statusCode);
+    }
+
+    /**
+     * Eliminar una medición de Contaminantes Químicos desde la app móvil.
+     */
+    public function destroyContaminantesQuimicosMeasurement($moduleId, $id)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+        $measurement = $module->contaminantesQuimicosMeasurements()->find($id);
+
+        if ($measurement) {
+            $measurement->delete();
+            $module->points_completed = $module->contaminantesQuimicosMeasurements()->count();
+            $module->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Punto de medición de Contaminantes Químicos eliminado correctamente.',
+            'points_completed' => $module->points_completed,
+        ]);
+    }
 }
+
 
 
 

@@ -1089,10 +1089,17 @@ table#modulesMasterTable td {
                             </div>
                             <svg class="option-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         </div>
-                        <div class="dropdown-option-item" data-value="particulas" onclick="selectCustomModuleFilter('particulas', 'Partículas')">
+                        <div class="dropdown-option-item" data-value="particulas" onclick="selectCustomModuleFilter('particulas', 'Partículas Ocupacionales')">
                             <div class="option-item-left">
-                                <span class="option-item-dot" style="background: #a855f7;"></span>
-                                <span>Partículas</span>
+                                <span class="option-item-dot" style="background: #0284c7;"></span>
+                                <span>Partículas Ocupacionales</span>
+                            </div>
+                            <svg class="option-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div class="dropdown-option-item" data-value="particulas_ambientales" onclick="selectCustomModuleFilter('particulas_ambientales', 'Partículas Ambientales')">
+                            <div class="option-item-left">
+                                <span class="option-item-dot" style="background: #0ea5e9;"></span>
+                                <span>Partículas Ambientales</span>
                             </div>
                             <svg class="option-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         </div>
@@ -1119,8 +1126,15 @@ table#modulesMasterTable td {
                         </div>
                         <div class="dropdown-option-item" data-value="vibracion" onclick="selectCustomModuleFilter('vibracion', 'Vibración')">
                             <div class="option-item-left">
-                                <span class="option-item-dot" style="background: #ec4899;"></span>
+                                <span class="option-item-dot" style="background: #eab308;"></span>
                                 <span>Vibración</span>
+                            </div>
+                            <svg class="option-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div class="dropdown-option-item" data-value="contaminantes_quimicos" onclick="selectCustomModuleFilter('contaminantes_quimicos', 'Contaminantes Químicos')">
+                            <div class="option-item-left">
+                                <span class="option-item-dot" style="background: #0d9488;"></span>
+                                <span>Contaminantes Químicos</span>
                             </div>
                             <svg class="option-check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         </div>
@@ -1256,6 +1270,34 @@ table#modulesMasterTable td {
                                     </a>
                                 @elseif($item['module_key'] === 'inspeccion_fotografica' || $item['module_key'] === 'fotografica')
                                     <a href="{{ route('modules.photographic_inspection', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Inspección Fotográfica">
+                                        <div style="font-weight: 800; color: #0284c7; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
+                                            <span>{{ $item['module_name'] }}</span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                        </div>
+                                    </a>
+                                @elseif($item['module_key'] === 'particulas' || $item['module_key'] === 'particles')
+                                    <a href="{{ route('modules.particulas', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Partículas Ocupacionales">
+                                        <div style="font-weight: 800; color: #0284c7; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
+                                            <span>{{ $item['module_name'] }}</span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                        </div>
+                                    </a>
+                                @elseif($item['module_key'] === 'particulas_ambientales' || $item['module_key'] === 'particulas_amb')
+                                    <a href="{{ route('modules.particulas_ambientales', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Partículas Ambientales">
+                                        <div style="font-weight: 800; color: #0284c7; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
+                                            <span>{{ $item['module_name'] }}</span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                        </div>
+                                    </a>
+                                @elseif($item['module_key'] === 'vibracion' || $item['module_key'] === 'vibraciones' || $item['module_key'] === 'vibration')
+                                    <a href="{{ route('modules.vibracion', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Monitoreo de Vibración Ocupacional">
+                                        <div style="font-weight: 800; color: #0284c7; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
+                                            <span>{{ $item['module_name'] }}</span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                        </div>
+                                    </a>
+                                @elseif($item['module_key'] === 'contaminantes_quimicos' || $item['module_key'] === 'quimicos' || $item['module_key'] === 'contaminante_quimico')
+                                    <a href="{{ route('modules.contaminantes_quimicos', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Monitoreo de Contaminantes Químicos">
                                         <div style="font-weight: 800; color: #0284c7; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
                                             <span>{{ $item['module_name'] }}</span>
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
@@ -1478,6 +1520,40 @@ table#modulesMasterTable td {
                                                 <circle cx="12" cy="13" r="3"/>
                                             </svg>
                                         </button>
+                                    @elseif($item['module_key'] === 'particulas' || $item['module_key'] === 'particles')
+                                        <!-- Ver Partículas Ocupacionales -->
+                                        <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.particulas', $item['id']) }}'" title="Partículas Ocupacionales (Ver Mediciones)" aria-label="Ver Mediciones de Partículas">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="12" cy="12" r="2.5"/>
+                                                <circle cx="6" cy="7" r="1.5"/>
+                                                <circle cx="18" cy="8" r="1.5"/>
+                                                <circle cx="6" cy="17" r="1.5"/>
+                                                <circle cx="17" cy="16" r="1.5"/>
+                                            </svg>
+                                        </button>
+                                    @elseif($item['module_key'] === 'particulas_ambientales' || $item['module_key'] === 'particulas_amb')
+                                        <!-- Ver Partículas Ambientales -->
+                                        <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.particulas_ambientales', $item['id']) }}'" title="Partículas Ambientales (Ver Mediciones)" aria-label="Ver Mediciones de Partículas Ambientales">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+                                            </svg>
+                                        </button>
+                                    @elseif($item['module_key'] === 'vibracion' || $item['module_key'] === 'vibraciones' || $item['module_key'] === 'vibration')
+                                        <!-- Ver Monitoreo de Vibración Ocupacional -->
+                                        <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.vibracion', $item['id']) }}'" title="Monitoreo de Vibración (Ver Mediciones)" aria-label="Ver Mediciones de Vibración">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M2 12h3l2 4 4-8 4 8 3-5 2 1h4"/>
+                                            </svg>
+                                        </button>
+                                    @elseif($item['module_key'] === 'contaminantes_quimicos' || $item['module_key'] === 'quimicos' || $item['module_key'] === 'contaminante_quimico')
+                                        <!-- Ver Monitoreo de Contaminantes Químicos -->
+                                        <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.contaminantes_quimicos', $item['id']) }}'" title="Monitoreo de Contaminantes Químicos (Ver Mediciones)" aria-label="Ver Mediciones de Contaminantes Químicos">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M10 2v7.31L4.89 20a2 2 0 0 0 1.77 3h14.68a2 2 0 0 0 1.77-3L14 9.31V2"/>
+                                                <path d="M8.5 2h7"/>
+                                                <path d="M7 16h10"/>
+                                            </svg>
+                                        </button>
                                     @endif
 
                                     <!-- Editar Módulo -->
@@ -1579,11 +1655,13 @@ table#modulesMasterTable td {
                                     <option value="iluminacion">Iluminación</option>
                                     <option value="inspeccion_fotografica">Inspección Fotográfica</option>
                                     <option value="opacidad">Opacidad</option>
-                                    <option value="particulas">Partículas</option>
+                                    <option value="particulas">Partículas Ocupacionales</option>
+                                    <option value="particulas_ambientales">Partículas Ambientales</option>
                                     <option value="ruido_ambiental">Ruido Ambiental</option>
                                     <option value="ruido">Ruido Ocupacional</option>
                                     <option value="ventilacion">Ventilación</option>
                                     <option value="vibracion">Vibración</option>
+                                    <option value="contaminantes_quimicos">Contaminantes Químicos</option>
                                 </select>
                             </div>
 
@@ -1795,11 +1873,13 @@ table#modulesMasterTable td {
                                     <option value="iluminacion">Iluminación</option>
                                     <option value="inspeccion_fotografica">Inspección Fotográfica</option>
                                     <option value="opacidad">Opacidad</option>
-                                    <option value="particulas">Partículas</option>
+                                    <option value="particulas">Partículas Ocupacionales</option>
+                                    <option value="particulas_ambientales">Partículas Ambientales</option>
                                     <option value="ruido_ambiental">Ruido Ambiental</option>
                                     <option value="ruido">Ruido Ocupacional</option>
                                     <option value="ventilacion">Ventilación</option>
                                     <option value="vibracion">Vibración</option>
+                                    <option value="contaminantes_quimicos">Contaminantes Químicos</option>
                                 </select>
                             </div>
 

@@ -23,6 +23,10 @@ use App\Http\Controllers\ErgonomiaRebaController;
 use App\Http\Controllers\ErgonomiaRosaController;
 use App\Http\Controllers\GasesController;
 use App\Http\Controllers\PhotographicInspectionController;
+use App\Http\Controllers\ParticulasController;
+use App\Http\Controllers\ParticulasAmbientalesController;
+use App\Http\Controllers\VibracionController;
+use App\Http\Controllers\ContaminantesQuimicosController;
 
 // 0. Live Zero-Build Asset Fallback (Automatic Dynamic Serving & Sync)
 Route::get('/css/{file}', function ($file) {
@@ -55,10 +59,21 @@ Route::get('/js/{file}', function ($file) {
     abort(404);
 })->where('file', '.*');
 
-// 1. Rutas Públicas de Autenticación
+// 1. Rutas Públicas (Autenticación y Legal)
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Política de Privacidad Pública (Requisito Google Play Store)
+Route::get('/privacidad', function () {
+    return view('legal.privacy-policy');
+})->name('privacy.policy');
+Route::get('/politica-de-privacidad', function () {
+    return view('legal.privacy-policy');
+});
+Route::get('/privacy-policy', function () {
+    return view('legal.privacy-policy');
+});
 
 // Redirección inicial hacia el login si no está autenticado
 Route::middleware(['auth'])->group(function () {
@@ -243,6 +258,50 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/modulos/{id}/inspeccion-fotografica/header', [PhotographicInspectionController::class, 'updateHeader'])->name('modules.photographic_inspection.header.update');
     Route::post('/modulos/{id}/inspeccion-fotografica/photo-report-settings', [PhotographicInspectionController::class, 'savePhotoReportSettings'])->name('modules.photographic_inspection.photo-report-settings.save');
 
+    // Monitoreo de Partículas Ocupacionales
+    Route::get('/modulos/{id}/particulas', [ParticulasController::class, 'index'])->name('modules.particulas');
+    Route::get('/modulos/{id}/particulas/informe', [ParticulasController::class, 'showReport'])->name('modules.particulas.report');
+    Route::post('/modulos/{id}/particulas/informe/save', [ParticulasController::class, 'saveReportData'])->name('modules.particulas.report.save');
+    Route::post('/modulos/{id}/particulas/mediciones', [ParticulasController::class, 'storeMeasurement'])->name('modules.particulas.measurements.store');
+    Route::put('/modulos/{id}/particulas/mediciones/{measurementId}', [ParticulasController::class, 'updateMeasurement'])->name('modules.particulas.measurements.update');
+    Route::match(['delete', 'post'], '/modulos/{id}/particulas/mediciones/{measurementId}/delete', [ParticulasController::class, 'destroyMeasurement'])->name('modules.particulas.measurements.destroy.post');
+    Route::match(['delete', 'post'], '/modulos/{id}/particulas/mediciones/{measurementId}', [ParticulasController::class, 'destroyMeasurement'])->name('modules.particulas.measurements.destroy');
+    Route::post('/modulos/{id}/particulas/header', [ParticulasController::class, 'updateHeader'])->name('modules.particulas.header.update');
+    Route::post('/modulos/{id}/particulas/photo-report-settings', [ParticulasController::class, 'savePhotoReportSettings'])->name('modules.particulas.photo-report-settings.save');
+
+    // Monitoreo de Partículas Ambientales (Calidad de Aire)
+    Route::get('/modulos/{id}/particulas-ambientales', [ParticulasAmbientalesController::class, 'index'])->name('modules.particulas_ambientales');
+    Route::get('/modulos/{id}/particulas-ambientales/informe', [ParticulasAmbientalesController::class, 'showReport'])->name('modules.particulas_ambientales.report');
+    Route::post('/modulos/{id}/particulas-ambientales/informe/save', [ParticulasAmbientalesController::class, 'saveReportData'])->name('modules.particulas_ambientales.report.save');
+    Route::post('/modulos/{id}/particulas-ambientales/mediciones', [ParticulasAmbientalesController::class, 'storeMeasurement'])->name('modules.particulas_ambientales.measurements.store');
+    Route::put('/modulos/{id}/particulas-ambientales/mediciones/{measurementId}', [ParticulasAmbientalesController::class, 'updateMeasurement'])->name('modules.particulas_ambientales.measurements.update');
+    Route::match(['delete', 'post'], '/modulos/{id}/particulas-ambientales/mediciones/{measurementId}/delete', [ParticulasAmbientalesController::class, 'destroyMeasurement'])->name('modules.particulas_ambientales.measurements.destroy.post');
+    Route::match(['delete', 'post'], '/modulos/{id}/particulas-ambientales/mediciones/{measurementId}', [ParticulasAmbientalesController::class, 'destroyMeasurement'])->name('modules.particulas_ambientales.measurements.destroy');
+    Route::post('/modulos/{id}/particulas-ambientales/header', [ParticulasAmbientalesController::class, 'updateHeader'])->name('modules.particulas_ambientales.header.update');
+    Route::post('/modulos/{id}/particulas-ambientales/photo-report-settings', [ParticulasAmbientalesController::class, 'savePhotoReportSettings'])->name('modules.particulas_ambientales.photo-report-settings.save');
+
+    // Monitoreo de Vibración Ocupacional (Cuerpo Entero y Mano - Brazo)
+    Route::get('/modulos/{id}/vibracion', [VibracionController::class, 'index'])->name('modules.vibracion');
+    Route::get('/modulos/{id}/vibraciones', [VibracionController::class, 'index'])->name('modules.vibraciones');
+    Route::get('/modulos/{id}/vibracion/informe', [VibracionController::class, 'showReport'])->name('modules.vibracion.report');
+    Route::post('/modulos/{id}/vibracion/informe/save', [VibracionController::class, 'saveReportData'])->name('modules.vibracion.report.save');
+    Route::post('/modulos/{id}/vibracion/mediciones', [VibracionController::class, 'storeMeasurement'])->name('modules.vibracion.measurements.store');
+    Route::put('/modulos/{id}/vibracion/mediciones/{measurementId}', [VibracionController::class, 'updateMeasurement'])->name('modules.vibracion.measurements.update');
+    Route::match(['delete', 'post'], '/modulos/{id}/vibracion/mediciones/{measurementId}/delete', [VibracionController::class, 'destroyMeasurement'])->name('modules.vibracion.measurements.destroy.post');
+    Route::match(['delete', 'post'], '/modulos/{id}/vibracion/mediciones/{measurementId}', [VibracionController::class, 'destroyMeasurement'])->name('modules.vibracion.measurements.destroy');
+    Route::post('/modulos/{id}/vibracion/header', [VibracionController::class, 'updateHeader'])->name('modules.vibracion.header.update');
+    Route::post('/modulos/{id}/vibracion/photo-report-settings', [VibracionController::class, 'savePhotoReportSettings'])->name('modules.vibracion.photo-report-settings.save');
+
+    // Monitoreo de Contaminantes Químicos (Gases, Vapores y Polvos)
+    Route::get('/modulos/{id}/contaminantes-quimicos', [ContaminantesQuimicosController::class, 'index'])->name('modules.contaminantes_quimicos');
+    Route::get('/modulos/{id}/quimicos', [ContaminantesQuimicosController::class, 'index'])->name('modules.quimicos');
+    Route::post('/modulos/{id}/contaminantes-quimicos/mediciones', [ContaminantesQuimicosController::class, 'storeMeasurement'])->name('modules.contaminantes_quimicos.measurements.store');
+    Route::put('/modulos/{id}/contaminantes-quimicos/mediciones/{measurementId}', [ContaminantesQuimicosController::class, 'updateMeasurement'])->name('modules.contaminantes_quimicos.measurements.update');
+    Route::match(['delete', 'post'], '/modulos/{id}/contaminantes-quimicos/mediciones/{measurementId}/delete', [ContaminantesQuimicosController::class, 'destroyMeasurement'])->name('modules.contaminantes_quimicos.measurements.destroy.post');
+    Route::match(['delete', 'post'], '/modulos/{id}/contaminantes-quimicos/mediciones/{measurementId}', [ContaminantesQuimicosController::class, 'destroyMeasurement'])->name('modules.contaminantes_quimicos.measurements.destroy');
+    Route::post('/modulos/{id}/contaminantes-quimicos/header', [ContaminantesQuimicosController::class, 'updateHeader'])->name('modules.contaminantes_quimicos.header.update');
+    Route::post('/modulos/{id}/contaminantes-quimicos/photo-report-settings', [ContaminantesQuimicosController::class, 'savePhotoReportSettings'])->name('modules.contaminantes_quimicos.photo-report-settings.save');
+
     // Equipos: Inventario, altas, edición, eliminación y calibraciones
     Route::get('/equipos', [EquipmentController::class, 'index'])->name('equipment.index');
     Route::post('/equipos', [EquipmentController::class, 'store'])->name('equipment.store');
@@ -276,6 +335,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/modulos/{id}/ergonomia-reba/export', function ($id) { return redirect()->route('modules.ergonomia_reba', $id); })->name('modules.ergonomia_reba.export');
     Route::get('/modulos/{id}/ergonomia-rosa/export', function ($id) { return redirect()->route('modules.ergonomia_rosa', $id); })->name('modules.ergonomia_rosa.export');
     Route::get('/modulos/{id}/gases/export', function ($id) { return redirect()->route('modules.gases', $id); })->name('modules.gases.export');
+    Route::get('/modulos/{id}/particulas/export', function ($id) { return redirect()->route('modules.particulas', $id); })->name('modules.particulas.export');
+    Route::get('/modulos/{id}/particulas-ambientales/export', function ($id) { return redirect()->route('modules.particulas_ambientales', $id); })->name('modules.particulas_ambientales.export');
+    Route::get('/modulos/{id}/vibracion/export', function ($id) { return redirect()->route('modules.vibracion', $id); })->name('modules.vibracion.export');
+    Route::get('/modulos/{id}/contaminantes-quimicos/export', function ($id) { return redirect()->route('modules.contaminantes_quimicos', $id); })->name('modules.contaminantes_quimicos.export');
     Route::get('/modulos/{id}/inspeccion-fotografica/export', function ($id) { return redirect()->route('modules.photographic_inspection', $id); })->name('modules.photographic_inspection.export');
 
     Route::get('/configuracion', [SettingsController::class, 'index'])->name('settings.index');
