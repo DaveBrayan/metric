@@ -85,6 +85,14 @@ Route::post('/modules/{moduleId}/dosimetria', [MobileApiController::class, 'stor
 Route::delete('/modules/{moduleId}/dosimetry/{id}', [MobileApiController::class, 'destroyDosimetryMeasurement']);
 Route::delete('/modules/{moduleId}/dosimetria/{id}', [MobileApiController::class, 'destroyDosimetryMeasurement']);
 
+// Monitoreo de Ruido Ambiental
+Route::get('/modules/{moduleId}/ambient-noise', [MobileApiController::class, 'getAmbientNoiseMeasurements']);
+Route::get('/modules/{moduleId}/ruido-ambiental', [MobileApiController::class, 'getAmbientNoiseMeasurements']);
+Route::post('/modules/{moduleId}/ambient-noise', [MobileApiController::class, 'storeAmbientNoiseMeasurement']);
+Route::post('/modules/{moduleId}/ruido-ambiental', [MobileApiController::class, 'storeAmbientNoiseMeasurement']);
+Route::delete('/modules/{moduleId}/ambient-noise/{id}', [MobileApiController::class, 'destroyAmbientNoiseMeasurement']);
+Route::delete('/modules/{moduleId}/ruido-ambiental/{id}', [MobileApiController::class, 'destroyAmbientNoiseMeasurement']);
+
 // Monitoreo de Opacidad Vehicular (Emisión de Humos)
 Route::get('/modules/{moduleId}/opacity', [MobileApiController::class, 'getOpacityMeasurements']);
 Route::get('/modules/{moduleId}/opacidad', [MobileApiController::class, 'getOpacityMeasurements']);

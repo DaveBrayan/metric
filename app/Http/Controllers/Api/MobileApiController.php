@@ -22,11 +22,13 @@ use App\Models\PhotographicInspection;
 use App\Models\ParticulasMeasurement;
 use App\Models\ParticulasAmbientalesMeasurement;
 use App\Models\VibracionMeasurement;
+use App\Models\RuidoAmbientalMeasurement;
 use App\Models\ContaminantesQuimicosMeasurement;
 use App\Http\Controllers\VentilationController;
 use App\Http\Controllers\HeatStressController;
 use App\Http\Controllers\ColdStressController;
 use App\Http\Controllers\DosimetryController;
+use App\Http\Controllers\RuidoAmbientalController;
 use App\Http\Controllers\ErgonomiaRebaController;
 use App\Http\Controllers\ErgonomiaRosaController;
 use App\Http\Controllers\GasesController;
@@ -582,9 +584,22 @@ class MobileApiController extends Controller
         $area = $request->input('area');
         $workstation = $request->input('workstation') ?? $request->input('puesto_trabajo') ?? 'General';
         $measurementPoint = $request->input('measurement_point') ?? $request->input('punto_medicion') ?? 'P-01';
-        $activityDescription = $request->input('activity_description') ?? $request->input('descripcion_actividad') ?? 'Oficinas y talleres';
-        $lightingType = $request->input('lighting_type') ?? $request->input('tipo_iluminacion') ?? 'Natural y Artificial';
         $requiredLux = $request->input('required_lux') ?? $request->input('nivel_requerido') ?? 300;
+        $activityDescription = $request->input('activity_description') ?? $request->input('descripcion_actividad');
+        if (empty($activityDescription)) {
+            $luxNormas = [
+                25 => 'Paso en construcción',
+                50 => 'Pasillos, almacenes y baños',
+                75 => 'Trabajos en construcción',
+                100 => 'Supervisión intermitente / Montaje mediano',
+                300 => 'Trabajos de oficina, lectura y escritura',
+                750 => 'Trabajos de pintura e inspección de detalle',
+                1500 => 'Alta precisión y ensamble fino',
+                3000 => 'Casos especiales (Joyería / Cirugías)',
+            ];
+            $activityDescription = $luxNormas[(int)$requiredLux] ?? 'Trabajos de oficina, lectura y escritura';
+        }
+        $lightingType = $request->input('lighting_type') ?? $request->input('tipo_iluminacion') ?? 'Natural y Artificial';
         
         // Mediciones array / lecturas lux
         $rawReadings = $request->input('readings') ?? $request->input('mediciones_lux') ?? [];
@@ -3447,6 +3462,454 @@ class MobileApiController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Medición de dosimetría eliminada correctamente.',
+            'points_completed' => $module->points_completed,
+        ]);
+    }
+
+    /**
+     * Obtener mediciones de Ruido Ambiental de un módulo.
+     */
+    public function getAmbientNoiseMeasurements(Request $request, $moduleId)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+
+        $measurements = $module->ruidoAmbientalMeasurements()
+            ->with('staff')
+            ->orderBy('id', 'asc')
+            ->get()
+            ->map(function ($item, $index) {
+                $images = is_array($item->images) 
+                    ? $item->images 
+                    : (json_decode($item->images, true) ?: []);
+                if (empty($images) && !empty($item->image_path)) {
+                    $images = [$item->image_path];
+                }
+
+                $imageUrls = array_values(array_filter(array_map(function ($p) {
+                    if (!$p) return null;
+                    if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+                    return asset($p);
+                }, $images)));
+
+                $p1Puntos = is_array($item->p1_norte_puntos) ? $item->p1_norte_puntos : (json_decode($item->p1_norte_puntos, true) ?: []);
+                $p2Puntos = is_array($item->p2_sur_puntos) ? $item->p2_sur_puntos : (json_decode($item->p2_sur_puntos, true) ?: []);
+                $p3Puntos = is_array($item->p3_este_puntos) ? $item->p3_este_puntos : (json_decode($item->p3_este_puntos, true) ?: []);
+                $p4Puntos = is_array($item->p4_oeste_puntos) ? $item->p4_oeste_puntos : (json_decode($item->p4_oeste_puntos, true) ?: []);
+                $allPoints = array_merge($p1Puntos, $p2Puntos, $p3Puntos, $p4Puntos);
+
+                $leqCalculado = RuidoAmbientalController::calculateLeq($allPoints);
+                $leqFinal = $item->leq_d !== null ? (float) $item->leq_d : $leqCalculado;
+                $limite = $item->limite_normativa !== null ? (float) $item->limite_normativa : 68.0;
+                $isCompliant = ($leqFinal !== null) ? ($leqFinal <= $limite) : true;
+                $cumple = ($leqFinal !== null) ? ($isCompliant ? 'SI' : 'NO') : '—';
+
+                return [
+                    'id' => $item->id,
+                    'remote_id' => (string) $item->id,
+                    'module_id' => (string) $item->module_id,
+                    'monitoreo_id' => (string) $item->module_id,
+                    'proyecto_id' => (string) $item->project_id,
+                    'point_number' => $item->point_number ?: str_pad($index + 1, 2, '0', STR_PAD_LEFT),
+                    'num' => $item->point_number ?: str_pad($index + 1, 2, '0', STR_PAD_LEFT),
+                    'measurement_date' => $item->measurement_date ? $item->measurement_date->format('Y-m-d') : null,
+                    'measurement_time' => $item->measurement_time,
+                    'measured_at' => $item->measurement_date 
+                        ? ($item->measurement_date->format('Y-m-d') . ' ' . ($item->measurement_time ?: '00:00:00'))
+                        : null,
+                    'normativa' => $item->normativa ?: 'RASIM - ANEXO 12-C',
+                    'tipo_zona' => $item->tipo_zona ?: 'Industrial - día',
+                    'horario' => $item->horario ?: '08:00 a 22:00',
+                    'limite_normativa' => $limite,
+                    'zona_banda' => $item->zona_banda ?: '19K',
+
+                    // Colindancias y Coordenadas
+                    'norte_colindancia' => $item->norte_colindancia,
+                    'norte_x' => $item->norte_x,
+                    'norte_y' => $item->norte_y,
+                    'sur_colindancia' => $item->sur_colindancia,
+                    'sur_x' => $item->sur_x,
+                    'sur_y' => $item->sur_y,
+                    'este_colindancia' => $item->este_colindancia,
+                    'este_x' => $item->este_x,
+                    'este_y' => $item->este_y,
+                    'oeste_colindancia' => $item->oeste_colindancia,
+                    'oeste_x' => $item->oeste_x,
+                    'oeste_y' => $item->oeste_y,
+
+                    // Mediciones por punto cardinal
+                    'p1_norte_inicio' => $item->p1_norte_inicio,
+                    'p1_norte_fin' => $item->p1_norte_fin,
+                    'p1_norte_puntos' => $p1Puntos,
+                    'p1_norte_leq' => RuidoAmbientalController::calculateLeq($p1Puntos),
+
+                    'p2_sur_inicio' => $item->p2_sur_inicio,
+                    'p2_sur_fin' => $item->p2_sur_fin,
+                    'p2_sur_puntos' => $p2Puntos,
+                    'p2_sur_leq' => RuidoAmbientalController::calculateLeq($p2Puntos),
+
+                    'p3_este_inicio' => $item->p3_este_inicio,
+                    'p3_este_fin' => $item->p3_este_fin,
+                    'p3_este_puntos' => $p3Puntos,
+                    'p3_este_leq' => RuidoAmbientalController::calculateLeq($p3Puntos),
+
+                    'p4_oeste_inicio' => $item->p4_oeste_inicio,
+                    'p4_oeste_fin' => $item->p4_oeste_fin,
+                    'p4_oeste_puntos' => $p4Puntos,
+                    'p4_oeste_leq' => RuidoAmbientalController::calculateLeq($p4Puntos),
+
+                    'mediciones_db' => $allPoints,
+                    'leq_d' => $leqFinal,
+                    'leq' => $leqFinal,
+                    'nps_max' => $item->nps_max !== null ? (float) $item->nps_max : (!empty($allPoints) ? max($allPoints) : null),
+                    'nps_min' => $item->nps_min !== null ? (float) $item->nps_min : (!empty($allPoints) ? min($allPoints) : null),
+                    'is_compliant' => $isCompliant,
+                    'cumple' => $cumple,
+                    'latitude' => $item->latitude,
+                    'longitude' => $item->longitude,
+                    'location' => $item->location,
+                    'image_urls' => $imageUrls,
+                    'images' => $imageUrls,
+                    'image_path' => $item->image_path ? (str_starts_with($item->image_path, 'http') ? $item->image_path : asset($item->image_path)) : null,
+                    'observations' => $item->observations,
+                    'observaciones' => $item->observations,
+                    'registered_by' => $item->registered_by,
+                    'created_by' => $item->registered_by,
+                    'staff_id' => $item->staff_id,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'module_id' => (string) $module->id,
+            'module_name' => $module->name,
+            'measurements' => $measurements,
+        ]);
+    }
+
+    /**
+     * Guardar o actualizar una medición de Ruido Ambiental desde la aplicación móvil.
+     */
+    public function storeAmbientNoiseMeasurement(Request $request, $moduleId)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+
+        // Inputs básicos
+        $normativa = $request->input('normativa') ?: 'RASIM - ANEXO 12-C';
+        $tipoZona = $request->input('tipo_zona') ?: 'Industrial - día';
+        $horario = $request->input('horario') ?: '08:00 a 22:00';
+        $limiteNormativa = (float) ($request->input('limite_normativa') ?? 68.0);
+        $zonaBanda = $request->input('zona_banda') ?: '19K';
+
+        // Colindancias y Coordenadas
+        $norteColindancia = $request->input('norte_colindancia');
+        $norteX = $request->input('norte_x');
+        $norteY = $request->input('norte_y');
+
+        $surColindancia = $request->input('sur_colindancia');
+        $surX = $request->input('sur_x');
+        $surY = $request->input('sur_y');
+
+        $esteColindancia = $request->input('este_colindancia');
+        $esteX = $request->input('este_x');
+        $esteY = $request->input('este_y');
+
+        $oesteColindancia = $request->input('oeste_colindancia');
+        $oesteX = $request->input('oeste_x');
+        $oesteY = $request->input('oeste_y');
+
+        // Procesar puntos cardinales y lecturas
+        $parsePoints = function ($val) {
+            if (is_array($val)) {
+                return array_values(array_filter(array_map('floatval', $val), 'is_numeric'));
+            } elseif (is_string($val) && (str_starts_with(trim($val), '[') || str_starts_with(trim($val), '{'))) {
+                $decoded = json_decode($val, true);
+                if (is_array($decoded)) {
+                    return array_values(array_filter(array_map('floatval', $decoded), 'is_numeric'));
+                }
+            }
+            return [];
+        };
+
+        $p1 = $parsePoints($request->input('p1_norte_puntos'));
+        $p2 = $parsePoints($request->input('p2_sur_puntos'));
+        $p3 = $parsePoints($request->input('p3_este_puntos'));
+        $p4 = $parsePoints($request->input('p4_oeste_puntos'));
+        $allPoints = array_merge($p1, $p2, $p3, $p4);
+
+        if (empty($allPoints)) {
+            $allPoints = $parsePoints($request->input('mediciones_db'));
+        }
+
+        $leq = RuidoAmbientalController::calculateLeq($allPoints);
+        if ($leq === null && $request->has('leq_d') && is_numeric($request->input('leq_d'))) {
+            $leq = (float) $request->input('leq_d');
+        }
+
+        $isCompliant = ($leq !== null) ? ($leq <= $limiteNormativa) : true;
+        $npsMax = !empty($allPoints) ? max($allPoints) : ($request->input('nps_max') ? (float)$request->input('nps_max') : null);
+        $npsMin = !empty($allPoints) ? min($allPoints) : ($request->input('nps_min') ? (float)$request->input('nps_min') : null);
+
+        // Fecha y hora
+        $measuredAt = $request->input('measured_at') ?? $request->input('measurement_date');
+        $measurementDate = Carbon::now()->format('Y-m-d');
+        $measurementTime = Carbon::now()->format('H:i');
+
+        if (!empty($measuredAt)) {
+            try {
+                $dt = Carbon::parse($measuredAt);
+                $measurementDate = $dt->format('Y-m-d');
+                $measurementTime = $dt->format('H:i');
+            } catch (\Throwable $e) {}
+        }
+
+        // Staff / Registrador
+        $staffId = $request->input('staff_id');
+        $rawCreatedBy = $request->input('created_by');
+        $rawRegisteredBy = $request->input('registered_by');
+        $rawUserId = $request->input('user_id');
+
+        if (empty($staffId)) {
+            if (is_numeric($rawCreatedBy)) {
+                $staffId = (int) $rawCreatedBy;
+            } elseif (is_numeric($rawRegisteredBy)) {
+                $staffId = (int) $rawRegisteredBy;
+            } elseif (is_numeric($rawUserId)) {
+                $staffId = (int) $rawUserId;
+            }
+        }
+
+        if (empty($staffId)) {
+            $authHeader = $request->header('Authorization');
+            if ($authHeader && preg_match('/Bearer\s+mtoken_([a-zA-Z0-9+\/=]+)/i', $authHeader, $matches)) {
+                $decodedToken = base64_decode($matches[1]);
+                $tokenParts = explode(':', $decodedToken);
+                if (!empty($tokenParts[0]) && is_numeric($tokenParts[0])) {
+                    $staffId = (int) $tokenParts[0];
+                }
+            }
+        }
+
+        $registeredByName = null;
+        if (!empty($staffId)) {
+            $staff = Staff::find($staffId);
+            if ($staff) {
+                $registeredByName = $staff->full_name ?: $staff->name;
+            } else {
+                $user = User::find($staffId);
+                if ($user) {
+                    $registeredByName = $user->name;
+                }
+            }
+        }
+
+        if (empty($registeredByName)) {
+            $candidateName = $rawRegisteredBy ?? $rawCreatedBy;
+            if (!empty($candidateName) && !is_numeric($candidateName)) {
+                $registeredByName = trim($candidateName);
+            }
+        }
+
+        if (empty($registeredByName)) {
+            $registeredByName = 'Técnico de Campo';
+        }
+
+        // Manejo de imágenes (archivos multipart o URLs)
+        $uploadedImages = [];
+        $uploadDir = public_path('uploads/ruido_ambiental');
+        if (!File::isDirectory($uploadDir)) {
+            File::makeDirectory($uploadDir, 0755, true, true);
+        }
+
+        if ($request->hasFile('photos')) {
+            foreach ($request->file('photos') as $file) {
+                if ($file->isValid()) {
+                    $filename = 'ra_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+                    $file->move($uploadDir, $filename);
+                    $uploadedImages[] = 'uploads/ruido_ambiental/' . $filename;
+                }
+            }
+        }
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                if ($file->isValid()) {
+                    $filename = 'ra_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+                    $file->move($uploadDir, $filename);
+                    $uploadedImages[] = 'uploads/ruido_ambiental/' . $filename;
+                }
+            }
+        }
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            if ($file->isValid()) {
+                $filename = 'ra_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+                $file->move($uploadDir, $filename);
+                array_unshift($uploadedImages, 'uploads/ruido_ambiental/' . $filename);
+            }
+        }
+
+        $inputUrls = $request->input('image_urls') ?? $request->input('images');
+        if (is_string($inputUrls)) {
+            $inputUrls = json_decode($inputUrls, true);
+        }
+        if (is_array($inputUrls)) {
+            foreach ($inputUrls as $u) {
+                if (is_string($u) && !in_array($u, $uploadedImages)) {
+                    $uploadedImages[] = $u;
+                }
+            }
+        }
+
+        $imagePath = $uploadedImages[0] ?? null;
+
+        // Ubicación
+        $latitude = $request->input('latitude');
+        $longitude = $request->input('longitude');
+        $locationRaw = $request->input('location');
+
+        if (is_array($locationRaw)) {
+            $latitude = $latitude ?? ($locationRaw['lat'] ?? ($locationRaw['latitude'] ?? null));
+            $longitude = $longitude ?? ($locationRaw['lng'] ?? ($locationRaw['longitude'] ?? null));
+            if (!empty($locationRaw['formatted'])) {
+                $locationRaw = $locationRaw['formatted'];
+            }
+        } elseif (is_string($locationRaw) && (str_starts_with(trim($locationRaw), '{') || str_starts_with(trim($locationRaw), '['))) {
+            $decodedLoc = json_decode($locationRaw, true);
+            if (is_array($decodedLoc)) {
+                $latitude = $latitude ?? ($decodedLoc['lat'] ?? ($decodedLoc['latitude'] ?? null));
+                $longitude = $longitude ?? ($decodedLoc['lng'] ?? ($decodedLoc['longitude'] ?? null));
+                if (!empty($decodedLoc['formatted'])) {
+                    $locationRaw = $decodedLoc['formatted'];
+                }
+            }
+        }
+
+        if (($latitude === null || $longitude === null) && !empty($norteX) && !empty($norteY)) {
+            $eNum = (float) preg_replace('/[^0-9.]/', '', $norteX);
+            $nNum = (float) preg_replace('/[^0-9.]/', '', $norteY);
+            if ($eNum > 0 && $nNum > 0) {
+                $conv = $this->utmToLatLng($eNum, $nNum, $zonaBanda ?: '19K');
+                $latitude = $conv['lat'];
+                $longitude = $conv['lng'];
+            }
+        }
+
+        $measurementId = $request->input('id') ?? $request->input('remote_id');
+        $measurement = null;
+
+        if ($measurementId) {
+            $measurement = $module->ruidoAmbientalMeasurements()->find($measurementId);
+        }
+
+        if ($measurement) {
+            $pointNumber = $measurement->point_number;
+            $statusCode = 200;
+        } else {
+            $existingCount = $module->ruidoAmbientalMeasurements()->count();
+            $pointNumber = $request->input('point_number') ?? ('P-' . str_pad($existingCount + 1, 2, '0', STR_PAD_LEFT));
+            $measurement = new RuidoAmbientalMeasurement();
+            $measurement->module_id = $module->id;
+            $measurement->project_id = $module->project_id;
+            $statusCode = 201;
+        }
+
+        $measurement->staff_id = $staffId ?: ($module->field_staff_id ?? null);
+        $measurement->point_number = $pointNumber;
+        $measurement->measurement_date = $measurementDate;
+        $measurement->measurement_time = $measurementTime;
+        $measurement->normativa = $normativa;
+        $measurement->tipo_zona = $tipoZona;
+        $measurement->horario = $horario;
+        $measurement->limite_normativa = $limiteNormativa;
+        $measurement->zona_banda = $zonaBanda;
+
+        $measurement->norte_colindancia = $norteColindancia;
+        $measurement->norte_x = $norteX;
+        $measurement->norte_y = $norteY;
+        $measurement->sur_colindancia = $surColindancia;
+        $measurement->sur_x = $surX;
+        $measurement->sur_y = $surY;
+        $measurement->este_colindancia = $esteColindancia;
+        $measurement->este_x = $esteX;
+        $measurement->este_y = $esteY;
+        $measurement->oeste_colindancia = $oesteColindancia;
+        $measurement->oeste_x = $oesteX;
+        $measurement->oeste_y = $oesteY;
+
+        $measurement->p1_norte_inicio = $request->input('p1_norte_inicio');
+        $measurement->p1_norte_fin = $request->input('p1_norte_fin');
+        $measurement->p1_norte_puntos = $p1;
+
+        $measurement->p2_sur_inicio = $request->input('p2_sur_inicio');
+        $measurement->p2_sur_fin = $request->input('p2_sur_fin');
+        $measurement->p2_sur_puntos = $p2;
+
+        $measurement->p3_este_inicio = $request->input('p3_este_inicio');
+        $measurement->p3_este_fin = $request->input('p3_este_fin');
+        $measurement->p3_este_puntos = $p3;
+
+        $measurement->p4_oeste_inicio = $request->input('p4_oeste_inicio');
+        $measurement->p4_oeste_fin = $request->input('p4_oeste_fin');
+        $measurement->p4_oeste_puntos = $p4;
+
+        $measurement->mediciones_db = $allPoints;
+        $measurement->leq_d = $leq;
+        $measurement->nps_max = $npsMax;
+        $measurement->nps_min = $npsMin;
+        $measurement->is_compliant = $isCompliant;
+
+        $measurement->latitude = $latitude;
+        $measurement->longitude = $longitude;
+        $measurement->location = is_string($locationRaw) ? $locationRaw : json_encode($locationRaw);
+
+        if (!empty($uploadedImages)) {
+            $measurement->images = $uploadedImages;
+            $measurement->image_path = $imagePath;
+        }
+
+        $measurement->observations = $request->input('observations') ?? $request->input('observaciones');
+        $measurement->registered_by = $registeredByName;
+        $measurement->save();
+
+        $module->points_completed = $module->ruidoAmbientalMeasurements()->count();
+        $module->save();
+
+        $finalImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
+        $finalUrls = array_values(array_filter(array_map(function($p) {
+            if (!$p) return null;
+            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+            return asset($p);
+        }, $finalImages)));
+
+        return response()->json([
+            'success' => true,
+            'message' => "Punto de medición de Ruido Ambiental '{$measurement->point_number}' guardado exitosamente.",
+            'id' => $measurement->id,
+            'remote_id' => (string) $measurement->id,
+            'point_number' => $measurement->point_number,
+            'leq_d' => $measurement->leq_d,
+            'is_compliant' => $measurement->is_compliant,
+            'image_urls' => $finalUrls,
+            'points_completed' => $module->points_completed,
+        ], $statusCode);
+    }
+
+    /**
+     * Eliminar una medición de Ruido Ambiental.
+     */
+    public function destroyAmbientNoiseMeasurement($moduleId, $id)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+        $measurement = $module->ruidoAmbientalMeasurements()->find($id);
+
+        if ($measurement) {
+            $measurement->delete();
+            $module->points_completed = $module->ruidoAmbientalMeasurements()->count();
+            $module->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Medición de Ruido Ambiental eliminada correctamente.',
             'points_completed' => $module->points_completed,
         ]);
     }

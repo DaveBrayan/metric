@@ -337,7 +337,7 @@ class FireActivityController extends Controller
                     $tipo = $actTypes[$idx] ?? 'Producción';
                     $largo = isset($actLargos[$idx]) && $actLargos[$idx] !== '' ? (float)$actLargos[$idx] : 1.5;
                     $ancho = isset($actAnchos[$idx]) && $actAnchos[$idx] !== '' ? (float)$actAnchos[$idx] : 1.0;
-                    $alto = isset($actAltos[$idx]) ? $actAltos[$idx] : '';
+                    $alto = ($tipo === 'Almacén') ? (isset($actAltos[$idx]) ? $actAltos[$idx] : '') : '';
                     $desc = $actDescs[$idx] ?? '';
                     
                     $norm = self::lookupNormativeValuesStatic($name, $tipo);
@@ -360,6 +360,12 @@ class FireActivityController extends Controller
         } elseif ($request->has('activities')) {
             $rawActs = $request->input('activities');
             $activities = is_string($rawActs) ? (json_decode($rawActs, true) ?: []) : (array)($rawActs ?: []);
+            foreach ($activities as &$act) {
+                if (isset($act['tipo']) && $act['tipo'] !== 'Almacén') {
+                    $act['alto'] = '';
+                }
+            }
+            unset($act);
         }
 
         // Equipos Contra Incendios
@@ -505,7 +511,7 @@ class FireActivityController extends Controller
                     $tipo = $actTypes[$idx] ?? 'Producción';
                     $largo = isset($actLargos[$idx]) && $actLargos[$idx] !== '' ? (float)$actLargos[$idx] : 1.5;
                     $ancho = isset($actAnchos[$idx]) && $actAnchos[$idx] !== '' ? (float)$actAnchos[$idx] : 1.0;
-                    $alto = isset($actAltos[$idx]) ? $actAltos[$idx] : '';
+                    $alto = ($tipo === 'Almacén') ? (isset($actAltos[$idx]) ? $actAltos[$idx] : '') : '';
                     $desc = $actDescs[$idx] ?? '';
                     
                     $norm = self::lookupNormativeValuesStatic($name, $tipo);
@@ -528,6 +534,12 @@ class FireActivityController extends Controller
         } elseif ($request->has('activities')) {
             $rawActs = $request->input('activities');
             $activities = is_string($rawActs) ? (json_decode($rawActs, true) ?: []) : (array)($rawActs ?: []);
+            foreach ($activities as &$act) {
+                if (isset($act['tipo']) && $act['tipo'] !== 'Almacén') {
+                    $act['alto'] = '';
+                }
+            }
+            unset($act);
         } else {
             $activities = is_array($measurement->activities) ? $measurement->activities : [];
         }
