@@ -24,7 +24,7 @@ use App\Models\ParticulasAmbientalesMeasurement;
 use App\Models\VibracionMeasurement;
 use App\Models\RuidoAmbientalMeasurement;
 use App\Models\ContaminantesQuimicosMeasurement;
-use App\\Models\\NoiseMeasurement;
+use App\Models\NoiseMeasurement;
 use App\Http\Controllers\VentilationController;
 use App\Http\Controllers\HeatStressController;
 use App\Http\Controllers\ColdStressController;
@@ -67,7 +67,7 @@ class MobileApiController extends Controller
             if (empty($rawImages) && !empty($item->image_path)) {
                 $rawImages = [$item->image_path];
             }
-            $imagesUrls = array_values(array_filter(array_map(function($p) {
+            $imagesUrls = array_values(array_filter(array_map(function ($p) {
                 return $p ? asset($p) : null;
             }, $rawImages)));
 
@@ -82,23 +82,23 @@ class MobileApiController extends Controller
                 'descripcion_actividad' => $item->descripcion_actividad,
                 'tipo_ruido' => $item->tipo_ruido,
                 'punto_medicion' => $item->punto_medicion,
-                'tiempo_expos_h' => (float)$item->tiempo_expos_h,
+                'tiempo_expos_h' => (float) $item->tiempo_expos_h,
                 'ponderacion' => $item->ponderacion,
                 'respuesta' => $item->respuesta,
                 'mediciones_db' => is_array($item->mediciones_db) ? $item->mediciones_db : json_decode($item->mediciones_db, true) ?: [],
-                'leq_t_db' => $item->leq_t_db ? (float)$item->leq_t_db : null,
-                'uso_protectores' => (bool)$item->uso_protectores,
+                'leq_t_db' => $item->leq_t_db ? (float) $item->leq_t_db : null,
+                'uso_protectores' => (bool) $item->uso_protectores,
                 'tipo_protector' => $item->tipo_protector,
-                'nrr_db' => $item->nrr_db ? (float)$item->nrr_db : null,
-                'cumple' => (bool)$item->cumple,
+                'nrr_db' => $item->nrr_db ? (float) $item->nrr_db : null,
+                'cumple' => (bool) $item->cumple,
                 'image_path' => $item->image_path ? asset($item->image_path) : ($imagesUrls[0] ?? null),
                 'images' => $imagesUrls,
                 'location' => $item->location,
-                'latitude' => $item->latitude !== null ? (float)$item->latitude : null,
-                'longitude' => $item->longitude !== null ? (float)$item->longitude : null,
+                'latitude' => $item->latitude !== null ? (float) $item->latitude : null,
+                'longitude' => $item->longitude !== null ? (float) $item->longitude : null,
                 'utm_zone' => $item->utm_zone,
-                'utm_easting' => $item->utm_easting !== null ? (float)$item->utm_easting : null,
-                'utm_northing' => $item->utm_northing !== null ? (float)$item->utm_northing : null,
+                'utm_easting' => $item->utm_easting !== null ? (float) $item->utm_easting : null,
+                'utm_northing' => $item->utm_northing !== null ? (float) $item->utm_northing : null,
                 'observations' => $item->observations,
                 'registered_by' => $item->registered_by,
                 'staff_id' => $item->staff_id,
@@ -127,24 +127,24 @@ class MobileApiController extends Controller
         $maquinariaEquipo = $request->input('maquinaria_equipo');
         $actividad = $request->input('actividad');
         $descripcionActividad = $request->input('descripcion_actividad');
-        
+
         $tipoRuido = $request->input('tipo_ruido') ?? 'Fluctuante';
         $puntoMedicion = $request->input('punto_medicion') ?? 'P-01';
         $tiempoExposH = (float) ($request->input('tiempo_expos_h') ?? 8.0);
         $ponderacion = $request->input('ponderacion') ?? 'A';
         $respuesta = $request->input('respuesta') ?? 'Lento';
-        
+
         // Mediciones array (dB)
         $rawReadings = $request->input('mediciones_db') ?? [];
         if (is_string($rawReadings)) {
             $rawReadings = json_decode($rawReadings, true) ?: [];
         }
         $readings = is_array($rawReadings) ? array_map('floatval', array_filter($rawReadings, 'is_numeric')) : [];
-        
+
         // LEQ equivalente
         $leqT = $request->input('leq_t_db') ?? $request->input('leq_db');
         $leqT = $leqT !== null ? (float) $leqT : null;
-        
+
         // Protección
         $usoProtectores = (bool) ($request->input('uso_protectores') ?? false);
         $tipoProtector = $request->input('tipo_protector');
@@ -154,11 +154,11 @@ class MobileApiController extends Controller
         } else {
             $nrrDb = null;
         }
-        
+
         // Cumplimiento (basado en LEQ vs límite del módulo - typically 85 dB)
         $lmpLimit = (float) ($module->lmp_limit ?? 85.0);
         $cumple = ($leqT !== null) ? ($leqT <= $lmpLimit) : true;
-        
+
         // Fecha y hora
         $measuredAt = $request->input('measured_at') ?? $request->input('measurement_date');
         $measurementDate = Carbon::now()->format('Y-m-d');
@@ -169,7 +169,8 @@ class MobileApiController extends Controller
                 $dt = Carbon::parse($measuredAt);
                 $measurementDate = $dt->format('Y-m-d');
                 $measurementTime = $dt->format('H:i');
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+            }
         }
 
         // Staff / Registrador
@@ -318,8 +319,8 @@ class MobileApiController extends Controller
 
         // Construir location string
         if (!empty($utmEasting) && !empty($utmNorthing) && !empty($utmZone)) {
-            $eFormatted = is_numeric($utmEasting) ? number_format((float)$utmEasting, 3, '.', '') : $utmEasting;
-            $nFormatted = is_numeric($utmNorthing) ? number_format((float)$utmNorthing, 3, '.', '') : $utmNorthing;
+            $eFormatted = is_numeric($utmEasting) ? number_format((float) $utmEasting, 3, '.', '') : $utmEasting;
+            $nFormatted = is_numeric($utmNorthing) ? number_format((float) $utmNorthing, 3, '.', '') : $utmNorthing;
             $locationRaw = "E: {$eFormatted}, N: {$nFormatted}, Z: {$utmZone}";
         } elseif (!is_string($locationRaw) || empty($locationRaw)) {
             if ($latitude !== null && $longitude !== null) {
@@ -357,11 +358,11 @@ class MobileApiController extends Controller
             'image_path' => $imagePath,
             'images' => !empty($uploadedImages) ? $uploadedImages : null,
             'location' => $locationRaw,
-            'latitude' => $latitude !== null ? (float)$latitude : null,
-            'longitude' => $longitude !== null ? (float)$longitude : null,
+            'latitude' => $latitude !== null ? (float) $latitude : null,
+            'longitude' => $longitude !== null ? (float) $longitude : null,
             'utm_zone' => $utmZone,
-            'utm_easting' => $utmEasting !== null ? (float)$utmEasting : null,
-            'utm_northing' => $utmNorthing !== null ? (float)$utmNorthing : null,
+            'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
+            'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
             'observations' => $request->input('observations') ?? $request->input('observaciones'),
             'registered_by' => $registeredByName,
             'staff_id' => $staffId,
@@ -380,9 +381,11 @@ class MobileApiController extends Controller
         $module->save();
 
         $finalImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
-        $finalUrls = array_values(array_filter(array_map(function($p) {
-            if (!$p) return null;
-            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+        $finalUrls = array_values(array_filter(array_map(function ($p) {
+            if (!$p)
+                return null;
+            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://'))
+                return $p;
             return asset($p);
         }, $finalImages)));
 
@@ -706,9 +709,11 @@ class MobileApiController extends Controller
             }
         }
 
-        $project = Project::with(['modules' => function ($q) {
-            $q->orderBy('id', 'asc');
-        }])->findOrFail($projectId);
+        $project = Project::with([
+            'modules' => function ($q) {
+                $q->orderBy('id', 'asc');
+            }
+        ])->findOrFail($projectId);
 
         $keyNames = [
             'iluminacion' => 'Iluminación',
@@ -876,20 +881,22 @@ class MobileApiController extends Controller
             ->orderBy('id', 'asc')
             ->get()
             ->map(function ($item, $index) {
-                $readings = is_array($item->readings) 
-                    ? $item->readings 
+                $readings = is_array($item->readings)
+                    ? $item->readings
                     : (json_decode($item->readings, true) ?: []);
 
-                $images = is_array($item->images) 
-                    ? $item->images 
+                $images = is_array($item->images)
+                    ? $item->images
                     : (json_decode($item->images, true) ?: []);
                 if (empty($images) && !empty($item->image_path)) {
                     $images = [$item->image_path];
                 }
 
                 $imageUrls = array_values(array_filter(array_map(function ($p) {
-                    if (!$p) return null;
-                    if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+                    if (!$p)
+                        return null;
+                    if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://'))
+                        return $p;
                     return asset($p);
                 }, $images)));
 
@@ -902,7 +909,7 @@ class MobileApiController extends Controller
                     'punto_medicion' => $item->measurement_point,
                     'measurement_date' => $item->measurement_date ? $item->measurement_date->format('Y-m-d') : null,
                     'measurement_time' => $item->measurement_time,
-                    'measured_at' => $item->measurement_date 
+                    'measured_at' => $item->measurement_date
                         ? ($item->measurement_date->format('Y-m-d') . ' ' . ($item->measurement_time ?: '00:00:00'))
                         : null,
                     'area' => $item->area,
@@ -962,10 +969,10 @@ class MobileApiController extends Controller
                 1500 => 'Alta precisión y ensamble fino',
                 3000 => 'Casos especiales (Joyería / Cirugías)',
             ];
-            $activityDescription = $luxNormas[(int)$requiredLux] ?? 'Trabajos de oficina, lectura y escritura';
+            $activityDescription = $luxNormas[(int) $requiredLux] ?? 'Trabajos de oficina, lectura y escritura';
         }
         $lightingType = $request->input('lighting_type') ?? $request->input('tipo_iluminacion') ?? 'Natural y Artificial';
-        
+
         // Mediciones array / lecturas lux
         $rawReadings = $request->input('readings') ?? $request->input('mediciones_lux') ?? [];
         if (is_string($rawReadings)) {
@@ -990,7 +997,8 @@ class MobileApiController extends Controller
                 $dt = Carbon::parse($measuredAt);
                 $measurementDate = $dt->format('Y-m-d');
                 $measurementTime = $dt->format('H:i');
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+            }
         }
 
         // Staff / Registrador
@@ -1154,8 +1162,8 @@ class MobileApiController extends Controller
 
         // Si location no es un string formateado "E: ..., N: ..., Z: ...", armar el formato legible
         if (!empty($utmEasting) && !empty($utmNorthing) && !empty($utmZone)) {
-            $eFormatted = is_numeric($utmEasting) ? number_format((float)$utmEasting, 3, '.', '') : $utmEasting;
-            $nFormatted = is_numeric($utmNorthing) ? number_format((float)$utmNorthing, 3, '.', '') : $utmNorthing;
+            $eFormatted = is_numeric($utmEasting) ? number_format((float) $utmEasting, 3, '.', '') : $utmEasting;
+            $nFormatted = is_numeric($utmNorthing) ? number_format((float) $utmNorthing, 3, '.', '') : $utmNorthing;
             $locationRaw = "E: {$eFormatted}, N: {$nFormatted}, Z: {$utmZone}";
         } elseif (!is_string($locationRaw) || empty($locationRaw)) {
             if ($latitude !== null && $longitude !== null) {
@@ -1186,8 +1194,8 @@ class MobileApiController extends Controller
             'image_path' => $imagePath,
             'images' => !empty($uploadedImages) ? $uploadedImages : null,
             'location' => $locationRaw,
-            'latitude' => $latitude !== null ? (float)$latitude : null,
-            'longitude' => $longitude !== null ? (float)$longitude : null,
+            'latitude' => $latitude !== null ? (float) $latitude : null,
+            'longitude' => $longitude !== null ? (float) $longitude : null,
             'observations' => $request->input('observations') ?? $request->input('observaciones'),
             'registered_by' => $registeredByName,
             'staff_id' => $staffId,
@@ -1247,7 +1255,7 @@ class MobileApiController extends Controller
             if (empty($rawImages) && !empty($item->image_path)) {
                 $rawImages = [$item->image_path];
             }
-            $imagesUrls = array_values(array_filter(array_map(function($p) {
+            $imagesUrls = array_values(array_filter(array_map(function ($p) {
                 return $p ? asset($p) : null;
             }, $rawImages)));
 
@@ -1260,31 +1268,31 @@ class MobileApiController extends Controller
                 'tipo_local' => $item->tipo_local,
                 'tipo_ventilacion' => $item->tipo_ventilacion,
                 'elemento_ventilacion' => $item->elemento_ventilacion,
-                'temperatura_seca_c' => (float)$item->temperatura_seca_c,
-                'vel_aire_ms' => (float)$item->vel_aire_ms,
-                'vel_aire_mh' => (float)$item->vel_aire_mh,
-                'area_largo_m' => (float)$item->area_largo_m,
-                'area_ancho_m' => (float)$item->area_ancho_m,
-                'area_diametro_m' => (float)$item->area_diametro_m,
-                'area_ventilacion_m2' => (float)$item->area_ventilacion_m2,
-                'caudal_m3h' => (float)$item->caudal_m3h,
-                'vol_largo_m' => (float)$item->vol_largo_m,
-                'vol_ancho_m' => (float)$item->vol_ancho_m,
-                'vol_alto_m' => (float)$item->vol_alto_m,
-                'volumen_m3' => (float)$item->volumen_m3,
-                'renovaciones_h' => (float)$item->renovaciones_h,
-                'renovaciones_min' => (float)$item->renovaciones_min,
-                'renovaciones_max' => (float)$item->renovaciones_max,
+                'temperatura_seca_c' => (float) $item->temperatura_seca_c,
+                'vel_aire_ms' => (float) $item->vel_aire_ms,
+                'vel_aire_mh' => (float) $item->vel_aire_mh,
+                'area_largo_m' => (float) $item->area_largo_m,
+                'area_ancho_m' => (float) $item->area_ancho_m,
+                'area_diametro_m' => (float) $item->area_diametro_m,
+                'area_ventilacion_m2' => (float) $item->area_ventilacion_m2,
+                'caudal_m3h' => (float) $item->caudal_m3h,
+                'vol_largo_m' => (float) $item->vol_largo_m,
+                'vol_ancho_m' => (float) $item->vol_ancho_m,
+                'vol_alto_m' => (float) $item->vol_alto_m,
+                'volumen_m3' => (float) $item->volumen_m3,
+                'renovaciones_h' => (float) $item->renovaciones_h,
+                'renovaciones_min' => (float) $item->renovaciones_min,
+                'renovaciones_max' => (float) $item->renovaciones_max,
                 'renovaciones_intervalo' => $item->renovaciones_intervalo,
                 'cumple' => $item->cumple,
                 'image_path' => $item->image_path ? asset($item->image_path) : ($imagesUrls[0] ?? null),
                 'images' => $imagesUrls,
                 'location' => $item->location,
-                'latitude' => $item->latitude !== null ? (float)$item->latitude : null,
-                'longitude' => $item->longitude !== null ? (float)$item->longitude : null,
+                'latitude' => $item->latitude !== null ? (float) $item->latitude : null,
+                'longitude' => $item->longitude !== null ? (float) $item->longitude : null,
                 'utm_zone' => $item->utm_zone,
-                'utm_easting' => (float)$item->utm_easting,
-                'utm_northing' => (float)$item->utm_northing,
+                'utm_easting' => (float) $item->utm_easting,
+                'utm_northing' => (float) $item->utm_northing,
                 'observations' => $item->observations,
                 'registered_by' => $item->registered_by,
                 'staff_id' => $item->staff_id,
@@ -1356,7 +1364,8 @@ class MobileApiController extends Controller
         $registeredByName = $request->input('registered_by') ?? $request->input('registrado_por');
         if (!empty($staffId) && empty($registeredByName)) {
             $st = Staff::find($staffId);
-            if ($st) $registeredByName = $st->full_name ?: $st->name;
+            if ($st)
+                $registeredByName = $st->full_name ?: $st->name;
         }
         if (empty($registeredByName) || is_numeric($registeredByName)) {
             if ($module->fieldStaff) {
@@ -1422,8 +1431,8 @@ class MobileApiController extends Controller
         }
 
         if (!empty($utmEasting) && !empty($utmNorthing)) {
-            $eFormatted = is_numeric($utmEasting) ? number_format((float)$utmEasting, 3, '.', '') : $utmEasting;
-            $nFormatted = is_numeric($utmNorthing) ? number_format((float)$utmNorthing, 3, '.', '') : $utmNorthing;
+            $eFormatted = is_numeric($utmEasting) ? number_format((float) $utmEasting, 3, '.', '') : $utmEasting;
+            $nFormatted = is_numeric($utmNorthing) ? number_format((float) $utmNorthing, 3, '.', '') : $utmNorthing;
             $locationRaw = "E: {$eFormatted}, N: {$nFormatted}, Z: {$utmZone}";
         }
 
@@ -1461,11 +1470,11 @@ class MobileApiController extends Controller
             'image_path' => $imagePath,
             'images' => !empty($uploadedImages) ? $uploadedImages : null,
             'location' => $locationRaw,
-            'latitude' => $latitude !== null ? (float)$latitude : null,
-            'longitude' => $longitude !== null ? (float)$longitude : null,
+            'latitude' => $latitude !== null ? (float) $latitude : null,
+            'longitude' => $longitude !== null ? (float) $longitude : null,
             'utm_zone' => $utmZone,
-            'utm_easting' => $utmEasting !== null ? (float)$utmEasting : null,
-            'utm_northing' => $utmNorthing !== null ? (float)$utmNorthing : null,
+            'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
+            'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
             'observations' => $request->input('observations') ?? $request->input('observaciones'),
             'registered_by' => $registeredByName,
             'staff_id' => $staffId,
@@ -1535,8 +1544,8 @@ class MobileApiController extends Controller
         $utmK0 = 0.9996;
 
         $utmIsSouth = $utmZoneLetter !== '' ? ($utmZoneLetter < 'N') : true;
-        $utmX = (float)$utmEasting - 500000.0;
-        $utmY = $utmIsSouth ? (float)$utmNorthing - 10000000.0 : (float)$utmNorthing;
+        $utmX = (float) $utmEasting - 500000.0;
+        $utmY = $utmIsSouth ? (float) $utmNorthing - 10000000.0 : (float) $utmNorthing;
 
         $utmMarc = $utmY / $utmK0;
         $utmE2 = $utmE * $utmE;
@@ -1610,8 +1619,10 @@ class MobileApiController extends Controller
                     : (json_decode($item->photo_paths, true) ?: []);
 
                 $imageUrls = array_values(array_filter(array_map(function ($p) {
-                    if (!$p) return null;
-                    if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+                    if (!$p)
+                        return null;
+                    if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://'))
+                        return $p;
                     return asset($p);
                 }, $photos)));
 
@@ -1678,14 +1689,14 @@ class MobileApiController extends Controller
         $puestoTrabajo = $request->input('puesto_trabajo') ?? $request->input('workstation') ?? 'General';
         $descActividades = $request->input('desc_actividades') ?? $request->input('descripcion_actividad');
         $interiorExterior = $request->input('interior_exterior') ?? 'Interior';
-        
+
         $aclimatadoRaw = $request->input('aclimatado');
         if (is_bool($aclimatadoRaw)) {
             $aclimatadoStr = $aclimatadoRaw ? 'Sí' : 'No';
         } elseif (is_numeric($aclimatadoRaw)) {
-            $aclimatadoStr = ((int)$aclimatadoRaw === 1) ? 'Sí' : 'No';
+            $aclimatadoStr = ((int) $aclimatadoRaw === 1) ? 'Sí' : 'No';
         } else {
-            $aclimatadoStr = $aclimatadoRaw ? trim((string)$aclimatadoRaw) : 'Sí';
+            $aclimatadoStr = $aclimatadoRaw ? trim((string) $aclimatadoRaw) : 'Sí';
         }
 
         $tipoRopa = $request->input('tipo_ropa_cav') ?? 'Ropa de Trabajo';
@@ -1693,24 +1704,31 @@ class MobileApiController extends Controller
         if (is_bool($capuchaRaw)) {
             $capuchaStr = $capuchaRaw ? 'Sí' : 'No';
         } elseif (is_numeric($capuchaRaw)) {
-            $capuchaStr = ((int)$capuchaRaw === 1) ? 'Sí' : 'No';
+            $capuchaStr = ((int) $capuchaRaw === 1) ? 'Sí' : 'No';
         } else {
-            $capuchaStr = $capuchaRaw ? trim((string)$capuchaRaw) : 'No';
+            $capuchaStr = $capuchaRaw ? trim((string) $capuchaRaw) : 'No';
         }
 
         $tasaMetabolica = $request->input('tasa_metabolica') ?? 'Clase 2 - Índice metabólico medio';
 
-        $tempC = $request->filled('temp_c') ? (float)$request->input('temp_c') : null;
-        $hrPercent = $request->filled('hr_percent') ? (float)$request->input('hr_percent') : null;
-        $velViento = $request->filled('vel_viento_ms') ? (float)$request->input('vel_viento_ms') : null;
-        $presion = $request->filled('presion_mmhg') ? (float)$request->input('presion_mmhg') : null;
-        $wbC = $request->filled('wb_c') ? (float)$request->input('wb_c') : null;
-        $gtC = $request->filled('gt_c') ? (float)$request->input('gt_c') : null;
-        $wbgtRaw = $request->filled('wbgt_c') ? (float)$request->input('wbgt_c') : null;
+        $tempC = $request->filled('temp_c') ? (float) $request->input('temp_c') : null;
+        $hrPercent = $request->filled('hr_percent') ? (float) $request->input('hr_percent') : null;
+        $velViento = $request->filled('vel_viento_ms') ? (float) $request->input('vel_viento_ms') : null;
+        $presion = $request->filled('presion_mmhg') ? (float) $request->input('presion_mmhg') : null;
+        $wbC = $request->filled('wb_c') ? (float) $request->input('wb_c') : null;
+        $gtC = $request->filled('gt_c') ? (float) $request->input('gt_c') : null;
+        $wbgtRaw = $request->filled('wbgt_c') ? (float) $request->input('wbgt_c') : null;
 
         // Evaluación técnica automática con ACGIH TLVs
         $eval = HeatStressController::evaluateHeatStress(
-            $wbgtRaw, $wbC, $gtC, $tempC, $interiorExterior, $aclimatadoStr, $tipoRopa, $tasaMetabolica
+            $wbgtRaw,
+            $wbC,
+            $gtC,
+            $tempC,
+            $interiorExterior,
+            $aclimatadoStr,
+            $tipoRopa,
+            $tasaMetabolica
         );
 
         // Fecha y hora
@@ -1722,7 +1740,8 @@ class MobileApiController extends Controller
                 $dt = Carbon::parse($measuredAt);
                 $measurementDate = $dt->format('Y-m-d');
                 $measurementTime = $dt->format('H:i');
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+            }
         }
 
         // Staff / Colaborador
@@ -1730,12 +1749,13 @@ class MobileApiController extends Controller
         $rawCreatedBy = $request->input('created_by') ?? $request->input('registered_by');
         if (empty($staffId) && !empty($rawCreatedBy)) {
             if (is_numeric($rawCreatedBy)) {
-                $staffId = (int)$rawCreatedBy;
+                $staffId = (int) $rawCreatedBy;
             } else {
                 $foundStaff = Staff::where('name', trim($rawCreatedBy))
                     ->orWhereRaw("CONCAT(TRIM(first_name), ' ', TRIM(last_name)) = ?", [trim($rawCreatedBy)])
                     ->first();
-                if ($foundStaff) $staffId = $foundStaff->id;
+                if ($foundStaff)
+                    $staffId = $foundStaff->id;
             }
         }
         if (empty($staffId)) {
@@ -1795,8 +1815,8 @@ class MobileApiController extends Controller
 
         $locationRaw = $request->input('location') ?? $request->input('location_description');
         if (empty($locationRaw) && !empty($utmEasting) && !empty($utmNorthing)) {
-            $eFormatted = is_numeric($utmEasting) ? number_format((float)$utmEasting, 3, '.', '') : $utmEasting;
-            $nFormatted = is_numeric($utmNorthing) ? number_format((float)$utmNorthing, 3, '.', '') : $utmNorthing;
+            $eFormatted = is_numeric($utmEasting) ? number_format((float) $utmEasting, 3, '.', '') : $utmEasting;
+            $nFormatted = is_numeric($utmNorthing) ? number_format((float) $utmNorthing, 3, '.', '') : $utmNorthing;
             $locationRaw = "E: {$eFormatted}, N: {$nFormatted}, Z: {$utmZone}";
         }
 
@@ -1834,11 +1854,11 @@ class MobileApiController extends Controller
             'limite_wbgt_lmp' => $eval['lmp'],
             'regimen_trabajo_descanso' => $eval['regimen'],
             'is_compliant' => $eval['compliant'],
-            'latitude' => $latitude !== null ? (float)$latitude : null,
-            'longitude' => $longitude !== null ? (float)$longitude : null,
+            'latitude' => $latitude !== null ? (float) $latitude : null,
+            'longitude' => $longitude !== null ? (float) $longitude : null,
             'utm_zone' => $utmZone,
-            'utm_easting' => $utmEasting !== null ? (float)$utmEasting : null,
-            'utm_northing' => $utmNorthing !== null ? (float)$utmNorthing : null,
+            'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
+            'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
             'location_description' => $locationRaw,
             'observations' => $request->input('observations') ?? $request->input('observaciones'),
             'photo_paths' => !empty($uploadedImages) ? $uploadedImages : null,
@@ -1913,8 +1933,10 @@ class MobileApiController extends Controller
                     : (json_decode($item->photo_paths, true) ?: []);
 
                 $imageUrls = array_values(array_filter(array_map(function ($p) {
-                    if (!$p) return null;
-                    if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+                    if (!$p)
+                        return null;
+                    if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://'))
+                        return $p;
                     return asset($p);
                 }, $photos)));
 
@@ -1975,10 +1997,10 @@ class MobileApiController extends Controller
         $puestoTrabajo = $request->input('puesto_trabajo') ?? $request->input('workstation') ?? 'General';
         $descActividades = $request->input('desc_actividades') ?? $request->input('descripcion_actividad');
 
-        $tempC = $request->filled('temp_c') ? (float)$request->input('temp_c') : null;
-        $hrPercent = $request->filled('hr_percent') ? (float)$request->input('hr_percent') : null;
-        $velViento = $request->filled('vel_viento_ms') ? (float)$request->input('vel_viento_ms') : null;
-        $presion = $request->filled('presion_mmhg') ? (float)$request->input('presion_mmhg') : null;
+        $tempC = $request->filled('temp_c') ? (float) $request->input('temp_c') : null;
+        $hrPercent = $request->filled('hr_percent') ? (float) $request->input('hr_percent') : null;
+        $velViento = $request->filled('vel_viento_ms') ? (float) $request->input('vel_viento_ms') : null;
+        $presion = $request->filled('presion_mmhg') ? (float) $request->input('presion_mmhg') : null;
 
         $metabolismo = $request->input('metabolismo') ?? 'Metabolismo moderado';
         $aislamiento = $request->input('aislamiento') ?? 'Vestimenta térmica estándar';
@@ -1995,7 +2017,8 @@ class MobileApiController extends Controller
                 $dt = Carbon::parse($measuredAt);
                 $measurementDate = $dt->format('Y-m-d');
                 $measurementTime = $dt->format('H:i');
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+            }
         }
 
         // Staff / Colaborador
@@ -2003,12 +2026,13 @@ class MobileApiController extends Controller
         $rawCreatedBy = $request->input('created_by') ?? $request->input('registered_by');
         if (empty($staffId) && !empty($rawCreatedBy)) {
             if (is_numeric($rawCreatedBy)) {
-                $staffId = (int)$rawCreatedBy;
+                $staffId = (int) $rawCreatedBy;
             } else {
                 $foundStaff = Staff::where('name', trim($rawCreatedBy))
                     ->orWhereRaw("CONCAT(TRIM(first_name), ' ', TRIM(last_name)) = ?", [trim($rawCreatedBy)])
                     ->first();
-                if ($foundStaff) $staffId = $foundStaff->id;
+                if ($foundStaff)
+                    $staffId = $foundStaff->id;
             }
         }
         if (empty($staffId)) {
@@ -2068,8 +2092,8 @@ class MobileApiController extends Controller
 
         $locationRaw = $request->input('location') ?? $request->input('location_description');
         if (empty($locationRaw) && !empty($utmEasting) && !empty($utmNorthing)) {
-            $eFormatted = is_numeric($utmEasting) ? number_format((float)$utmEasting, 3, '.', '') : $utmEasting;
-            $nFormatted = is_numeric($utmNorthing) ? number_format((float)$utmNorthing, 3, '.', '') : $utmNorthing;
+            $eFormatted = is_numeric($utmEasting) ? number_format((float) $utmEasting, 3, '.', '') : $utmEasting;
+            $nFormatted = is_numeric($utmNorthing) ? number_format((float) $utmNorthing, 3, '.', '') : $utmNorthing;
             $locationRaw = "E: {$eFormatted}, N: {$nFormatted}, Z: {$utmZone}";
         }
 
@@ -2101,11 +2125,11 @@ class MobileApiController extends Controller
             'nivel_riesgo' => $eval['riesgo'],
             'tiempo_limite_exposicion' => $eval['tle'],
             'is_compliant' => $eval['compliant'],
-            'latitude' => $latitude !== null ? (float)$latitude : null,
-            'longitude' => $longitude !== null ? (float)$longitude : null,
+            'latitude' => $latitude !== null ? (float) $latitude : null,
+            'longitude' => $longitude !== null ? (float) $longitude : null,
             'utm_zone' => $utmZone,
-            'utm_easting' => $utmEasting !== null ? (float)$utmEasting : null,
-            'utm_northing' => $utmNorthing !== null ? (float)$utmNorthing : null,
+            'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
+            'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
             'location_description' => $locationRaw,
             'observations' => $request->input('observations') ?? $request->input('observaciones'),
             'photo_paths' => !empty($uploadedImages) ? $uploadedImages : null,
@@ -2172,7 +2196,7 @@ class MobileApiController extends Controller
             if (empty($rawImages) && !empty($item->image_path)) {
                 $rawImages = [$item->image_path];
             }
-            $imagesUrls = array_values(array_filter(array_map(function($p) {
+            $imagesUrls = array_values(array_filter(array_map(function ($p) {
                 return $p ? (str_starts_with($p, 'http') ? $p : asset($p)) : null;
             }, $rawImages)));
 
@@ -2262,7 +2286,7 @@ class MobileApiController extends Controller
         $puestoTrabajo = $request->input('puesto_trabajo') ?? 'Puesto Evaluado';
         $factorRiesgo = $request->input('factor_riesgo') ?? 'Posturas forzadas';
         $numTrabajadores = (int) ($request->input('num_trabajadores') ?? 1);
-        
+
         $nombres = $request->input('nombres_trabajadores');
         if (is_string($nombres)) {
             $nombres = json_decode($nombres, true) ?: [$nombres];
@@ -2284,7 +2308,8 @@ class MobileApiController extends Controller
                 $dt = Carbon::parse($measuredAt);
                 $measurementDate = $dt->format('Y-m-d');
                 $measurementTime = $dt->format('H:i:s');
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+            }
         }
 
         // Staff / Evaluador
@@ -2292,18 +2317,20 @@ class MobileApiController extends Controller
         $rawCreatedBy = $request->input('created_by') ?? $request->input('registered_by');
         if (empty($staffId) && !empty($rawCreatedBy)) {
             if (is_numeric($rawCreatedBy)) {
-                $staffId = (int)$rawCreatedBy;
+                $staffId = (int) $rawCreatedBy;
             } else {
                 $foundStaff = Staff::where('name', trim($rawCreatedBy))
                     ->orWhereRaw("CONCAT(TRIM(first_name), ' ', TRIM(last_name)) = ?", [trim($rawCreatedBy)])
                     ->first();
-                if ($foundStaff) $staffId = $foundStaff->id;
+                if ($foundStaff)
+                    $staffId = $foundStaff->id;
             }
         }
         $registeredByName = $rawCreatedBy;
         if (!empty($staffId)) {
             $st = Staff::find($staffId);
-            if ($st) $registeredByName = $st->full_name ?: $st->name;
+            if ($st)
+                $registeredByName = $st->full_name ?: $st->name;
         }
 
         // Fotos
@@ -2353,14 +2380,14 @@ class MobileApiController extends Controller
         $locationRaw = $request->input('location');
 
         if (($latitude === null || $longitude === null) && !empty($utmEasting) && !empty($utmNorthing)) {
-            $conv = $this->utmToLatLng((float)$utmEasting, (float)$utmNorthing, $utmZone);
+            $conv = $this->utmToLatLng((float) $utmEasting, (float) $utmNorthing, $utmZone);
             $latitude = $conv['lat'];
             $longitude = $conv['lng'];
         }
 
         if (!empty($utmEasting) && !empty($utmNorthing) && !empty($utmZone)) {
-            $eF = number_format((float)$utmEasting, 2, '.', '');
-            $nF = number_format((float)$utmNorthing, 2, '.', '');
+            $eF = number_format((float) $utmEasting, 2, '.', '');
+            $nF = number_format((float) $utmNorthing, 2, '.', '');
             $locationRaw = "Zona {$utmZone} E: {$eF} N: {$nF}";
         }
 
@@ -2373,7 +2400,7 @@ class MobileApiController extends Controller
         $existingCount = $module->rebaMeasurements()->count();
         $pointNumber = $request->input('point_number') ?? str_pad($existingCount + 1, 2, '0', STR_PAD_LEFT);
 
-        $pModApi = (int)($request->input('piernas_mod') ?? 0);
+        $pModApi = (int) ($request->input('piernas_mod') ?? 0);
         if ($request->has('piernas_flexion_30_60') || $request->has('piernas_flexion_mas_60')) {
             $pMod30 = $request->input('piernas_flexion_30_60') ? 1 : 0;
             $pMod60 = $request->input('piernas_flexion_mas_60') ? 2 : 0;
@@ -2390,12 +2417,12 @@ class MobileApiController extends Controller
             'num_trabajadores' => $numTrabajadores,
             'nombres_trabajadores' => $nombres,
             'edad' => $request->input('edad'),
-            'tiempo_exposicion_horas' => $request->filled('tiempo_exposicion_horas') ? (float)$request->input('tiempo_exposicion_horas') : null,
+            'tiempo_exposicion_horas' => $request->filled('tiempo_exposicion_horas') ? (float) $request->input('tiempo_exposicion_horas') : null,
             'procedimiento_escrito' => $request->input('procedimiento_escrito'),
             'capacitacion' => $request->input('capacitacion'),
             'fuerza_agarre' => $request->input('fuerza_agarre'),
-            'carga_peso_kg' => $request->filled('carga_peso_kg') ? (float)$request->input('carga_peso_kg') : null,
-            'distancia_m' => $request->filled('distancia_m') ? (float)$request->input('distancia_m') : null,
+            'carga_peso_kg' => $request->filled('carga_peso_kg') ? (float) $request->input('carga_peso_kg') : null,
+            'distancia_m' => $request->filled('distancia_m') ? (float) $request->input('distancia_m') : null,
             'ayuda_mecanica' => $request->input('ayuda_mecanica'),
             'descripcion_carga' => $request->input('descripcion_carga'),
             'manifestacion_temprana' => $request->input('manifestacion_temprana'),
@@ -2405,30 +2432,30 @@ class MobileApiController extends Controller
             'image_path' => $uploadedImages[0] ?? null,
             'images' => !empty($uploadedImages) ? $uploadedImages : null,
             'location' => $locationRaw,
-            'latitude' => $latitude !== null ? (float)$latitude : null,
-            'longitude' => $longitude !== null ? (float)$longitude : null,
+            'latitude' => $latitude !== null ? (float) $latitude : null,
+            'longitude' => $longitude !== null ? (float) $longitude : null,
             'utm_zone' => $utmZone,
-            'utm_easting' => $utmEasting !== null ? (float)$utmEasting : null,
-            'utm_northing' => $utmNorthing !== null ? (float)$utmNorthing : null,
-            'tronco_base' => (int)($request->input('tronco_base') ?? 1),
-            'tronco_mod' => (int)($request->input('tronco_mod') ?? 0),
-            'cuello_base' => (int)($request->input('cuello_base') ?? 1),
-            'cuello_mod' => (int)($request->input('cuello_mod') ?? 0),
-            'piernas_base' => (int)($request->input('piernas_base') ?? 1),
+            'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
+            'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
+            'tronco_base' => (int) ($request->input('tronco_base') ?? 1),
+            'tronco_mod' => (int) ($request->input('tronco_mod') ?? 0),
+            'cuello_base' => (int) ($request->input('cuello_base') ?? 1),
+            'cuello_mod' => (int) ($request->input('cuello_mod') ?? 0),
+            'piernas_base' => (int) ($request->input('piernas_base') ?? 1),
             'piernas_mod' => $pModApi,
-            'carga_fuerza' => (int)($request->input('carga_fuerza') ?? 0),
-            'carga_brusca' => (int)($request->input('carga_brusca') ?? 0),
-            'brazo_base' => (int)($request->input('brazo_base') ?? 1),
-            'brazo_abduccion' => (int)($request->input('brazo_abduccion') ?? 0),
-            'brazo_hombro_elevado' => (int)($request->input('brazo_hombro_elevado') ?? 0),
-            'brazo_apoyo_gravedad' => (int)($request->input('brazo_apoyo_gravedad') ?? 0),
-            'antebrazo_base' => (int)($request->input('antebrazo_base') ?? 1),
-            'muneca_base' => (int)($request->input('muneca_base') ?? 1),
-            'muneca_mod' => (int)($request->input('muneca_mod') ?? 0),
-            'agarre' => (int)($request->input('agarre') ?? 0),
-            'actividad_estatica' => (int)($request->input('actividad_estatica') ?? 0),
-            'actividad_repetitiva' => (int)($request->input('actividad_repetitiva') ?? 0),
-            'actividad_inestable' => (int)($request->input('actividad_inestable') ?? 0),
+            'carga_fuerza' => (int) ($request->input('carga_fuerza') ?? 0),
+            'carga_brusca' => (int) ($request->input('carga_brusca') ?? 0),
+            'brazo_base' => (int) ($request->input('brazo_base') ?? 1),
+            'brazo_abduccion' => (int) ($request->input('brazo_abduccion') ?? 0),
+            'brazo_hombro_elevado' => (int) ($request->input('brazo_hombro_elevado') ?? 0),
+            'brazo_apoyo_gravedad' => (int) ($request->input('brazo_apoyo_gravedad') ?? 0),
+            'antebrazo_base' => (int) ($request->input('antebrazo_base') ?? 1),
+            'muneca_base' => (int) ($request->input('muneca_base') ?? 1),
+            'muneca_mod' => (int) ($request->input('muneca_mod') ?? 0),
+            'agarre' => (int) ($request->input('agarre') ?? 0),
+            'actividad_estatica' => (int) ($request->input('actividad_estatica') ?? 0),
+            'actividad_repetitiva' => (int) ($request->input('actividad_repetitiva') ?? 0),
+            'actividad_inestable' => (int) ($request->input('actividad_inestable') ?? 0),
             'score_tabla_a' => $calc['score_tabla_a'],
             'score_a' => $calc['score_a'],
             'score_tabla_b' => $calc['score_tabla_b'],
@@ -2502,7 +2529,7 @@ class MobileApiController extends Controller
             if (empty($rawImages) && !empty($item->image_path)) {
                 $rawImages = [$item->image_path];
             }
-            $imagesUrls = array_values(array_filter(array_map(function($p) {
+            $imagesUrls = array_values(array_filter(array_map(function ($p) {
                 return $p ? (str_starts_with($p, 'http') ? $p : asset($p)) : null;
             }, $rawImages)));
 
@@ -2597,7 +2624,7 @@ class MobileApiController extends Controller
         $puestoTrabajo = $request->input('puesto_trabajo') ?? 'Puesto Administrativo';
         $factorRiesgo = $request->input('factor_riesgo') ?? 'Trabajo prolongado frente a PVD / Pantallas';
         $numTrabajadores = (int) ($request->input('num_trabajadores') ?? 1);
-        
+
         $nombres = $request->input('nombres_trabajadores');
         if (is_string($nombres)) {
             $nombres = json_decode($nombres, true) ?: [$nombres];
@@ -2619,7 +2646,8 @@ class MobileApiController extends Controller
                 $dt = Carbon::parse($measuredAt);
                 $measurementDate = $dt->format('Y-m-d');
                 $measurementTime = $dt->format('H:i:s');
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+            }
         }
 
         // Staff / Evaluador
@@ -2627,18 +2655,20 @@ class MobileApiController extends Controller
         $rawCreatedBy = $request->input('created_by') ?? $request->input('registered_by');
         if (empty($staffId) && !empty($rawCreatedBy)) {
             if (is_numeric($rawCreatedBy)) {
-                $staffId = (int)$rawCreatedBy;
+                $staffId = (int) $rawCreatedBy;
             } else {
                 $foundStaff = Staff::where('name', trim($rawCreatedBy))
                     ->orWhereRaw("CONCAT(TRIM(first_name), ' ', TRIM(last_name)) = ?", [trim($rawCreatedBy)])
                     ->first();
-                if ($foundStaff) $staffId = $foundStaff->id;
+                if ($foundStaff)
+                    $staffId = $foundStaff->id;
             }
         }
         $registeredByName = $rawCreatedBy;
         if (!empty($staffId)) {
             $st = Staff::find($staffId);
-            if ($st) $registeredByName = $st->full_name ?: $st->name;
+            if ($st)
+                $registeredByName = $st->full_name ?: $st->name;
         }
 
         // Fotos
@@ -2688,14 +2718,14 @@ class MobileApiController extends Controller
         $locationRaw = $request->input('location');
 
         if (($latitude === null || $longitude === null) && !empty($utmEasting) && !empty($utmNorthing)) {
-            $conv = $this->utmToLatLng((float)$utmEasting, (float)$utmNorthing, $utmZone);
+            $conv = $this->utmToLatLng((float) $utmEasting, (float) $utmNorthing, $utmZone);
             $latitude = $conv['lat'];
             $longitude = $conv['lng'];
         }
 
         if (!empty($utmEasting) && !empty($utmNorthing) && !empty($utmZone)) {
-            $eF = number_format((float)$utmEasting, 2, '.', '');
-            $nF = number_format((float)$utmNorthing, 2, '.', '');
+            $eF = number_format((float) $utmEasting, 2, '.', '');
+            $nF = number_format((float) $utmNorthing, 2, '.', '');
             $locationRaw = "Zona {$utmZone} E: {$eF} N: {$nF}";
         }
 
@@ -2718,12 +2748,12 @@ class MobileApiController extends Controller
             'num_trabajadores' => $numTrabajadores,
             'nombres_trabajadores' => $nombres,
             'edad' => $request->input('edad'),
-            'tiempo_exposicion_horas' => $request->filled('tiempo_exposicion_horas') ? (float)$request->input('tiempo_exposicion_horas') : null,
+            'tiempo_exposicion_horas' => $request->filled('tiempo_exposicion_horas') ? (float) $request->input('tiempo_exposicion_horas') : null,
             'procedimiento_escrito' => $request->input('procedimiento_escrito'),
             'capacitacion' => $request->input('capacitacion'),
             'fuerza_agarre' => $request->input('fuerza_agarre'),
-            'carga_peso_kg' => $request->filled('carga_peso_kg') ? (float)$request->input('carga_peso_kg') : null,
-            'distancia_m' => $request->filled('distancia_m') ? (float)$request->input('distancia_m') : null,
+            'carga_peso_kg' => $request->filled('carga_peso_kg') ? (float) $request->input('carga_peso_kg') : null,
+            'distancia_m' => $request->filled('distancia_m') ? (float) $request->input('distancia_m') : null,
             'ayuda_mecanica' => $request->input('ayuda_mecanica'),
             'descripcion_carga' => $request->input('descripcion_carga'),
             'manifestacion_temprana' => $request->input('manifestacion_temprana'),
@@ -2733,35 +2763,35 @@ class MobileApiController extends Controller
             'image_path' => $uploadedImages[0] ?? null,
             'images' => !empty($uploadedImages) ? $uploadedImages : null,
             'location' => $locationRaw,
-            'latitude' => $latitude !== null ? (float)$latitude : null,
-            'longitude' => $longitude !== null ? (float)$longitude : null,
+            'latitude' => $latitude !== null ? (float) $latitude : null,
+            'longitude' => $longitude !== null ? (float) $longitude : null,
             'utm_zone' => $utmZone,
-            'utm_easting' => $utmEasting !== null ? (float)$utmEasting : null,
-            'utm_northing' => $utmNorthing !== null ? (float)$utmNorthing : null,
-            'altura_asiento_base' => (int)($request->input('altura_asiento_base') ?? 1),
-            'altura_asiento_mod' => (int)($request->input('altura_asiento_mod') ?? 0),
-            'profundidad_base' => (int)($request->input('profundidad_base') ?? 1),
-            'profundidad_mod' => (int)($request->input('profundidad_mod') ?? 0),
-            'reposabrazos_base' => (int)($request->input('reposabrazos_base') ?? 1),
-            'reposabrazos_mod' => (int)($request->input('reposabrazos_mod') ?? 0),
-            'respaldo_base' => (int)($request->input('respaldo_base') ?? 1),
-            'respaldo_mod' => (int)($request->input('respaldo_mod') ?? 0),
-            'silla_tiempo_uso' => (int)($request->input('silla_tiempo_uso') ?? 0),
-            'pantalla_base' => (int)($request->input('pantalla_base') ?? 1),
-            'pantalla_mod' => (int)($request->input('pantalla_mod') ?? 0),
-            'pantalla_tiempo' => (int)($request->input('pantalla_tiempo') ?? 0),
-            'telefono_base' => (int)($request->input('telefono_base') ?? 1),
-            'telefono_mod' => (int)($request->input('telefono_mod') ?? 0),
-            'telefono_tiempo' => (int)($request->input('telefono_tiempo') ?? 0),
-            'raton_base' => (int)($request->input('raton_base') ?? 1),
-            'raton_mod' => (int)($request->input('raton_mod') ?? 0),
-            'raton_tiempo' => (int)($request->input('raton_tiempo') ?? 0),
-            'teclado_base' => (int)($request->input('teclado_base') ?? 1),
-            'teclado_mod' => (int)($request->input('teclado_mod') ?? 0),
-            'teclado_tiempo' => (int)($request->input('teclado_tiempo') ?? 0),
-            'actividad_estatica' => (int)($request->input('actividad_estatica') ?? 0),
-            'actividad_repetitiva' => (int)($request->input('actividad_repetitiva') ?? 0),
-            'actividad_inestable' => (int)($request->input('actividad_inestable') ?? 0),
+            'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
+            'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
+            'altura_asiento_base' => (int) ($request->input('altura_asiento_base') ?? 1),
+            'altura_asiento_mod' => (int) ($request->input('altura_asiento_mod') ?? 0),
+            'profundidad_base' => (int) ($request->input('profundidad_base') ?? 1),
+            'profundidad_mod' => (int) ($request->input('profundidad_mod') ?? 0),
+            'reposabrazos_base' => (int) ($request->input('reposabrazos_base') ?? 1),
+            'reposabrazos_mod' => (int) ($request->input('reposabrazos_mod') ?? 0),
+            'respaldo_base' => (int) ($request->input('respaldo_base') ?? 1),
+            'respaldo_mod' => (int) ($request->input('respaldo_mod') ?? 0),
+            'silla_tiempo_uso' => (int) ($request->input('silla_tiempo_uso') ?? 0),
+            'pantalla_base' => (int) ($request->input('pantalla_base') ?? 1),
+            'pantalla_mod' => (int) ($request->input('pantalla_mod') ?? 0),
+            'pantalla_tiempo' => (int) ($request->input('pantalla_tiempo') ?? 0),
+            'telefono_base' => (int) ($request->input('telefono_base') ?? 1),
+            'telefono_mod' => (int) ($request->input('telefono_mod') ?? 0),
+            'telefono_tiempo' => (int) ($request->input('telefono_tiempo') ?? 0),
+            'raton_base' => (int) ($request->input('raton_base') ?? 1),
+            'raton_mod' => (int) ($request->input('raton_mod') ?? 0),
+            'raton_tiempo' => (int) ($request->input('raton_tiempo') ?? 0),
+            'teclado_base' => (int) ($request->input('teclado_base') ?? 1),
+            'teclado_mod' => (int) ($request->input('teclado_mod') ?? 0),
+            'teclado_tiempo' => (int) ($request->input('teclado_tiempo') ?? 0),
+            'actividad_estatica' => (int) ($request->input('actividad_estatica') ?? 0),
+            'actividad_repetitiva' => (int) ($request->input('actividad_repetitiva') ?? 0),
+            'actividad_inestable' => (int) ($request->input('actividad_inestable') ?? 0),
             'score_a' => $calc['score_a'],
             'score_b' => $calc['score_b'],
             'score_c' => $calc['score_c'],
@@ -2835,14 +2865,14 @@ class MobileApiController extends Controller
             if (empty($rawImages) && !empty($item->image_path)) {
                 $rawImages = [$item->image_path];
             }
-            $imagesUrls = array_values(array_filter(array_map(function($p) {
+            $imagesUrls = array_values(array_filter(array_map(function ($p) {
                 return $p ? (str_starts_with($p, 'http') ? $p : asset($p)) : null;
             }, $rawImages)));
 
             $dimensions = is_array($item->dimensions) ? $item->dimensions : (json_decode($item->dimensions, true) ?: [
-                'yi_largo' => (float)$item->yi_largo,
-                'xi_ancho' => (float)$item->xi_ancho,
-                'area_m2' => (float)$item->area_m2,
+                'yi_largo' => (float) $item->yi_largo,
+                'xi_ancho' => (float) $item->xi_ancho,
+                'area_m2' => (float) $item->area_m2,
             ]);
 
             $activities = is_array($item->activities) ? $item->activities : (json_decode($item->activities, true) ?: []);
@@ -2868,7 +2898,7 @@ class MobileApiController extends Controller
                 'risk_level' => $item->risk_level,
                 'risk_color' => $item->risk_color,
                 'risk_theme' => $item->risk_color,
-                'ra_value' => $item->ra_value !== null ? (float)$item->ra_value : 1.0,
+                'ra_value' => $item->ra_value !== null ? (float) $item->ra_value : 1.0,
                 'image_path' => $item->image_path ? (str_starts_with($item->image_path, 'http') ? $item->image_path : asset($item->image_path)) : ($imagesUrls[0] ?? null),
                 'images' => $imagesUrls,
                 'images_count' => count($imagesUrls),
@@ -2906,10 +2936,11 @@ class MobileApiController extends Controller
         if (is_string($dimensions)) {
             $dimensions = json_decode($dimensions, true) ?: [];
         }
-        $yiLargo = (float)($dimensions['yi_largo'] ?? $request->input('yi_largo') ?? $request->input('largo') ?? 10.0);
-        $xiAncho = (float)($dimensions['xi_ancho'] ?? $request->input('xi_ancho') ?? $request->input('ancho') ?? 10.0);
-        $areaM2 = (float)($dimensions['area_m2'] ?? $request->input('area_m2') ?? ($yiLargo * $xiAncho));
-        if ($areaM2 <= 0) $areaM2 = 1.0;
+        $yiLargo = (float) ($dimensions['yi_largo'] ?? $request->input('yi_largo') ?? $request->input('largo') ?? 10.0);
+        $xiAncho = (float) ($dimensions['xi_ancho'] ?? $request->input('xi_ancho') ?? $request->input('ancho') ?? 10.0);
+        $areaM2 = (float) ($dimensions['area_m2'] ?? $request->input('area_m2') ?? ($yiLargo * $xiAncho));
+        if ($areaM2 <= 0)
+            $areaM2 = 1.0;
 
         $dimensions = [
             'yi_largo' => $yiLargo,
@@ -2922,25 +2953,28 @@ class MobileApiController extends Controller
         if (is_string($activities)) {
             $activities = json_decode($activities, true) ?: [];
         }
-        if (!is_array($activities)) $activities = [];
+        if (!is_array($activities))
+            $activities = [];
 
         $fireEquipments = $request->input('fire_equipments') ?? $request->input('equipos');
         if (is_string($fireEquipments)) {
             $fireEquipments = json_decode($fireEquipments, true) ?: [];
         }
-        if (!is_array($fireEquipments)) $fireEquipments = [];
+        if (!is_array($fireEquipments))
+            $fireEquipments = [];
 
         // Cálculo de Qs por actividad: sum(Si * qsi * Ci) / S * Ra
-        $raValue = (float)($request->input('ra_value') ?? 1.0);
-        if ($raValue <= 0) $raValue = 1.0;
+        $raValue = (float) ($request->input('ra_value') ?? 1.0);
+        if ($raValue <= 0)
+            $raValue = 1.0;
 
         $sumWeighted = 0.0;
         foreach ($activities as $act) {
-            $actLargo = (float)($act['largo'] ?? 0);
-            $actAncho = (float)($act['ancho'] ?? 0);
-            $actArea = $actLargo > 0 && $actAncho > 0 ? ($actLargo * $actAncho) : (float)($act['area'] ?? $areaM2);
-            $qsi = (float)($act['qsi'] ?? 800);
-            $ci = (float)($act['ci'] ?? 1.0);
+            $actLargo = (float) ($act['largo'] ?? 0);
+            $actAncho = (float) ($act['ancho'] ?? 0);
+            $actArea = $actLargo > 0 && $actAncho > 0 ? ($actLargo * $actAncho) : (float) ($act['area'] ?? $areaM2);
+            $qsi = (float) ($act['qsi'] ?? 800);
+            $ci = (float) ($act['ci'] ?? 1.0);
             $sumWeighted += ($actArea * $qsi * $ci);
         }
 
@@ -2968,7 +3002,8 @@ class MobileApiController extends Controller
                 $dt = Carbon::parse($measuredAt);
                 $measurementDate = $dt->format('Y-m-d');
                 $measurementTime = $dt->format('H:i:s');
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+            }
         }
 
         // Staff
@@ -2976,18 +3011,20 @@ class MobileApiController extends Controller
         $rawCreatedBy = $request->input('created_by') ?? $request->input('registered_by');
         if (empty($staffId) && !empty($rawCreatedBy)) {
             if (is_numeric($rawCreatedBy)) {
-                $staffId = (int)$rawCreatedBy;
+                $staffId = (int) $rawCreatedBy;
             } else {
                 $foundStaff = Staff::where('name', trim($rawCreatedBy))
                     ->orWhereRaw("CONCAT(TRIM(first_name), ' ', TRIM(last_name)) = ?", [trim($rawCreatedBy)])
                     ->first();
-                if ($foundStaff) $staffId = $foundStaff->id;
+                if ($foundStaff)
+                    $staffId = $foundStaff->id;
             }
         }
         $registeredByName = $rawCreatedBy;
         if (!empty($staffId)) {
             $st = Staff::find($staffId);
-            if ($st) $registeredByName = $st->full_name ?: $st->name;
+            if ($st)
+                $registeredByName = $st->full_name ?: $st->name;
         }
 
         // Fotos
@@ -3037,14 +3074,14 @@ class MobileApiController extends Controller
         $locationRaw = $request->input('location');
 
         if (($latitude === null || $longitude === null) && !empty($utmEasting) && !empty($utmNorthing)) {
-            $conv = $this->utmToLatLng((float)$utmEasting, (float)$utmNorthing, $utmZone);
+            $conv = $this->utmToLatLng((float) $utmEasting, (float) $utmNorthing, $utmZone);
             $latitude = $conv['lat'];
             $longitude = $conv['lng'];
         }
 
         if (!empty($utmEasting) && !empty($utmNorthing) && !empty($utmZone)) {
-            $eF = number_format((float)$utmEasting, 2, '.', '');
-            $nF = number_format((float)$utmNorthing, 2, '.', '');
+            $eF = number_format((float) $utmEasting, 2, '.', '');
+            $nF = number_format((float) $utmNorthing, 2, '.', '');
             $locationRaw = "Zona {$utmZone} E: {$eF} N: {$nF}";
         }
 
@@ -3077,11 +3114,11 @@ class MobileApiController extends Controller
             'image_path' => $uploadedImages[0] ?? null,
             'images' => !empty($uploadedImages) ? $uploadedImages : null,
             'location' => $locationRaw,
-            'latitude' => $latitude !== null ? (float)$latitude : null,
-            'longitude' => $longitude !== null ? (float)$longitude : null,
+            'latitude' => $latitude !== null ? (float) $latitude : null,
+            'longitude' => $longitude !== null ? (float) $longitude : null,
             'utm_zone' => $utmZone,
-            'utm_easting' => $utmEasting !== null ? (float)$utmEasting : null,
-            'utm_northing' => $utmNorthing !== null ? (float)$utmNorthing : null,
+            'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
+            'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
             'registered_by' => $registeredByName,
             'staff_id' => $staffId,
         ];
@@ -3145,14 +3182,14 @@ class MobileApiController extends Controller
             if (empty($rawImages) && !empty($item->image_path)) {
                 $rawImages = [$item->image_path];
             }
-            $imagesUrls = array_values(array_filter(array_map(function($p) {
+            $imagesUrls = array_values(array_filter(array_map(function ($p) {
                 return $p ? (str_starts_with($p, 'http') ? $p : asset($p)) : null;
             }, $rawImages)));
 
             $dimensions = is_array($item->dimensions) ? $item->dimensions : (json_decode($item->dimensions, true) ?: [
-                'yi_largo' => (float)$item->yi_largo,
-                'xi_ancho' => (float)$item->xi_ancho,
-                'area_m2' => (float)$item->area_m2,
+                'yi_largo' => (float) $item->yi_largo,
+                'xi_ancho' => (float) $item->xi_ancho,
+                'area_m2' => (float) $item->area_m2,
             ]);
 
             $materials = is_array($item->materials) ? $item->materials : (json_decode($item->materials, true) ?: []);
@@ -3178,7 +3215,7 @@ class MobileApiController extends Controller
                 'risk_level' => $item->risk_level,
                 'risk_color' => $item->risk_color,
                 'risk_theme' => $item->risk_color,
-                'ra_value' => $item->ra_value !== null ? (float)$item->ra_value : 1.0,
+                'ra_value' => $item->ra_value !== null ? (float) $item->ra_value : 1.0,
                 'image_path' => $item->image_path ? (str_starts_with($item->image_path, 'http') ? $item->image_path : asset($item->image_path)) : ($imagesUrls[0] ?? null),
                 'images' => $imagesUrls,
                 'images_count' => count($imagesUrls),
@@ -3216,10 +3253,11 @@ class MobileApiController extends Controller
         if (is_string($dimensions)) {
             $dimensions = json_decode($dimensions, true) ?: [];
         }
-        $yiLargo = (float)($dimensions['yi_largo'] ?? $request->input('yi_largo') ?? $request->input('largo') ?? 10.0);
-        $xiAncho = (float)($dimensions['xi_ancho'] ?? $request->input('xi_ancho') ?? $request->input('ancho') ?? 10.0);
-        $areaM2 = (float)($dimensions['area_m2'] ?? $request->input('area_m2') ?? ($yiLargo * $xiAncho));
-        if ($areaM2 <= 0) $areaM2 = 1.0;
+        $yiLargo = (float) ($dimensions['yi_largo'] ?? $request->input('yi_largo') ?? $request->input('largo') ?? 10.0);
+        $xiAncho = (float) ($dimensions['xi_ancho'] ?? $request->input('xi_ancho') ?? $request->input('ancho') ?? 10.0);
+        $areaM2 = (float) ($dimensions['area_m2'] ?? $request->input('area_m2') ?? ($yiLargo * $xiAncho));
+        if ($areaM2 <= 0)
+            $areaM2 = 1.0;
 
         $dimensions = [
             'yi_largo' => $yiLargo,
@@ -3232,23 +3270,26 @@ class MobileApiController extends Controller
         if (is_string($materials)) {
             $materials = json_decode($materials, true) ?: [];
         }
-        if (!is_array($materials)) $materials = [];
+        if (!is_array($materials))
+            $materials = [];
 
         $fireEquipments = $request->input('fire_equipments') ?? $request->input('equipos');
         if (is_string($fireEquipments)) {
             $fireEquipments = json_decode($fireEquipments, true) ?: [];
         }
-        if (!is_array($fireEquipments)) $fireEquipments = [];
+        if (!is_array($fireEquipments))
+            $fireEquipments = [];
 
         // Cálculo de Qs por peso: sum(Pi * qi * Ki) / S * Ra
-        $raValue = (float)($request->input('ra_value') ?? 1.0);
-        if ($raValue <= 0) $raValue = 1.0;
+        $raValue = (float) ($request->input('ra_value') ?? 1.0);
+        if ($raValue <= 0)
+            $raValue = 1.0;
 
         $sumWeighted = 0.0;
         foreach ($materials as $mat) {
-            $pesoKg = (float)($mat['peso_kg'] ?? $mat['peso'] ?? 0);
-            $qi = (float)($mat['calor_combustion_mj'] ?? $mat['calor_combustion'] ?? $mat['qi'] ?? 16.0);
-            $ki = (float)($mat['ki_peligro'] ?? $mat['ki'] ?? 1.0);
+            $pesoKg = (float) ($mat['peso_kg'] ?? $mat['peso'] ?? 0);
+            $qi = (float) ($mat['calor_combustion_mj'] ?? $mat['calor_combustion'] ?? $mat['qi'] ?? 16.0);
+            $ki = (float) ($mat['ki_peligro'] ?? $mat['ki'] ?? 1.0);
             $sumWeighted += ($pesoKg * $qi * $ki);
         }
 
@@ -3276,7 +3317,8 @@ class MobileApiController extends Controller
                 $dt = Carbon::parse($measuredAt);
                 $measurementDate = $dt->format('Y-m-d');
                 $measurementTime = $dt->format('H:i:s');
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+            }
         }
 
         // Staff
@@ -3284,18 +3326,20 @@ class MobileApiController extends Controller
         $rawCreatedBy = $request->input('created_by') ?? $request->input('registered_by');
         if (empty($staffId) && !empty($rawCreatedBy)) {
             if (is_numeric($rawCreatedBy)) {
-                $staffId = (int)$rawCreatedBy;
+                $staffId = (int) $rawCreatedBy;
             } else {
                 $foundStaff = Staff::where('name', trim($rawCreatedBy))
                     ->orWhereRaw("CONCAT(TRIM(first_name), ' ', TRIM(last_name)) = ?", [trim($rawCreatedBy)])
                     ->first();
-                if ($foundStaff) $staffId = $foundStaff->id;
+                if ($foundStaff)
+                    $staffId = $foundStaff->id;
             }
         }
         $registeredByName = $rawCreatedBy;
         if (!empty($staffId)) {
             $st = Staff::find($staffId);
-            if ($st) $registeredByName = $st->full_name ?: $st->name;
+            if ($st)
+                $registeredByName = $st->full_name ?: $st->name;
         }
 
         // Fotos
@@ -3345,14 +3389,14 @@ class MobileApiController extends Controller
         $locationRaw = $request->input('location');
 
         if (($latitude === null || $longitude === null) && !empty($utmEasting) && !empty($utmNorthing)) {
-            $conv = $this->utmToLatLng((float)$utmEasting, (float)$utmNorthing, $utmZone);
+            $conv = $this->utmToLatLng((float) $utmEasting, (float) $utmNorthing, $utmZone);
             $latitude = $conv['lat'];
             $longitude = $conv['lng'];
         }
 
         if (!empty($utmEasting) && !empty($utmNorthing) && !empty($utmZone)) {
-            $eF = number_format((float)$utmEasting, 2, '.', '');
-            $nF = number_format((float)$utmNorthing, 2, '.', '');
+            $eF = number_format((float) $utmEasting, 2, '.', '');
+            $nF = number_format((float) $utmNorthing, 2, '.', '');
             $locationRaw = "Zona {$utmZone} E: {$eF} N: {$nF}";
         }
 
@@ -3385,11 +3429,11 @@ class MobileApiController extends Controller
             'image_path' => $uploadedImages[0] ?? null,
             'images' => !empty($uploadedImages) ? $uploadedImages : null,
             'location' => $locationRaw,
-            'latitude' => $latitude !== null ? (float)$latitude : null,
-            'longitude' => $longitude !== null ? (float)$longitude : null,
+            'latitude' => $latitude !== null ? (float) $latitude : null,
+            'longitude' => $longitude !== null ? (float) $longitude : null,
             'utm_zone' => $utmZone,
-            'utm_easting' => $utmEasting !== null ? (float)$utmEasting : null,
-            'utm_northing' => $utmNorthing !== null ? (float)$utmNorthing : null,
+            'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
+            'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
             'registered_by' => $registeredByName,
             'staff_id' => $staffId,
         ];
@@ -3450,16 +3494,18 @@ class MobileApiController extends Controller
             ->orderBy('id', 'asc')
             ->get()
             ->map(function ($item, $index) {
-                $images = is_array($item->images) 
-                    ? $item->images 
+                $images = is_array($item->images)
+                    ? $item->images
                     : (json_decode($item->images, true) ?: []);
                 if (empty($images) && !empty($item->image_path)) {
                     $images = [$item->image_path];
                 }
 
                 $imageUrls = array_values(array_filter(array_map(function ($p) {
-                    if (!$p) return null;
-                    if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+                    if (!$p)
+                        return null;
+                    if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://'))
+                        return $p;
                     return asset($p);
                 }, $images)));
 
@@ -3479,7 +3525,7 @@ class MobileApiController extends Controller
                     'num' => $item->point_number ?: str_pad($index + 1, 2, '0', STR_PAD_LEFT),
                     'measurement_date' => $item->measurement_date ? $item->measurement_date->format('Y-m-d') : null,
                     'measurement_time' => $item->measurement_time,
-                    'measured_at' => $item->measurement_date 
+                    'measured_at' => $item->measurement_date
                         ? ($item->measurement_date->format('Y-m-d') . ' ' . ($item->measurement_time ?: '00:00:00'))
                         : null,
                     'area' => $item->area,
@@ -3537,7 +3583,7 @@ class MobileApiController extends Controller
         $ponderacion = $request->input('ponderacion') ?: 'A';
         $respuesta = $request->input('respuesta') ?: 'Lento';
         $duracion = (float) ($request->input('duracion_medicion_h') ?? $request->input('duration_h') ?? 0.0);
-        
+
         $npsMax = $request->input('nps_max_db');
         if ($npsMax !== null && $npsMax !== '') {
             $npsMax = (float) $npsMax;
@@ -3565,7 +3611,8 @@ class MobileApiController extends Controller
                 $dt = Carbon::parse($measuredAt);
                 $measurementDate = $dt->format('Y-m-d');
                 $measurementTime = $dt->format('H:i');
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+            }
         }
 
         // Staff / Registrador
@@ -3714,14 +3761,14 @@ class MobileApiController extends Controller
         }
 
         if (($latitude === null || $longitude === null) && !empty($utmEasting) && !empty($utmNorthing)) {
-            $conv = $this->utmToLatLng((float)$utmEasting, (float)$utmNorthing, $utmZone ?: '20K');
+            $conv = $this->utmToLatLng((float) $utmEasting, (float) $utmNorthing, $utmZone ?: '20K');
             $latitude = $conv['lat'];
             $longitude = $conv['lng'];
         }
 
         if (!empty($utmEasting) && !empty($utmNorthing) && !empty($utmZone)) {
-            $eFormatted = is_numeric($utmEasting) ? number_format((float)$utmEasting, 3, '.', '') : $utmEasting;
-            $nFormatted = is_numeric($utmNorthing) ? number_format((float)$utmNorthing, 3, '.', '') : $utmNorthing;
+            $eFormatted = is_numeric($utmEasting) ? number_format((float) $utmEasting, 3, '.', '') : $utmEasting;
+            $nFormatted = is_numeric($utmNorthing) ? number_format((float) $utmNorthing, 3, '.', '') : $utmNorthing;
             $locationRaw = "E: {$eFormatted}, N: {$nFormatted}, Z: {$utmZone}";
         } elseif (!is_string($locationRaw) || empty($locationRaw)) {
             if ($latitude !== null && $longitude !== null) {
@@ -3768,11 +3815,11 @@ class MobileApiController extends Controller
             'image_path' => $imagePath ?: ($measurement ? $measurement->image_path : null),
             'images' => !empty($uploadedImages) ? $uploadedImages : ($measurement ? $measurement->images : null),
             'location' => $locationRaw,
-            'latitude' => $latitude !== null ? (float)$latitude : null,
-            'longitude' => $longitude !== null ? (float)$longitude : null,
+            'latitude' => $latitude !== null ? (float) $latitude : null,
+            'longitude' => $longitude !== null ? (float) $longitude : null,
             'utm_zone' => $utmZone,
-            'utm_easting' => $utmEasting !== null ? (float)$utmEasting : null,
-            'utm_northing' => $utmNorthing !== null ? (float)$utmNorthing : null,
+            'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
+            'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
             'observations' => $observations,
             'staff_id' => $staffId,
             'registered_by' => $registeredByName,
@@ -3791,9 +3838,11 @@ class MobileApiController extends Controller
         $module->save();
 
         $finalImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
-        $finalUrls = array_values(array_filter(array_map(function($p) {
-            if (!$p) return null;
-            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+        $finalUrls = array_values(array_filter(array_map(function ($p) {
+            if (!$p)
+                return null;
+            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://'))
+                return $p;
             return asset($p);
         }, $finalImages)));
 
@@ -3843,16 +3892,18 @@ class MobileApiController extends Controller
             ->orderBy('id', 'asc')
             ->get()
             ->map(function ($item, $index) {
-                $images = is_array($item->images) 
-                    ? $item->images 
+                $images = is_array($item->images)
+                    ? $item->images
                     : (json_decode($item->images, true) ?: []);
                 if (empty($images) && !empty($item->image_path)) {
                     $images = [$item->image_path];
                 }
 
                 $imageUrls = array_values(array_filter(array_map(function ($p) {
-                    if (!$p) return null;
-                    if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+                    if (!$p)
+                        return null;
+                    if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://'))
+                        return $p;
                     return asset($p);
                 }, $images)));
 
@@ -3878,7 +3929,7 @@ class MobileApiController extends Controller
                     'num' => $item->point_number ?: str_pad($index + 1, 2, '0', STR_PAD_LEFT),
                     'measurement_date' => $item->measurement_date ? $item->measurement_date->format('Y-m-d') : null,
                     'measurement_time' => $item->measurement_time,
-                    'measured_at' => $item->measurement_date 
+                    'measured_at' => $item->measurement_date
                         ? ($item->measurement_date->format('Y-m-d') . ' ' . ($item->measurement_time ?: '00:00:00'))
                         : null,
                     'normativa' => $item->normativa ?: 'RASIM - ANEXO 12-C',
@@ -4011,8 +4062,8 @@ class MobileApiController extends Controller
         }
 
         $isCompliant = ($leq !== null) ? ($leq <= $limiteNormativa) : true;
-        $npsMax = !empty($allPoints) ? max($allPoints) : ($request->input('nps_max') ? (float)$request->input('nps_max') : null);
-        $npsMin = !empty($allPoints) ? min($allPoints) : ($request->input('nps_min') ? (float)$request->input('nps_min') : null);
+        $npsMax = !empty($allPoints) ? max($allPoints) : ($request->input('nps_max') ? (float) $request->input('nps_max') : null);
+        $npsMin = !empty($allPoints) ? min($allPoints) : ($request->input('nps_min') ? (float) $request->input('nps_min') : null);
 
         // Fecha y hora
         $measuredAt = $request->input('measured_at') ?? $request->input('measurement_date');
@@ -4024,7 +4075,8 @@ class MobileApiController extends Controller
                 $dt = Carbon::parse($measuredAt);
                 $measurementDate = $dt->format('Y-m-d');
                 $measurementTime = $dt->format('H:i');
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+            }
         }
 
         // Staff / Registrador
@@ -4239,9 +4291,11 @@ class MobileApiController extends Controller
         $module->save();
 
         $finalImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
-        $finalUrls = array_values(array_filter(array_map(function($p) {
-            if (!$p) return null;
-            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+        $finalUrls = array_values(array_filter(array_map(function ($p) {
+            if (!$p)
+                return null;
+            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://'))
+                return $p;
             return asset($p);
         }, $finalImages)));
 
@@ -4287,9 +4341,11 @@ class MobileApiController extends Controller
         $module = MeasurementModule::findOrFail($moduleId);
         $measurements = $module->opacityMeasurements()->with('staff')->get()->map(function ($item) {
             $photos = is_array($item->photo_paths) ? $item->photo_paths : (json_decode($item->photo_paths, true) ?: []);
-            $photoUrls = array_values(array_filter(array_map(function($p) {
-                if (!$p) return null;
-                if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+            $photoUrls = array_values(array_filter(array_map(function ($p) {
+                if (!$p)
+                    return null;
+                if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://'))
+                    return $p;
                 return asset($p);
             }, $photos)));
 
@@ -4410,12 +4466,14 @@ class MobileApiController extends Controller
         $tipoVehiculo = $request->input('tipo_vehiculo') ?: ($request->input('nombre_vehiculo') ?: 'Vehículo Diésel');
         $marca = $request->input('marca') ?: '—';
         $modelo = $request->input('modelo') ?: '—';
-        $placa = strtoupper(trim((string)($request->input('placa') ?: '—')));
+        $placa = strtoupper(trim((string) ($request->input('placa') ?: '—')));
 
         // Helper para convertir strings con coma o punto a float limpio
-        $cleanFloat = function($val) {
-            if ($val === null || $val === '') return null;
-            if (is_numeric($val)) return (float) $val;
+        $cleanFloat = function ($val) {
+            if ($val === null || $val === '')
+                return null;
+            if (is_numeric($val))
+                return (float) $val;
             $clean = str_replace([' ', ','], ['', '.'], (string) $val);
             return is_numeric($clean) ? (float) $clean : null;
         };
@@ -4473,7 +4531,7 @@ class MobileApiController extends Controller
         }
 
         if (($latitude === null || $longitude === null) && !empty($utmEasting) && !empty($utmNorthing)) {
-            $conv = $this->utmToLatLng((float)$utmEasting, (float)$utmNorthing, $utmZone ?: '19K');
+            $conv = $this->utmToLatLng((float) $utmEasting, (float) $utmNorthing, $utmZone ?: '19K');
             $latitude = $conv['lat'];
             $longitude = $conv['lng'];
         }
@@ -4557,11 +4615,11 @@ class MobileApiController extends Controller
             'rpm_promedio' => $rpmPromedio,
             'limite_normativa' => $limite,
             'is_compliant' => $isCompliant,
-            'latitude' => $latitude !== null ? (float)$latitude : null,
-            'longitude' => $longitude !== null ? (float)$longitude : null,
+            'latitude' => $latitude !== null ? (float) $latitude : null,
+            'longitude' => $longitude !== null ? (float) $longitude : null,
             'utm_zone' => $utmZone,
-            'utm_easting' => $utmEasting !== null ? (float)$utmEasting : null,
-            'utm_northing' => $utmNorthing !== null ? (float)$utmNorthing : null,
+            'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
+            'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
             'location_description' => $locationDescription,
             'observations' => $observations,
         ];
@@ -4582,9 +4640,11 @@ class MobileApiController extends Controller
         $module->save();
 
         $finalPhotos = is_array($measurement->photo_paths) ? $measurement->photo_paths : (json_decode($measurement->photo_paths, true) ?: []);
-        $finalUrls = array_values(array_filter(array_map(function($p) {
-            if (!$p) return null;
-            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+        $finalUrls = array_values(array_filter(array_map(function ($p) {
+            if (!$p)
+                return null;
+            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://'))
+                return $p;
             return asset($p);
         }, $finalPhotos)));
 
@@ -4617,8 +4677,10 @@ class MobileApiController extends Controller
                 $rawImages = [$item->image_path];
             }
             $imagesUrls = array_values(array_filter(array_map(function ($p) {
-                if (!$p) return null;
-                if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+                if (!$p)
+                    return null;
+                if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://'))
+                    return $p;
                 return asset($p);
             }, $rawImages)));
 
@@ -4633,43 +4695,43 @@ class MobileApiController extends Controller
                 'workstation' => $item->workstation,
                 'measurement_point' => $item->measurement_point,
                 'activity_description' => $item->activity_description,
-                'temperatura' => $item->temperatura !== null ? (float)$item->temperatura : null,
-                'presion_atm' => $item->presion_atm !== null ? (float)$item->presion_atm : null,
-                'vel_aire' => $item->vel_aire !== null ? (float)$item->vel_aire : null,
+                'temperatura' => $item->temperatura !== null ? (float) $item->temperatura : null,
+                'presion_atm' => $item->presion_atm !== null ? (float) $item->presion_atm : null,
+                'vel_aire' => $item->vel_aire !== null ? (float) $item->vel_aire : null,
                 'selected_gases' => is_array($item->selected_gases) ? $item->selected_gases : json_decode($item->selected_gases, true),
                 'gases_readings' => is_array($item->gases_readings) ? $item->gases_readings : json_decode($item->gases_readings, true),
                 'o2_values' => is_array($item->o2_values) ? $item->o2_values : json_decode($item->o2_values, true),
-                'o2_prom' => $item->o2_prom !== null ? (float)$item->o2_prom : null,
+                'o2_prom' => $item->o2_prom !== null ? (float) $item->o2_prom : null,
                 'h2s_values' => is_array($item->h2s_values) ? $item->h2s_values : json_decode($item->h2s_values, true),
-                'h2s_prom' => $item->h2s_prom !== null ? (float)$item->h2s_prom : null,
+                'h2s_prom' => $item->h2s_prom !== null ? (float) $item->h2s_prom : null,
                 'co_values' => is_array($item->co_values) ? $item->co_values : json_decode($item->co_values, true),
-                'co_prom' => $item->co_prom !== null ? (float)$item->co_prom : null,
+                'co_prom' => $item->co_prom !== null ? (float) $item->co_prom : null,
                 'lel_values' => is_array($item->lel_values) ? $item->lel_values : json_decode($item->lel_values, true),
-                'lel_prom' => $item->lel_prom !== null ? (float)$item->lel_prom : null,
+                'lel_prom' => $item->lel_prom !== null ? (float) $item->lel_prom : null,
                 'hcho_values' => is_array($item->hcho_values) ? $item->hcho_values : json_decode($item->hcho_values, true),
-                'hcho_prom' => $item->hcho_prom !== null ? (float)$item->hcho_prom : null,
+                'hcho_prom' => $item->hcho_prom !== null ? (float) $item->hcho_prom : null,
                 'tvoc_values' => is_array($item->tvoc_values) ? $item->tvoc_values : json_decode($item->tvoc_values, true),
-                'tvoc_prom' => $item->tvoc_prom !== null ? (float)$item->tvoc_prom : null,
+                'tvoc_prom' => $item->tvoc_prom !== null ? (float) $item->tvoc_prom : null,
                 'co2_values' => is_array($item->co2_values) ? $item->co2_values : json_decode($item->co2_values, true),
-                'co2_prom' => $item->co2_prom !== null ? (float)$item->co2_prom : null,
+                'co2_prom' => $item->co2_prom !== null ? (float) $item->co2_prom : null,
                 'as_values' => is_array($item->as_values) ? $item->as_values : json_decode($item->as_values, true),
-                'as_prom' => $item->as_prom !== null ? (float)$item->as_prom : null,
+                'as_prom' => $item->as_prom !== null ? (float) $item->as_prom : null,
                 'so2_values' => is_array($item->so2_values) ? $item->so2_values : json_decode($item->so2_values, true),
-                'so2_prom' => $item->so2_prom !== null ? (float)$item->so2_prom : null,
+                'so2_prom' => $item->so2_prom !== null ? (float) $item->so2_prom : null,
                 'nh3_values' => is_array($item->nh3_values) ? $item->nh3_values : json_decode($item->nh3_values, true),
-                'nh3_prom' => $item->nh3_prom !== null ? (float)$item->nh3_prom : null,
+                'nh3_prom' => $item->nh3_prom !== null ? (float) $item->nh3_prom : null,
                 'cl2_values' => is_array($item->cl2_values) ? $item->cl2_values : json_decode($item->cl2_values, true),
-                'cl2_prom' => $item->cl2_prom !== null ? (float)$item->cl2_prom : null,
+                'cl2_prom' => $item->cl2_prom !== null ? (float) $item->cl2_prom : null,
                 'tcov_values' => is_array($item->tcov_values) ? $item->tcov_values : json_decode($item->tcov_values, true),
-                'tcov_prom' => $item->tcov_prom !== null ? (float)$item->tcov_prom : null,
+                'tcov_prom' => $item->tcov_prom !== null ? (float) $item->tcov_prom : null,
                 'no2_values' => is_array($item->no2_values) ? $item->no2_values : json_decode($item->no2_values, true),
-                'no2_prom' => $item->no2_prom !== null ? (float)$item->no2_prom : null,
+                'no2_prom' => $item->no2_prom !== null ? (float) $item->no2_prom : null,
                 'location' => $item->location,
-                'latitude' => $item->latitude !== null ? (float)$item->latitude : null,
-                'longitude' => $item->longitude !== null ? (float)$item->longitude : null,
+                'latitude' => $item->latitude !== null ? (float) $item->latitude : null,
+                'longitude' => $item->longitude !== null ? (float) $item->longitude : null,
                 'utm_zone' => $item->utm_zone,
-                'utm_easting' => $item->utm_easting !== null ? (float)$item->utm_easting : null,
-                'utm_northing' => $item->utm_northing !== null ? (float)$item->utm_northing : null,
+                'utm_easting' => $item->utm_easting !== null ? (float) $item->utm_easting : null,
+                'utm_northing' => $item->utm_northing !== null ? (float) $item->utm_northing : null,
                 'image_urls' => $imagesUrls,
                 'observations' => $item->observations,
                 'registered_by' => $item->registered_by,
@@ -4717,9 +4779,9 @@ class MobileApiController extends Controller
             $pointNumber = str_pad($count + 1, 2, '0', STR_PAD_LEFT);
         }
 
-        $temp = $request->filled('temperatura') ? (float)$request->input('temperatura') : null;
-        $presion = $request->filled('presion_atm') ? (float)$request->input('presion_atm') : null;
-        $velAire = $request->filled('vel_aire') ? (float)$request->input('vel_aire') : null;
+        $temp = $request->filled('temperatura') ? (float) $request->input('temperatura') : null;
+        $presion = $request->filled('presion_atm') ? (float) $request->input('presion_atm') : null;
+        $velAire = $request->filled('vel_aire') ? (float) $request->input('vel_aire') : null;
 
         $rawSelectedGases = $request->input('selected_gases');
         $selectedGases = is_array($rawSelectedGases) ? $rawSelectedGases : (json_decode($rawSelectedGases, true) ?: []);
@@ -4778,21 +4840,26 @@ class MobileApiController extends Controller
             }
         }
 
-        $lat = $request->filled('latitude') ? (float)$request->input('latitude') : null;
-        $lng = $request->filled('longitude') ? (float)$request->input('longitude') : null;
+        $lat = $request->filled('latitude') ? (float) $request->input('latitude') : null;
+        $lng = $request->filled('longitude') ? (float) $request->input('longitude') : null;
         $utmZone = $request->input('utm_zone');
-        $utmE = $request->filled('utm_easting') ? (float)$request->input('utm_easting') : null;
-        $utmN = $request->filled('utm_northing') ? (float)$request->input('utm_northing') : null;
+        $utmE = $request->filled('utm_easting') ? (float) $request->input('utm_easting') : null;
+        $utmN = $request->filled('utm_northing') ? (float) $request->input('utm_northing') : null;
 
         $locInput = $request->input('location');
         if (is_string($locInput) && (str_starts_with($locInput, '{') || str_starts_with($locInput, '['))) {
             $locDecoded = json_decode($locInput, true);
             if (is_array($locDecoded)) {
-                if ($utmZone === null && !empty($locDecoded['utm_zone'])) $utmZone = $locDecoded['utm_zone'];
-                if ($utmE === null && !empty($locDecoded['easting'])) $utmE = (float)$locDecoded['easting'];
-                if ($utmN === null && !empty($locDecoded['northing'])) $utmN = (float)$locDecoded['northing'];
-                if ($lat === null && !empty($locDecoded['latitude'])) $lat = (float)$locDecoded['latitude'];
-                if ($lng === null && !empty($locDecoded['longitude'])) $lng = (float)$locDecoded['longitude'];
+                if ($utmZone === null && !empty($locDecoded['utm_zone']))
+                    $utmZone = $locDecoded['utm_zone'];
+                if ($utmE === null && !empty($locDecoded['easting']))
+                    $utmE = (float) $locDecoded['easting'];
+                if ($utmN === null && !empty($locDecoded['northing']))
+                    $utmN = (float) $locDecoded['northing'];
+                if ($lat === null && !empty($locDecoded['latitude']))
+                    $lat = (float) $locDecoded['latitude'];
+                if ($lng === null && !empty($locDecoded['longitude']))
+                    $lng = (float) $locDecoded['longitude'];
             }
         }
 
@@ -4800,7 +4867,8 @@ class MobileApiController extends Controller
         $registeredBy = $request->input('registered_by') ?? $request->input('created_by');
         if (!empty($staffId)) {
             $st = Staff::find($staffId);
-            if ($st) $registeredBy = $st->full_name ?: $st->name;
+            if ($st)
+                $registeredBy = $st->full_name ?: $st->name;
         }
 
         $data = [
@@ -4838,13 +4906,13 @@ class MobileApiController extends Controller
                 if (isset($gData['values']) && is_array($gData['values'])) {
                     $vals = array_values(array_map('floatval', array_filter($gData['values'], 'is_numeric')));
                 } elseif (isset($gData['med1']) || isset($gData['med2']) || isset($gData['med3'])) {
-                    $m1 = isset($gData['med1']) && is_numeric($gData['med1']) ? (float)$gData['med1'] : null;
-                    $m2 = isset($gData['med2']) && is_numeric($gData['med2']) ? (float)$gData['med2'] : null;
-                    $m3 = isset($gData['med3']) && is_numeric($gData['med3']) ? (float)$gData['med3'] : null;
+                    $m1 = isset($gData['med1']) && is_numeric($gData['med1']) ? (float) $gData['med1'] : null;
+                    $m2 = isset($gData['med2']) && is_numeric($gData['med2']) ? (float) $gData['med2'] : null;
+                    $m3 = isset($gData['med3']) && is_numeric($gData['med3']) ? (float) $gData['med3'] : null;
                     $vals = array_values(array_filter([$m1, $m2, $m3], fn($x) => $x !== null));
                 }
                 $data["{$gk}_values"] = !empty($vals) ? $vals : null;
-                $data["{$gk}_prom"] = isset($gData['prom']) && is_numeric($gData['prom']) ? (float)$gData['prom'] : (!empty($vals) ? array_sum($vals) / count($vals) : null);
+                $data["{$gk}_prom"] = isset($gData['prom']) && is_numeric($gData['prom']) ? (float) $gData['prom'] : (!empty($vals) ? array_sum($vals) / count($vals) : null);
             }
         }
 
@@ -4866,8 +4934,10 @@ class MobileApiController extends Controller
 
         $finalImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
         $finalUrls = array_values(array_filter(array_map(function ($p) {
-            if (!$p) return null;
-            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+            if (!$p)
+                return null;
+            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://'))
+                return $p;
             return asset($p);
         }, $finalImages)));
 
@@ -4923,8 +4993,10 @@ class MobileApiController extends Controller
                 }
 
                 $imageUrls = array_values(array_filter(array_map(function ($p) {
-                    if (!$p) return null;
-                    if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+                    if (!$p)
+                        return null;
+                    if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://'))
+                        return $p;
                     return asset($p);
                 }, $images)));
 
@@ -4936,7 +5008,7 @@ class MobileApiController extends Controller
                     'point_number' => $item->point_number ?: str_pad($index + 1, 2, '0', STR_PAD_LEFT),
                     'inspection_date' => $item->inspection_date ? $item->inspection_date->format('Y-m-d') : null,
                     'inspection_time' => $item->inspection_time,
-                    'measured_at' => $item->inspection_date 
+                    'measured_at' => $item->inspection_date
                         ? ($item->inspection_date->format('Y-m-d') . ' ' . ($item->inspection_time ?: '00:00:00'))
                         : null,
                     'area' => $item->area,
@@ -4947,12 +5019,12 @@ class MobileApiController extends Controller
                     'image_urls' => $imageUrls,
                     'images' => $imageUrls,
                     'location' => $item->location,
-                    'latitude' => $item->latitude !== null ? (float)$item->latitude : null,
-                    'longitude' => $item->longitude !== null ? (float)$item->longitude : null,
+                    'latitude' => $item->latitude !== null ? (float) $item->latitude : null,
+                    'longitude' => $item->longitude !== null ? (float) $item->longitude : null,
                     'utm_zone' => $item->utm_zone ?: '20K',
-                    'utm_easting' => $item->utm_easting !== null ? (float)$item->utm_easting : null,
-                    'utm_northing' => $item->utm_northing !== null ? (float)$item->utm_northing : null,
-                    'gps_accuracy' => $item->gps_accuracy !== null ? (float)$item->gps_accuracy : null,
+                    'utm_easting' => $item->utm_easting !== null ? (float) $item->utm_easting : null,
+                    'utm_northing' => $item->utm_northing !== null ? (float) $item->utm_northing : null,
+                    'gps_accuracy' => $item->gps_accuracy !== null ? (float) $item->gps_accuracy : null,
                     'registered_by' => $item->registered_by,
                     'created_by' => $item->registered_by,
                     'staff_id' => $item->staff_id,
@@ -4994,7 +5066,8 @@ class MobileApiController extends Controller
                 $c = Carbon::parse($measuredAt);
                 $inspectionDate = $c->format('Y-m-d');
                 $inspectionTime = $c->format('H:i');
-            } catch (\Exception $e) {}
+            } catch (\Exception $e) {
+            }
         }
         if ($request->filled('inspection_time')) {
             $inspectionTime = $request->input('inspection_time');
@@ -5032,7 +5105,8 @@ class MobileApiController extends Controller
         $base64Photos = $request->input('base64_photos') ?? $request->input('photos_base64');
         if (is_array($base64Photos)) {
             foreach ($base64Photos as $b64) {
-                if (count($uploadedImages) >= 3) break;
+                if (count($uploadedImages) >= 3)
+                    break;
                 if (!empty($b64) && is_string($b64)) {
                     $cleanB64 = preg_replace('/^data:image\/\w+;base64,/', '', $b64);
                     $decoded = base64_decode($cleanB64);
@@ -5070,12 +5144,12 @@ class MobileApiController extends Controller
             'observation' => $observation,
             'description' => $description,
             'location' => $location,
-            'latitude' => $latitude !== null ? (float)$latitude : null,
-            'longitude' => $longitude !== null ? (float)$longitude : null,
+            'latitude' => $latitude !== null ? (float) $latitude : null,
+            'longitude' => $longitude !== null ? (float) $longitude : null,
             'utm_zone' => $utmZone,
-            'utm_easting' => $utmEasting !== null ? (float)$utmEasting : null,
-            'utm_northing' => $utmNorthing !== null ? (float)$utmNorthing : null,
-            'gps_accuracy' => $gpsAccuracy !== null ? (float)$gpsAccuracy : null,
+            'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
+            'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
+            'gps_accuracy' => $gpsAccuracy !== null ? (float) $gpsAccuracy : null,
             'registered_by' => $request->input('registered_by') ?? $request->input('created_by'),
             'staff_id' => $request->input('staff_id'),
         ];
@@ -5104,8 +5178,10 @@ class MobileApiController extends Controller
 
         $finalImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
         $finalUrls = array_values(array_filter(array_map(function ($p) {
-            if (!$p) return null;
-            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+            if (!$p)
+                return null;
+            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://'))
+                return $p;
             return asset($p);
         }, $finalImages)));
 
@@ -5156,8 +5232,10 @@ class MobileApiController extends Controller
                 $imagesList = is_array($item->image_urls) ? $item->image_urls : (json_decode($item->image_urls, true) ?: []);
             }
             $imagesUrls = array_values(array_filter(array_map(function ($p) {
-                if (!$p) return null;
-                if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+                if (!$p)
+                    return null;
+                if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://'))
+                    return $p;
                 return asset($p);
             }, $imagesList)));
 
@@ -5173,21 +5251,21 @@ class MobileApiController extends Controller
                 'workstation' => $item->workstation ?: $item->punto_medicion,
                 'punto_medicion' => $item->punto_medicion ?: $item->workstation,
                 'puesto_trabajo' => $item->punto_medicion ?: $item->workstation,
-                'temperatura' => $item->temperatura !== null ? (float)$item->temperatura : null,
-                'temperatura_c' => $item->temperatura !== null ? (float)$item->temperatura : null,
-                'hr_percent' => $item->hr_percent !== null ? (float)$item->hr_percent : null,
+                'temperatura' => $item->temperatura !== null ? (float) $item->temperatura : null,
+                'temperatura_c' => $item->temperatura !== null ? (float) $item->temperatura : null,
+                'hr_percent' => $item->hr_percent !== null ? (float) $item->hr_percent : null,
                 'pm10_values' => is_array($item->pm10_values) ? $item->pm10_values : json_decode($item->pm10_values, true),
-                'pm10_prom' => $item->pm10_prom !== null ? (float)$item->pm10_prom : null,
+                'pm10_prom' => $item->pm10_prom !== null ? (float) $item->pm10_prom : null,
                 'pm25_values' => is_array($item->pm25_values) ? $item->pm25_values : json_decode($item->pm25_values, true),
-                'pm25_prom' => $item->pm25_prom !== null ? (float)$item->pm25_prom : null,
+                'pm25_prom' => $item->pm25_prom !== null ? (float) $item->pm25_prom : null,
                 'pts_values' => is_array($item->pts_values) ? $item->pts_values : json_decode($item->pts_values, true),
-                'pts_prom' => $item->pts_prom !== null ? (float)$item->pts_prom : null,
+                'pts_prom' => $item->pts_prom !== null ? (float) $item->pts_prom : null,
                 'location' => $item->location,
-                'latitude' => $item->latitude !== null ? (float)$item->latitude : null,
-                'longitude' => $item->longitude !== null ? (float)$item->longitude : null,
+                'latitude' => $item->latitude !== null ? (float) $item->latitude : null,
+                'longitude' => $item->longitude !== null ? (float) $item->longitude : null,
                 'utm_zone' => $item->utm_zone,
-                'utm_easting' => $item->utm_easting !== null ? (float)$item->utm_easting : null,
-                'utm_northing' => $item->utm_northing !== null ? (float)$item->utm_northing : null,
+                'utm_easting' => $item->utm_easting !== null ? (float) $item->utm_easting : null,
+                'utm_northing' => $item->utm_northing !== null ? (float) $item->utm_northing : null,
                 'image_urls' => $imagesUrls,
                 'observations' => $item->observations,
                 'observaciones' => $item->observations,
@@ -5231,15 +5309,15 @@ class MobileApiController extends Controller
 
         $area = $request->input('area') ?? 'Área de Trabajo';
         $puntoMedicion = $request->input('punto_medicion') ?? $request->input('puesto_trabajo') ?? $request->input('workstation') ?? 'Punto de Medición';
-        
+
         $pointNumber = $request->input('point_number');
         if (empty($pointNumber)) {
             $count = $module->particulasMeasurements()->count();
             $pointNumber = str_pad($count + 1, 2, '0', STR_PAD_LEFT);
         }
 
-        $temp = $request->filled('temperatura') ? (float)$request->input('temperatura') : ($request->filled('temperatura_c') ? (float)$request->input('temperatura_c') : null);
-        $hr = $request->filled('hr_percent') ? (float)$request->input('hr_percent') : null;
+        $temp = $request->filled('temperatura') ? (float) $request->input('temperatura') : ($request->filled('temperatura_c') ? (float) $request->input('temperatura_c') : null);
+        $hr = $request->filled('hr_percent') ? (float) $request->input('hr_percent') : null;
 
         // PM10 readings
         $rawPm10 = $request->input('pm10_values');
@@ -5247,8 +5325,8 @@ class MobileApiController extends Controller
         if (is_string($pm10Values)) {
             $pm10Values = json_decode($pm10Values, true) ?: [];
         }
-        $pm10Nums = array_values(array_filter(array_map(fn($v) => is_numeric($v) ? (float)$v : null, (array)$pm10Values), fn($v) => $v !== null));
-        $pm10Prom = $request->filled('pm10_prom') ? (float)$request->input('pm10_prom') : (!empty($pm10Nums) ? array_sum($pm10Nums) / count($pm10Nums) : null);
+        $pm10Nums = array_values(array_filter(array_map(fn($v) => is_numeric($v) ? (float) $v : null, (array) $pm10Values), fn($v) => $v !== null));
+        $pm10Prom = $request->filled('pm10_prom') ? (float) $request->input('pm10_prom') : (!empty($pm10Nums) ? array_sum($pm10Nums) / count($pm10Nums) : null);
 
         // PM2.5 readings
         $rawPm25 = $request->input('pm25_values');
@@ -5256,8 +5334,8 @@ class MobileApiController extends Controller
         if (is_string($pm25Values)) {
             $pm25Values = json_decode($pm25Values, true) ?: [];
         }
-        $pm25Nums = array_values(array_filter(array_map(fn($v) => is_numeric($v) ? (float)$v : null, (array)$pm25Values), fn($v) => $v !== null));
-        $pm25Prom = $request->filled('pm25_prom') ? (float)$request->input('pm25_prom') : (!empty($pm25Nums) ? array_sum($pm25Nums) / count($pm25Nums) : null);
+        $pm25Nums = array_values(array_filter(array_map(fn($v) => is_numeric($v) ? (float) $v : null, (array) $pm25Values), fn($v) => $v !== null));
+        $pm25Prom = $request->filled('pm25_prom') ? (float) $request->input('pm25_prom') : (!empty($pm25Nums) ? array_sum($pm25Nums) / count($pm25Nums) : null);
 
         // PTS readings (optional/legacy)
         $rawPts = $request->input('pts_values');
@@ -5265,8 +5343,8 @@ class MobileApiController extends Controller
         if (is_string($ptsValues)) {
             $ptsValues = json_decode($ptsValues, true) ?: [];
         }
-        $ptsNums = array_values(array_filter(array_map(fn($v) => is_numeric($v) ? (float)$v : null, (array)$ptsValues), fn($v) => $v !== null));
-        $ptsProm = $request->filled('pts_prom') ? (float)$request->input('pts_prom') : (!empty($ptsNums) ? array_sum($ptsNums) / count($ptsNums) : null);
+        $ptsNums = array_values(array_filter(array_map(fn($v) => is_numeric($v) ? (float) $v : null, (array) $ptsValues), fn($v) => $v !== null));
+        $ptsProm = $request->filled('pts_prom') ? (float) $request->input('pts_prom') : (!empty($ptsNums) ? array_sum($ptsNums) / count($ptsNums) : null);
 
         // Subida de imágenes
         $uploadedImages = [];
@@ -5309,21 +5387,26 @@ class MobileApiController extends Controller
             }
         }
 
-        $lat = $request->filled('latitude') ? (float)$request->input('latitude') : null;
-        $lng = $request->filled('longitude') ? (float)$request->input('longitude') : null;
+        $lat = $request->filled('latitude') ? (float) $request->input('latitude') : null;
+        $lng = $request->filled('longitude') ? (float) $request->input('longitude') : null;
         $utmZone = $request->input('utm_zone');
-        $utmE = $request->filled('utm_easting') ? (float)$request->input('utm_easting') : null;
-        $utmN = $request->filled('utm_northing') ? (float)$request->input('utm_northing') : null;
+        $utmE = $request->filled('utm_easting') ? (float) $request->input('utm_easting') : null;
+        $utmN = $request->filled('utm_northing') ? (float) $request->input('utm_northing') : null;
 
         $locInput = $request->input('location');
         if (is_string($locInput) && (str_starts_with($locInput, '{') || str_starts_with($locInput, '['))) {
             $locDecoded = json_decode($locInput, true);
             if (is_array($locDecoded)) {
-                if ($utmZone === null && !empty($locDecoded['utm_zone'])) $utmZone = $locDecoded['utm_zone'];
-                if ($utmE === null && !empty($locDecoded['easting'])) $utmE = (float)$locDecoded['easting'];
-                if ($utmN === null && !empty($locDecoded['northing'])) $utmN = (float)$locDecoded['northing'];
-                if ($lat === null && !empty($locDecoded['latitude'])) $lat = (float)$locDecoded['latitude'];
-                if ($lng === null && !empty($locDecoded['longitude'])) $lng = (float)$locDecoded['longitude'];
+                if ($utmZone === null && !empty($locDecoded['utm_zone']))
+                    $utmZone = $locDecoded['utm_zone'];
+                if ($utmE === null && !empty($locDecoded['easting']))
+                    $utmE = (float) $locDecoded['easting'];
+                if ($utmN === null && !empty($locDecoded['northing']))
+                    $utmN = (float) $locDecoded['northing'];
+                if ($lat === null && !empty($locDecoded['latitude']))
+                    $lat = (float) $locDecoded['latitude'];
+                if ($lng === null && !empty($locDecoded['longitude']))
+                    $lng = (float) $locDecoded['longitude'];
             }
         }
 
@@ -5331,7 +5414,8 @@ class MobileApiController extends Controller
         $registeredBy = $request->input('registered_by') ?? $request->input('created_by');
         if (!empty($staffId)) {
             $st = Staff::find($staffId);
-            if ($st) $registeredBy = $st->full_name ?: $st->name;
+            if ($st)
+                $registeredBy = $st->full_name ?: $st->name;
         }
 
         $data = [
@@ -5381,8 +5465,10 @@ class MobileApiController extends Controller
 
         $finalImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
         $finalUrls = array_values(array_filter(array_map(function ($p) {
-            if (!$p) return null;
-            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+            if (!$p)
+                return null;
+            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://'))
+                return $p;
             return asset($p);
         }, $finalImages)));
 
@@ -5441,8 +5527,10 @@ class MobileApiController extends Controller
                     $rawImages = [$item->image_path];
                 }
                 $imagesUrls = array_values(array_filter(array_map(function ($p) {
-                    if (!$p) return null;
-                    if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+                    if (!$p)
+                        return null;
+                    if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://'))
+                        return $p;
                     return asset($p);
                 }, $rawImages)));
 
@@ -5461,30 +5549,30 @@ class MobileApiController extends Controller
                     'hora_inicio' => $item->hora_inicio,
                     'fecha_fin' => $item->fecha_fin ? $item->fecha_fin->format('Y-m-d') : null,
                     'hora_fin' => $item->hora_fin,
-                    'diferencia_horas' => $item->diferencia_horas !== null ? (float)$item->diferencia_horas : null,
-                    'temp_max' => $item->temp_max !== null ? (float)$item->temp_max : null,
-                    'temp_min' => $item->temp_min !== null ? (float)$item->temp_min : null,
-                    'temperatura' => $item->temperatura !== null ? (float)$item->temperatura : null,
-                    'presion_atm' => $item->presion_atm !== null ? (float)$item->presion_atm : null,
-                    'vel_viento' => $item->vel_viento !== null ? (float)$item->vel_viento : null,
+                    'diferencia_horas' => $item->diferencia_horas !== null ? (float) $item->diferencia_horas : null,
+                    'temp_max' => $item->temp_max !== null ? (float) $item->temp_max : null,
+                    'temp_min' => $item->temp_min !== null ? (float) $item->temp_min : null,
+                    'temperatura' => $item->temperatura !== null ? (float) $item->temperatura : null,
+                    'presion_atm' => $item->presion_atm !== null ? (float) $item->presion_atm : null,
+                    'vel_viento' => $item->vel_viento !== null ? (float) $item->vel_viento : null,
                     'dir_viento' => $item->dir_viento,
-                    'hr_percent' => $item->hr_percent !== null ? (float)$item->hr_percent : null,
-                    'pm10_filtro_inicial' => $item->pm10_filtro_inicial !== null ? (float)$item->pm10_filtro_inicial : null,
-                    'pm10_filtro_final' => $item->pm10_filtro_final !== null ? (float)$item->pm10_filtro_final : null,
-                    'pm10_prom' => $item->pm10_prom !== null ? (float)$item->pm10_prom : null,
-                    'pst_filtro_inicial' => $item->pst_filtro_inicial !== null ? (float)$item->pst_filtro_inicial : null,
-                    'pst_filtro_final' => $item->pst_filtro_final !== null ? (float)$item->pst_filtro_final : null,
-                    'pst_prom' => $item->pst_prom !== null ? (float)$item->pst_prom : null,
-                    'pm25_filtro_inicial' => $item->pm25_filtro_inicial !== null ? (float)$item->pm25_filtro_inicial : null,
-                    'pm25_filtro_final' => $item->pm25_filtro_final !== null ? (float)$item->pm25_filtro_final : null,
-                    'pm25_prom' => $item->pm25_prom !== null ? (float)$item->pm25_prom : null,
-                    'caudal' => $item->caudal !== null ? (float)$item->caudal : null,
+                    'hr_percent' => $item->hr_percent !== null ? (float) $item->hr_percent : null,
+                    'pm10_filtro_inicial' => $item->pm10_filtro_inicial !== null ? (float) $item->pm10_filtro_inicial : null,
+                    'pm10_filtro_final' => $item->pm10_filtro_final !== null ? (float) $item->pm10_filtro_final : null,
+                    'pm10_prom' => $item->pm10_prom !== null ? (float) $item->pm10_prom : null,
+                    'pst_filtro_inicial' => $item->pst_filtro_inicial !== null ? (float) $item->pst_filtro_inicial : null,
+                    'pst_filtro_final' => $item->pst_filtro_final !== null ? (float) $item->pst_filtro_final : null,
+                    'pst_prom' => $item->pst_prom !== null ? (float) $item->pst_prom : null,
+                    'pm25_filtro_inicial' => $item->pm25_filtro_inicial !== null ? (float) $item->pm25_filtro_inicial : null,
+                    'pm25_filtro_final' => $item->pm25_filtro_final !== null ? (float) $item->pm25_filtro_final : null,
+                    'pm25_prom' => $item->pm25_prom !== null ? (float) $item->pm25_prom : null,
+                    'caudal' => $item->caudal !== null ? (float) $item->caudal : null,
                     'location' => $item->location,
-                    'latitude' => $item->latitude !== null ? (float)$item->latitude : null,
-                    'longitude' => $item->longitude !== null ? (float)$item->longitude : null,
+                    'latitude' => $item->latitude !== null ? (float) $item->latitude : null,
+                    'longitude' => $item->longitude !== null ? (float) $item->longitude : null,
                     'utm_zone' => $item->utm_zone,
-                    'utm_easting' => $item->utm_easting !== null ? (float)$item->utm_easting : null,
-                    'utm_northing' => $item->utm_northing !== null ? (float)$item->utm_northing : null,
+                    'utm_easting' => $item->utm_easting !== null ? (float) $item->utm_easting : null,
+                    'utm_northing' => $item->utm_northing !== null ? (float) $item->utm_northing : null,
                     'image_urls' => $imagesUrls,
                     'observations' => $item->observations,
                     'observaciones' => $item->observations,
@@ -5528,7 +5616,7 @@ class MobileApiController extends Controller
 
         $area = $request->input('area') ?? 'Área Ambiental';
         $puntoMedicion = $request->input('punto_medicion') ?? $request->input('puesto_trabajo') ?? $request->input('workstation') ?? 'Estación de Muestreo';
-        
+
         $pointNumber = $request->input('point_number');
         if (empty($pointNumber)) {
             $count = $module->particulasAmbientalesMeasurements()->count();
@@ -5539,12 +5627,14 @@ class MobileApiController extends Controller
 
         // Fechas y Horas
         $fechaInicio = $request->input('fecha_inicio') ?? $date;
-        if ($fechaInicio && str_contains($fechaInicio, 'T')) $fechaInicio = explode('T', $fechaInicio)[0];
+        if ($fechaInicio && str_contains($fechaInicio, 'T'))
+            $fechaInicio = explode('T', $fechaInicio)[0];
         $horaInicio = $request->input('hora_inicio') ?? $time;
         $fechaFin = $request->input('fecha_fin') ?? $date;
-        if ($fechaFin && str_contains($fechaFin, 'T')) $fechaFin = explode('T', $fechaFin)[0];
+        if ($fechaFin && str_contains($fechaFin, 'T'))
+            $fechaFin = explode('T', $fechaFin)[0];
         $horaFin = $request->input('hora_fin') ?? $time;
-        $difHoras = $request->filled('diferencia_horas') ? (float)$request->input('diferencia_horas') : null;
+        $difHoras = $request->filled('diferencia_horas') ? (float) $request->input('diferencia_horas') : null;
 
         // Si no vino diferencia de horas, intentar calcularla
         if ($difHoras === null && !empty($fechaInicio) && !empty($horaInicio) && !empty($fechaFin) && !empty($horaFin)) {
@@ -5552,34 +5642,35 @@ class MobileApiController extends Controller
                 $startDt = Carbon::parse("$fechaInicio $horaInicio");
                 $endDt = Carbon::parse("$fechaFin $horaFin");
                 $difHoras = round($endDt->diffInMinutes($startDt) / 60.0, 2);
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+            }
         }
 
         // Meteorología
-        $tempMax = $request->filled('temp_max') ? (float)$request->input('temp_max') : null;
-        $tempMin = $request->filled('temp_min') ? (float)$request->input('temp_min') : null;
-        $temp = $request->filled('temperatura') ? (float)$request->input('temperatura') : ($tempMax && $tempMin ? ($tempMax + $tempMin) / 2 : null);
-        $presionAtm = $request->filled('presion_atm') ? (float)$request->input('presion_atm') : null;
-        $velViento = $request->filled('vel_viento') ? (float)$request->input('vel_viento') : null;
+        $tempMax = $request->filled('temp_max') ? (float) $request->input('temp_max') : null;
+        $tempMin = $request->filled('temp_min') ? (float) $request->input('temp_min') : null;
+        $temp = $request->filled('temperatura') ? (float) $request->input('temperatura') : ($tempMax && $tempMin ? ($tempMax + $tempMin) / 2 : null);
+        $presionAtm = $request->filled('presion_atm') ? (float) $request->input('presion_atm') : null;
+        $velViento = $request->filled('vel_viento') ? (float) $request->input('vel_viento') : null;
         $dirViento = $request->input('dir_viento');
-        $hr = $request->filled('hr_percent') ? (float)$request->input('hr_percent') : null;
+        $hr = $request->filled('hr_percent') ? (float) $request->input('hr_percent') : null;
 
         // PM10 Gravimétrico
-        $pm10Ini = $request->filled('pm10_filtro_inicial') ? (float)$request->input('pm10_filtro_inicial') : null;
-        $pm10Fin = $request->filled('pm10_filtro_final') ? (float)$request->input('pm10_filtro_final') : null;
-        $pm10Prom = $request->filled('pm10_prom') ? (float)$request->input('pm10_prom') : null;
+        $pm10Ini = $request->filled('pm10_filtro_inicial') ? (float) $request->input('pm10_filtro_inicial') : null;
+        $pm10Fin = $request->filled('pm10_filtro_final') ? (float) $request->input('pm10_filtro_final') : null;
+        $pm10Prom = $request->filled('pm10_prom') ? (float) $request->input('pm10_prom') : null;
 
         // PST Gravimétrico
-        $pstIni = $request->filled('pst_filtro_inicial') ? (float)$request->input('pst_filtro_inicial') : null;
-        $pstFin = $request->filled('pst_filtro_final') ? (float)$request->input('pst_filtro_final') : null;
-        $pstProm = $request->filled('pst_prom') ? (float)$request->input('pst_prom') : null;
+        $pstIni = $request->filled('pst_filtro_inicial') ? (float) $request->input('pst_filtro_inicial') : null;
+        $pstFin = $request->filled('pst_filtro_final') ? (float) $request->input('pst_filtro_final') : null;
+        $pstProm = $request->filled('pst_prom') ? (float) $request->input('pst_prom') : null;
 
         // PM2.5 Gravimétrico
-        $pm25Ini = $request->filled('pm25_filtro_inicial') ? (float)$request->input('pm25_filtro_inicial') : null;
-        $pm25Fin = $request->filled('pm25_filtro_final') ? (float)$request->input('pm25_filtro_final') : null;
-        $pm25Prom = $request->filled('pm25_prom') ? (float)$request->input('pm25_prom') : null;
+        $pm25Ini = $request->filled('pm25_filtro_inicial') ? (float) $request->input('pm25_filtro_inicial') : null;
+        $pm25Fin = $request->filled('pm25_filtro_final') ? (float) $request->input('pm25_filtro_final') : null;
+        $pm25Prom = $request->filled('pm25_prom') ? (float) $request->input('pm25_prom') : null;
 
-        $caudal = $request->filled('caudal') ? (float)$request->input('caudal') : null;
+        $caudal = $request->filled('caudal') ? (float) $request->input('caudal') : null;
 
         // Cálculo de concentración gravimétrica si faltase
         if ($caudal !== null && $caudal > 0 && $difHoras !== null && $difHoras > 0) {
@@ -5652,21 +5743,26 @@ class MobileApiController extends Controller
             }
         }
 
-        $lat = $request->filled('latitude') ? (float)$request->input('latitude') : null;
-        $lng = $request->filled('longitude') ? (float)$request->input('longitude') : null;
+        $lat = $request->filled('latitude') ? (float) $request->input('latitude') : null;
+        $lng = $request->filled('longitude') ? (float) $request->input('longitude') : null;
         $utmZone = $request->input('utm_zone');
-        $utmE = $request->filled('utm_easting') ? (float)$request->input('utm_easting') : null;
-        $utmN = $request->filled('utm_northing') ? (float)$request->input('utm_northing') : null;
+        $utmE = $request->filled('utm_easting') ? (float) $request->input('utm_easting') : null;
+        $utmN = $request->filled('utm_northing') ? (float) $request->input('utm_northing') : null;
 
         $locInput = $request->input('location');
         if (is_string($locInput) && (str_starts_with($locInput, '{') || str_starts_with($locInput, '['))) {
             $locDecoded = json_decode($locInput, true);
             if (is_array($locDecoded)) {
-                if ($utmZone === null && !empty($locDecoded['utm_zone'])) $utmZone = $locDecoded['utm_zone'];
-                if ($utmE === null && !empty($locDecoded['easting'])) $utmE = (float)$locDecoded['easting'];
-                if ($utmN === null && !empty($locDecoded['northing'])) $utmN = (float)$locDecoded['northing'];
-                if ($lat === null && !empty($locDecoded['latitude'])) $lat = (float)$locDecoded['latitude'];
-                if ($lng === null && !empty($locDecoded['longitude'])) $lng = (float)$locDecoded['longitude'];
+                if ($utmZone === null && !empty($locDecoded['utm_zone']))
+                    $utmZone = $locDecoded['utm_zone'];
+                if ($utmE === null && !empty($locDecoded['easting']))
+                    $utmE = (float) $locDecoded['easting'];
+                if ($utmN === null && !empty($locDecoded['northing']))
+                    $utmN = (float) $locDecoded['northing'];
+                if ($lat === null && !empty($locDecoded['latitude']))
+                    $lat = (float) $locDecoded['latitude'];
+                if ($lng === null && !empty($locDecoded['longitude']))
+                    $lng = (float) $locDecoded['longitude'];
             }
         }
 
@@ -5674,7 +5770,8 @@ class MobileApiController extends Controller
         $registeredBy = $request->input('registered_by') ?? $request->input('created_by');
         if (!empty($staffId)) {
             $st = Staff::find($staffId);
-            if ($st) $registeredBy = $st->full_name ?: $st->name;
+            if ($st)
+                $registeredBy = $st->full_name ?: $st->name;
         }
 
         $data = [
@@ -5738,8 +5835,10 @@ class MobileApiController extends Controller
 
         $finalImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
         $finalUrls = array_values(array_filter(array_map(function ($p) {
-            if (!$p) return null;
-            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+            if (!$p)
+                return null;
+            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://'))
+                return $p;
             return asset($p);
         }, $finalImages)));
 
@@ -5956,8 +6055,10 @@ class MobileApiController extends Controller
                 $measDate = now()->toDateString();
             }
         }
-        if (empty($measDate)) $measDate = now()->toDateString();
-        if (empty($measTime)) $measTime = now()->format('H:i');
+        if (empty($measDate))
+            $measDate = now()->toDateString();
+        if (empty($measTime))
+            $measTime = now()->format('H:i');
 
         $existingUrls = [];
         if (!empty($validated['image_urls'])) {
@@ -6235,8 +6336,10 @@ class MobileApiController extends Controller
                 $measDate = now()->toDateString();
             }
         }
-        if (empty($measDate)) $measDate = now()->toDateString();
-        if (empty($measTime)) $measTime = now()->format('H:i');
+        if (empty($measDate))
+            $measDate = now()->toDateString();
+        if (empty($measTime))
+            $measTime = now()->format('H:i');
 
         $existingUrls = [];
         if (!empty($validated['image_urls'])) {
@@ -6280,15 +6383,15 @@ class MobileApiController extends Controller
             'measurement_time' => $measTime,
             'area' => $area,
             'trabajador_nombre' => $trabajador,
-            'masa_inicial_filtro_mg' => $masaInicial !== null ? (float)$masaInicial : null,
-            'masa_final_filtro_mg' => $masaFinal !== null ? (float)$masaFinal : null,
+            'masa_inicial_filtro_mg' => $masaInicial !== null ? (float) $masaInicial : null,
+            'masa_final_filtro_mg' => $masaFinal !== null ? (float) $masaFinal : null,
             'hora_inicio' => $validated['hora_inicio'] ?? null,
             'hora_final' => $validated['hora_final'] ?? null,
-            't_inicial_c' => isset($validated['t_inicial_c']) ? (float)$validated['t_inicial_c'] : null,
-            't_final_c' => isset($validated['t_final_c']) ? (float)$validated['t_final_c'] : null,
-            'presion_hpa' => isset($validated['presion_hpa']) ? (float)$validated['presion_hpa'] : null,
-            'q_inicial_lmin' => isset($validated['q_inicial_lmin']) ? (float)$validated['q_inicial_lmin'] : null,
-            'q_final_lmin' => isset($validated['q_final_lmin']) ? (float)$validated['q_final_lmin'] : null,
+            't_inicial_c' => isset($validated['t_inicial_c']) ? (float) $validated['t_inicial_c'] : null,
+            't_final_c' => isset($validated['t_final_c']) ? (float) $validated['t_final_c'] : null,
+            'presion_hpa' => isset($validated['presion_hpa']) ? (float) $validated['presion_hpa'] : null,
+            'q_inicial_lmin' => isset($validated['q_inicial_lmin']) ? (float) $validated['q_inicial_lmin'] : null,
+            'q_final_lmin' => isset($validated['q_final_lmin']) ? (float) $validated['q_final_lmin'] : null,
             'location' => $locationVal,
             'latitude' => $validated['latitude'] ?? null,
             'longitude' => $validated['longitude'] ?? null,
