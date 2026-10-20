@@ -162,8 +162,10 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/modulos/{id}/ruido-ocupacional/mediciones/{measurementId}', [RuidoOcupacionalController::class, 'updateMeasurement'])->name('modules.ruido_ocupacional.measurements.update');
     Route::match(['delete', 'post'], '/modulos/{id}/ruido-ocupacional/mediciones/{measurementId}/delete', [RuidoOcupacionalController::class, 'destroyMeasurement'])->name('modules.ruido_ocupacional.measurements.destroy.post');
     Route::match(['delete', 'post'], '/modulos/{id}/ruido-ocupacional/mediciones/{measurementId}', [RuidoOcupacionalController::class, 'destroyMeasurement'])->name('modules.ruido_ocupacional.measurements.destroy');
+    Route::get('/modulos/{id}/ruido-ocupacional/mediciones/{measurementId}/download-word', [RuidoOcupacionalController::class, 'downloadWordReport'])->name('modules.ruido_ocupacional.measurements.download-word');
     Route::post('/modulos/{id}/ruido-ocupacional/header', [RuidoOcupacionalController::class, 'updateHeader'])->name('modules.ruido_ocupacional.header.update');
     Route::get('/modulos/{id}/ruido-ocupacional/informe', [RuidoOcupacionalController::class, 'showReport'])->name('modules.ruido_ocupacional.report');
+
 
     // Monitoreo de Opacidad (Vehicular / Humos)
     Route::get('/modulos/{id}/opacidad', [OpacityController::class, 'index'])->name('modules.opacity');

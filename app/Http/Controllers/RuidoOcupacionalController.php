@@ -736,6 +736,85 @@ class RuidoOcupacionalController extends Controller
             'lng' => round($lng, 7),
         ];
     }
+
+    /**
+     * Descarga un reporte de Ruido Ocupacional en formato Word (.docx)
+     */
+    public function downloadWordReport($moduleId, $measurementId)
+    {
+        $measurement = NoiseMeasurement::where('module_id', $moduleId)->findOrFail($measurementId);
+        $module = MeasurementModule::with('project.company', 'equipment', 'fieldStaff')->findOrFail($moduleId);
+
+        $projectName = $module->project ? $module->project->name : 'Proyecto';
+        $companyName = ($module->project && $module->project->company) ? $module->project->company->name : '';
+        $installationName = $module->installation_name ?: ($projectName . ($companyName ? " - {$companyName}" : ''));
+
+        $html = $this->generateWordHTML($measurement, $module, $installationName);
+
+        $fileName = 'Ruido_Ocupacional_' . $measurement->point_number . '_' . now()->format('YmdHis') . '.doc';
+
+        return response($html)
+            ->header('Content-Type', 'application/msword')
+            ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+    }
+
+    /**
+     * Genera el HTML del reporte Word
+     */
+    private function generateWordHTML($measurement, $module, $installationName)
+    {
+        $compliant = isset($measurement->cumple) && $measurement->cumple;
+        $compliantText = $compliant ? '<span style="color: #059669; font-weight: bold;">✓ CUMPLE</span>' : '<span style="color: #dc2626; font-weight: bold;">✗ NO CUMPLE</span>';
+        
+        return '<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Reporte Ruido Ocupacional</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 20px; }
+h1 { color: #0284c7; border-bottom: 2px solid #0284c7; }
+table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
+th { background-color: #f0f9ff; }
+</style>
+</head>
+<body>
+<h1>Reporte de Ruido Ocupacional NTS-002/17</h1>
+<table>
+<tr><td><strong>Ubicación:</strong></td><td>' . htmlspecialchars($installationName) . '</td></tr>
+<tr><td><strong>Fecha:</strong></td><td>' . ($measurement->measurement_date ? $measurement->measurement_date->format('d/m/Y') : 'N/A') . '</td></tr>
+<tr><td><strong>Punto:</strong></td><td>' . htmlspecialchars($measurement->punto_medicion ?? 'N/A') . '</td></tr>
+<tr><td><strong>Área:</strong></td><td>' . htmlspecialchars($measurement->area ?? 'N/A') . '</td></tr>
+</table>
+<h2>Parámetros</h2>
+<table>
+<tr><th>Tipo Ruido</th><th>Ponderación</th><th>Respuesta</th><th>Exposición (h)</th></tr>
+<tr><td>' . htmlspecialchars($measurement->tipo_ruido ?? 'N/A') . '</td><td>' . htmlspecialchars($measurement->ponderacion ?? 'A') . '</td><td>' . htmlspecialchars($measurement->respuesta ?? 'Lenta') . '</td><td>' . ($measurement->tiempo_expos_h ? number_format($measurement->tiempo_expos_h, 2) : 'N/A') . '</td></tr>
+</table>
+<h2>Resultados Acústicos</h2>
+<table>
+<tr><th>LAeq (dB)</th><th>NPS Máximo (dB)</th><th>Mediciones</th></tr>
+<tr><td><strong>' . ($measurement->leq_t_db ? number_format($measurement->leq_t_db, 1) : 'N/A') . '</strong></td><td>' . ($measurement->nps_max ? number_format($measurement->nps_max, 1) : 'N/A') . '</td><td>' . (is_array($measurement->mediciones_db) ? count($measurement->mediciones_db) : 0) . '</td></tr>
+</table>
+<h2>Dosis (NTS-002/17)</h2>
+<table>
+<tr><th>TMPE (h)</th><th>Dosis</th><th>Cumplimiento</th></tr>
+<tr><td>' . ($measurement->tmpe ? number_format($measurement->tmpe, 2) : 'N/A') . '</td><td><strong>' . ($measurement->dosis ? number_format($measurement->dosis, 2) : 'N/A') . '</strong></td><td>' . $compliantText . '</td></tr>
+</table>
+<h2>Protección Auditiva</h2>
+<table>
+<tr><th>Protectores</th><th>Tipo</th><th>NRR (dB)</th></tr>
+<tr><td>' . ($measurement->uso_protectores ? 'Sí' : 'No') . '</td><td>' . htmlspecialchars($measurement->tipo_protector ?? '-') . '</td><td>' . ($measurement->nrr_db ? number_format($measurement->nrr_db, 1) : '-') . '</td></tr>
+</table>
+<h2>Observaciones</h2>
+<p>' . ($measurement->observations ? htmlspecialchars($measurement->observations) : 'Sin observaciones') . '</p>
+<hr>
+<p style="color: #64748b; font-size: 12px;">Generado por METRIC V2 — Norma: NTS-002/17</p>
+</body>
+</html>';
+    }
 }
+
 
 

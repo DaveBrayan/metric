@@ -681,7 +681,32 @@ window.closePhotoReportModal = function() {
 window.openTechHeaderEditModal = function() {
     const m = document.getElementById('techHeaderEditModal');
     if (m) m.classList.add('open');
+
+
+/**
+ * Descarga reporte de Ruido Ocupacional en formato Word (.docx)
+ */
+window.downloadWordReport = function(measurementId) {
+    const measurement = ALL_MEASUREMENTS_DATA.find(m => m.id === measurementId);
+    if (!measurement) {
+        alert('Medición no encontrada');
+        return;
+    }
+
+    // URL para descargar el documento Word
+    const downloadUrl = `/modulos/${MODULE_ID}/ruido-ocupacional/mediciones/${measurementId}/download-word`;
+    
+    // Crear un elemento <a> temporal para descargar
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `Ruido_Ocupacional_P${measurement.num}.docx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    console.log('Descarga iniciada:', link.download);
 };
+
 
 window.closeTechHeaderEditModal = function() {
     const m = document.getElementById('techHeaderEditModal');
