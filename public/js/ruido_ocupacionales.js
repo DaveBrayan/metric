@@ -5,14 +5,14 @@
  */
 
 // Inicialización de configuración del servidor
-const cfg = window.METRIC_RUIDO_AMBIENTAL_CONFIG || {};
+const cfg = window.METRIC_RUIDO_OCUPACIONAL_CONFIG || {};
 const MODULE_ID = cfg.moduleId || window.MODULE_ID;
 const CSRF_TOKEN = cfg.csrfToken || window.CSRF_TOKEN || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 const ALL_MEASUREMENTS_DATA = cfg.measurements || window.ALL_MEASUREMENTS_DATA || [];
 const TECHNICAL_HEADER_DATA = cfg.technicalHeader || window.TECHNICAL_HEADER_DATA || {};
 const PHOTO_REPORT_INITIAL_SETTINGS = cfg.photoReportSettings || window.PHOTO_REPORT_INITIAL_SETTINGS || {};
 const REGISTERED_BY_HEADER = cfg.registeredByHeader || window.REGISTERED_BY_HEADER || '';
-const UPDATE_HEADER_URL = cfg.updateHeaderUrl || window.UPDATE_HEADER_URL || ('/modulos/' + MODULE_ID + '/ruido-ambiental/header');
+const UPDATE_HEADER_URL = cfg.updateHeaderUrl || window.UPDATE_HEADER_URL || ('/modulos/' + MODULE_ID + '/ruido-ocupacional/header');
 
 // Variables de Estado
 let currentGrid = PHOTO_REPORT_INITIAL_SETTINGS.grid || '2x3';
@@ -422,6 +422,83 @@ window.confirmDeleteMeasurement = function(id, pointNum) {
         }
     }
 };
+ 
+/**
+ * Builds a single row for the Cálculos summary table with NTS-002/17 formulas.
+ */
+function buildCalculosRow(m, idx) {
+    var med = m.mediciones_db || [];
+    var tpe = parseFloat(m.tiempo_expos_h) || 8;
+    var valid = med.map(function(v) { return parseFloat(v); }).filter(function(v) { return !isNaN(v) && v > 0; });
+    var n = valid.length, sumaE = 0, npsMax = 0;
+    valid.forEach(function(v) { sumaE += Math.pow(10, v / 10.0); if (v > npsMax) npsMax = v; });
+    var leq = n > 0 ? (10 * Math.log10(sumaE / n)) : 0;
+    var tmpe = leq > 0 ? (8 / Math.pow(2, (leq - 85) / 3)) : null;
+    var dosis = (tmpe && tmpe > 0) ? (tpe / tmpe) : null;
+    var cumple = dosis !== null && dosis <= 1;
+    var leqC = (n > 0 && leq > 85) ? '#dc2626' : '#059669';
+    var dosC = (dosis !== null && dosis > 1) ? '#dc2626' : '#059669';
+    var r = '<tr style="border-bottom:1px solid #e2e8f0;">';
+    r += '<td style="padding:8px 6px;text-align:center;font-weight:800;color:#94a3b8;">' + (idx + 1) + '</td>';
+    r += '<td style="padding:8px 6px;font-weight:600;color:#0284c7;font-size:11px;">' + (m.area || '—') + '</td>';
+    r += '<td style="padding:8px 6px;font-weight:600;color:#334155;font-size:11px;">' + (m.punto_medicion || '—') + '</td>';
+    r += '<td style="padding:8px 6px;text-align:center;font-weight:700;">' + (n > 0 ? npsMax.toFixed(1) : '—') + '</td>';
+    r += '<td style="padding:8px 6px;text-align:center;font-family:monospace;font-size:10px;color:#64748b;">' + (n > 0 ? sumaE.toExponential(3) : '—') + '</td>';
+    r += '<td style="padding:8px 6px;text-align:center;font-weight:800;color:' + leqC + ';">' + (n > 0 ? leq.toFixed(2) : '—') + '</td>';
+    r += '<td style="padding:8px 6px;text-align:center;font-weight:700;">' + tpe.toFixed(1) + '</td>';
+    r += '<td style="padding:8px 6px;text-align:center;font-weight:700;">' + (tmpe !== null ? tmpe.toFixed(2) : '—') + '</td>';
+    r += '<td style="padding:8px 6px;text-align:center;font-weight:800;color:' + dosC + ';">' + (dosis !== null ? dosis.toFixed(4) : '—') + '</td>';
+    if (n === 0) { r += '<td style="padding:8px 6px;text-align:center;color:#94a3b8;">—</td>'; }
+    else if (cumple) { r += '<td style="padding:8px 6px;text-align:center;"><span style="padding:2px 8px;background:#dcfce7;color:#166534;border-radius:4px;font-weight:700;font-size:10px;">CUMPLE</span></td>'; }
+    else { r += '<td style="padding:8px 6px;text-align:center;"><span style="padding:2px 8px;background:#fee2e2;color:#991b1b;border-radius:4px;font-weight:700;font-size:10px;">NO CUMPLE</span></td>'; }
+    r += '<td style="padding:8px 6px;text-align:center;"><button class="btn-admin-icon-action theme-cyan" onclick="openCalculosModal(ALL_MEASUREMENTS_DATA[' + idx + '])" title="Detalle" style="padding:4px 8px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></button></td>';
+    r += '</tr>';
+    return r;
+}
+
+/**
+ * Opens the Cálculos modal showing ALL measurements with full NTS-002/17 calculations.
+ */
+window.openCalculosListModal = function() {
+    const modal = document.getElementById('calculosModalRuido');
+    if (!modal) return;
+    const data = window.ALL_MEASUREMENTS_DATA || [];
+    const container = document.getElementById('calculosListContent');
+    if (!container) { modal.style.display = 'flex'; return; }
+    if (data.length === 0) {
+        container.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:40px;">No hay mediciones registradas.</div>';
+        modal.style.display = 'flex'; return;
+    }
+    let html = '<table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr style="background:#e0f2fe;border-bottom:2px solid #0284c7;">';
+    html += '<th style="padding:8px 6px;text-align:center;font-weight:700;color:#0284c7;width:40px;">N°</th>';
+    html += '<th style="padding:8px 6px;text-align:left;font-weight:700;color:#0284c7;">Área</th>';
+    html += '<th style="padding:8px 6px;text-align:left;font-weight:700;color:#0284c7;">Punto</th>';
+    html += '<th style="padding:8px 6px;text-align:center;font-weight:700;color:#0284c7;">NPS Max</th>';
+    html += '<th style="padding:8px 6px;text-align:center;font-weight:700;color:#0284c7;">Σ Energía</th>';
+    html += '<th style="padding:8px 6px;text-align:center;font-weight:700;color:#0284c7;">LAeq,T</th>';
+    html += '<th style="padding:8px 6px;text-align:center;font-weight:700;color:#0284c7;">TPE(h)</th>';
+    html += '<th style="padding:8px 6px;text-align:center;font-weight:700;color:#0284c7;">TMPE(h)</th>';
+    html += '<th style="padding:8px 6px;text-align:center;font-weight:700;color:#0284c7;">Dosis</th>';
+    html += '<th style="padding:8px 6px;text-align:center;font-weight:700;color:#0284c7;">Estado</th>';
+    html += '<th style="padding:8px 6px;text-align:center;font-weight:700;color:#0284c7;width:55px;">Detalle</th>';
+    html += '</tr></thead><tbody>';
+    data.forEach(function(m, idx) { html += buildCalculosRow(m, idx); });
+    html += '</tbody></table>';
+    html += '<div style="margin-top:15px;padding:12px;background:#fafafa;border-radius:8px;border:1px solid #e2e8f0;font-size:10px;color:#64748b;">';
+    html += '<b style="color:#334155;">NTS-002/17:</b> LAeq,T = 10·log₁₀(Σ10^(NPSi/10)/N) · TMPE = 8/2^((LAeq,T−85)/3) · Dosis = TPE/TMPE · Cumple si Dosis ≤ 1</div>';
+    container.innerHTML = html;
+    container.style.display = '';
+    var sv = document.getElementById('calculosSingleContent'); if (sv) sv.style.display = 'none';
+    var ti = document.getElementById('calculosModalTitle'); if (ti) ti.textContent = 'Cálculos y Evaluación — Todas las Mediciones';
+    var su = document.getElementById('calculosModalSubtitle'); if (su) su.textContent = 'NTS-002/17 · Resumen de ' + data.length + ' punto(s)';
+    modal.style.display = 'flex';
+};
+
+window.closeCalculosListModal = function() {
+    const modal = document.getElementById('calculosModalRuido');
+    if (modal) modal.style.display = 'none';
+};
+
 
 /* ==========================================================================
    4. MODAL MAPA GENERAL DE TODAS LAS UBICACIONES
@@ -619,7 +696,7 @@ window.filterruidoOcupacional = function(type, btn) {
     applyTableFilters();
 };
 
-window.searchruidoOcupacionalLive = function() {
+window.searchRuidoOcupacionalLive = function() {
     const inp = document.getElementById('ruidoSearchInput');
     currentSearchQuery = (inp?.value || '').toLowerCase().trim();
     applyTableFilters();
@@ -706,4 +783,5 @@ window.autoSaveHeaderField = autoSaveHeaderField;
 document.addEventListener('DOMContentLoaded', () => {
     recalcruidoOcupacional('create');
 });
+
 

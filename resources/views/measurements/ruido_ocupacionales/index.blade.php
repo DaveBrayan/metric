@@ -29,7 +29,7 @@
     @include('measurements.ruido_ocupacionales.modals.export-modal')
     @include('measurements.ruido_ocupacionales.modals.locations-modal')
     @include('measurements.ruido_ocupacionales.modals.photo-report-modal')
-    @include('measurements.ruido_ocupacionales.modals.tables-modal')
+    @include('measurements.ruido_ocupacionales.modals.calculos-modal')
 
     <!-- Formulario oculto para eliminar punto de medición -->
     <form id="deleteMeasurementForm" action="" method="POST" style="display: none;">

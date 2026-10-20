@@ -162,6 +162,22 @@ class RuidoOcupacionalController extends Controller
                 'raw_limite_normativa' => $limite,
                 'zona_banda' => $item->zona_banda ?: '19K',
                 
+                // Campos adicionales del registro (App Data)
+                'area_trabajo' => $item->area_trabajo ?: 'No especificada',
+                'punto_medicion' => $item->punto_medicion ?: 'Punto ' . str_pad($index + 1, 2, '0', STR_PAD_LEFT),
+                'tipo_ruido' => $item->tipo_ruido ?: 'Fluctuante',
+                'tpe_h' => $item->tpe_h ?: '8',
+                'ponderacion' => $item->ponderacion ?: 'A',
+                'respuesta' => $item->respuesta ?: 'Lento',
+                'nps1' => $item->nps1 ?: '—',
+                'nps2' => $item->nps2 ?: '—',
+                'nps3' => $item->nps3 ?: '—',
+                'nps4' => $item->nps4 ?: '—',
+                'nps5' => $item->nps5 ?: '—',
+                'nps6' => $item->nps6 ?: '—',
+                'nps7' => $item->nps7 ?: '—',
+                'nps8' => $item->nps8 ?: '—',
+                
                 // Colindancias
                 'norte_colindancia' => $item->norte_colindancia ?: 'Calle / Vía Principal',
                 'norte_x' => $item->norte_x ?: '—',
@@ -678,7 +694,81 @@ class RuidoOcupacionalController extends Controller
     }
 
     /**
-     * Save photo report layout settings.
+     * Display the official technical report page for ruido ocupacional monitoring.
+     */
+    public function showReport($moduleId)
+    {
+        $currentUser = Auth::user();
+        $module = MeasurementModule::with(['project.company', 'equipment', 'fieldStaff'])->findOrFail($moduleId);
+        
+        $projectName = $module->project ? $module->project->name : 'Proyecto';
+        $companyName = ($module->project && $module->project->company) ? $module->project->company->name : '';
+        $installationName = $module->installation_name ?: ($projectName . ($companyName ? " - {$companyName}" : ''));
+        
+        $startDateFormatted = $module->start_date ? $module->start_date->format('d/m/Y') : '';
+        $endDateFormatted = $module->end_date ? $module->end_date->format('d/m/Y') : '';
+        
+        $equipment = $module->equipment;
+        $equipmentName = $equipment ? $equipment->name : 'Sonómetro Integrador';
+        $equipmentBrand = $equipment ? ($equipment->brand ?: 'SVANTEK') : 'SVANTEK';
+        $equipmentModel = $equipment ? ($equipment->model ?: 'SV 971A') : 'SV 971A';
+        $equipmentSerial = $equipment ? ($equipment->serial_number ?: '924810') : '924810';
+        
+        $measurements = $module->noiseMeasurements()->orderBy('id', 'asc')->get()->map(function ($item) {
+            $mediciones = is_string($item->mediciones_db) ? json_decode($item->mediciones_db, true) : $item->mediciones_db;
+            $mediciones = is_array($mediciones) ? $mediciones : [];
+
+            // NTS-002/17: Full calculation chain
+            $validNps = array_values(array_filter(array_map('floatval', $mediciones), function ($v) {
+                return $v > 0;
+            }));
+            $n = count($validNps);
+            $sumaEnergia = 0.0;
+            $npsMax = 0.0;
+            foreach ($validNps as $v) {
+                $sumaEnergia += pow(10.0, $v / 10.0);
+                if ($v > $npsMax) $npsMax = $v;
+            }
+
+            $leq = $n > 0 ? (10.0 * log10($sumaEnergia / $n)) : 0;
+            $tpe = (float) ($item->tiempo_expos_h ?: 8);
+            $tmpe = $leq > 0 ? (8.0 / pow(2, ($leq - 85.0) / 3.0)) : null;
+            $dosis = ($tmpe && $tmpe > 0) ? ($tpe / $tmpe) : null;
+            $tpeSuperaTmpe = ($tmpe !== null && $tpe > $tmpe);
+
+            return [
+                'area' => $item->area,
+                'punto_medicion' => $item->punto_medicion,
+                'tipo_ruido' => $item->tipo_ruido,
+                'tiempo_expos_h' => $tpe,
+                'ponderacion' => $item->ponderacion ?? 'A',
+                'respuesta' => $item->respuesta ?? 'Lento',
+                'nps_max' => $n > 0 ? round($npsMax, 2) : null,
+                'leq_t_db' => $n > 0 ? round($leq, 2) : null,
+                'tmpe' => $tmpe !== null ? round($tmpe, 2) : null,
+                'dosis' => $dosis !== null ? round($dosis, 4) : null,
+                'tpe_supera_tmpe' => $tpeSuperaTmpe,
+                'requiere_dosimetria' => $tpeSuperaTmpe,
+                'observations' => $item->observations,
+                'cumple' => !$tpeSuperaTmpe,
+            ];
+        });
+        
+        return view('measurements.ruido_ocupacionales.report', [
+            'module' => $module,
+            'installationName' => $installationName,
+            'startDateFormatted' => $startDateFormatted,
+            'endDateFormatted' => $endDateFormatted,
+            'equipmentName' => $equipmentName,
+            'equipmentBrand' => $equipmentBrand,
+            'equipmentModel' => $equipmentModel,
+            'equipmentSerial' => $equipmentSerial,
+            'measurements' => $measurements,
+            'registeredBy' => $currentUser ? $currentUser->name : 'Técnico de Campo',
+        ]);
+    }
+
+    /**
      */
     public function savePhotoReportSettings(Request $request, $moduleId)
     {

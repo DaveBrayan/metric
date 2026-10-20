@@ -47,9 +47,24 @@
             <span>Exportar</span>
         </button>
 
-        <!-- Botón Ver Tablas (Matriz técnica e informe de evaluación) -->
-        <button type="button" class="btn-secondary-subtle" onclick="openRuidoAmbientalTablesModal()"
-            title="Ver tabla técnica e informe de mediciones">
+        <!-- Botón Cálculos (Modal con análisis técnico) -->
+        <button type="button" class="btn-secondary-subtle" onclick="openCalculosListModal()"
+            title="Ver análisis técnico y cálculos de todas las mediciones">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.3"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 10v3"/>
+                <path d="M6 6v11"/>
+                <path d="M10 3v18"/>
+                <path d="M14 8v7"/>
+                <path d="M18 5v13"/>
+                <path d="M22 10v3"/>
+            </svg>
+            <span>Cálculos</span>
+        </button>
+
+        <!-- Botón Informes (Reporte técnico formal imprimible) -->
+        <a href="{{ route('modules.ruido_ocupacional.report', $module->id) }}" class="btn-secondary-subtle"
+            title="Ver informe técnico formal para impresión">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.3"
                 stroke-linecap="round" stroke-linejoin="round">
                 <rect width="18" height="18" x="3" y="3" rx="2" />
@@ -57,8 +72,8 @@
                 <path d="M3 15h18" />
                 <path d="M9 3v18" />
             </svg>
-            <span>Ver Tablas</span>
-        </button>
+            <span>Informes</span>
+        </a>
 
         <button type="button" class="btn-primary-hero-action" onclick="openCreateMeasurementModal()">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
