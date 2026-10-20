@@ -2,10 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\SettingsController;
-use App\Http\Controllers\AdminController;
-use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\RuidoAmbientalController;
+use App\Http\Controllers\RuidoOcupacionalController;
 use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\ProjectController;
@@ -13,7 +11,6 @@ use App\Http\Controllers\EquipmentController;
 use App\Http\Controllers\IlluminationController;
 use App\Http\Controllers\VentilationController;
 use App\Http\Controllers\DosimetryController;
-use App\Http\Controllers\RuidoAmbientalController;
 use App\Http\Controllers\OpacityController;
 use App\Http\Controllers\ColdStressController;
 use App\Http\Controllers\HeatStressController;
@@ -158,6 +155,15 @@ Route::middleware(['auth'])->group(function () {
     Route::match(['delete', 'post'], '/modulos/{id}/ruido-ambiental/mediciones/{measurementId}', [RuidoAmbientalController::class, 'destroyMeasurement'])->name('modules.ruido_ambiental.measurements.destroy');
     Route::post('/modulos/{id}/ruido-ambiental/header', [RuidoAmbientalController::class, 'updateHeader'])->name('modules.ruido_ambiental.header.update');
     Route::post('/modulos/{id}/ruido-ambiental/photo-report-settings', [RuidoAmbientalController::class, 'savePhotoReportSettings'])->name('modules.ruido_ambiental.photo-report-settings.save');
+
+    // Monitoreo de Ruido Ocupacional
+    Route::get('/modulos/{id}/ruido-ocupacional', [RuidoOcupacionalController::class, 'index'])->name('modules.ruido_ocupacional');
+    Route::post('/modulos/{id}/ruido-ocupacional/mediciones', [RuidoOcupacionalController::class, 'storeMeasurement'])->name('modules.ruido_ocupacional.measurements.store');
+    Route::put('/modulos/{id}/ruido-ocupacional/mediciones/{measurementId}', [RuidoOcupacionalController::class, 'updateMeasurement'])->name('modules.ruido_ocupacional.measurements.update');
+    Route::match(['delete', 'post'], '/modulos/{id}/ruido-ocupacional/mediciones/{measurementId}/delete', [RuidoOcupacionalController::class, 'destroyMeasurement'])->name('modules.ruido_ocupacional.measurements.destroy.post');
+    Route::match(['delete', 'post'], '/modulos/{id}/ruido-ocupacional/mediciones/{measurementId}', [RuidoOcupacionalController::class, 'destroyMeasurement'])->name('modules.ruido_ocupacional.measurements.destroy');
+    Route::post('/modulos/{id}/ruido-ocupacional/header', [RuidoOcupacionalController::class, 'updateHeader'])->name('modules.ruido_ocupacional.header.update');
+    Route::post('/modulos/{id}/ruido-ocupacional/photo-report-settings', [RuidoOcupacionalController::class, 'savePhotoReportSettings'])->name('modules.ruido_ocupacional.photo-report-settings.save');
 
     // Monitoreo de Opacidad (Vehicular / Humos)
     Route::get('/modulos/{id}/opacidad', [OpacityController::class, 'index'])->name('modules.opacity');
@@ -346,3 +352,4 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/configuracion/test-gemini', [SettingsController::class, 'testGeminiConnection'])->name('settings.test-gemini');
     Route::post('/configuracion/gemini-models', [SettingsController::class, 'getAvailableGeminiModels'])->name('settings.gemini-models');
 });
+
