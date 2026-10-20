@@ -110,6 +110,7 @@ class MobileApiController extends Controller
         return response()->json([
             'success' => true,
             'data' => $measurements,
+            'measurements' => $measurements,
             'total' => $measurements->count(),
             'points_completed' => $module->points_completed,
         ]);
@@ -220,8 +221,25 @@ class MobileApiController extends Controller
                 }
             }
         }
+        if ($request->hasFile('photos')) {
+            foreach ($request->file('photos') as $file) {
+                if ($file->isValid()) {
+                    $filename = 'noise_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+                    $file->move($uploadDir, $filename);
+                    $uploadedImages[] = 'uploads/measurements/' . $filename;
+                }
+            }
+        }
         if ($request->hasFile('image')) {
             $file = $request->file('image');
+            if ($file->isValid()) {
+                $filename = 'noise_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+                $file->move($uploadDir, $filename);
+                $uploadedImages[] = 'uploads/measurements/' . $filename;
+            }
+        }
+        if ($request->hasFile('photo')) {
+            $file = $request->file('photo');
             if ($file->isValid()) {
                 $filename = 'noise_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
                 $file->move($uploadDir, $filename);
