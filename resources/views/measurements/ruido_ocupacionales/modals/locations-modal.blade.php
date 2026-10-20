@@ -10,80 +10,80 @@
                 </div>
                 <div>
                     <h2 id="allLocationsModalTitle" style="font-size: 17px; margin: 0; font-family: 'Outfit', sans-serif; font-weight: 800; color: var(--ink);">
-                        Ubicaciones de Puntos de Medición — Ruido Ocupacional
+                        Ubicaciones de Puntos — Ruido Ocupacional
                     </h2>
                     <span style="font-size: 12px; color: #64748b; font-weight: 500;">
-                        Linderos perimetrales georreferenciados y personal técnico registrador
+                        Puntos georreferenciados con evaluación NTS-002/17
                     </span>
                 </div>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 12px; font-weight: 800; background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; padding: 4px 10px; border-radius: 20px;">
-                    {{ $totalMeasurements }} Puntos Registrados
+                    {{ $totalMeasurements }} Puntos
                 </span>
-                <button type="button" class="btn-close-modal" onclick="closeAllLocationsModal()" aria-label="Cerrar">✕</button>
+                <button type="button" class="btn-close-modal" onclick="closeAllLocationsModal()">✕</button>
             </div>
         </div>
 
         <div class="modal-body-custom" style="padding: 18px 22px;">
             <div class="all-loc-modal-grid">
-                <!-- Mapa Leaflet Interactivo -->
                 <div>
                     <div id="allLocationsMapLeaflet"></div>
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px; font-size: 12px; color: #64748b; flex-wrap: wrap; gap: 8px;">
                         <div style="display: flex; align-items: center; gap: 14px;">
                             <span style="display: inline-flex; align-items: center; gap: 5px;">
                                 <span style="width: 10px; height: 10px; border-radius: 50%; background: #059669; display: inline-block;"></span>
-                                <span>Cumple LMP (≤ Límite)</span>
+                                <span>Cumple (Dosis ≤ 1.0)</span>
                             </span>
                             <span style="display: inline-flex; align-items: center; gap: 5px;">
                                 <span style="width: 10px; height: 10px; border-radius: 50%; background: #dc2626; display: inline-block;"></span>
-                                <span>Excede Límite (> LMP)</span>
+                                <span>No Cumple (Dosis > 1.0)</span>
                             </span>
                         </div>
-                        <span style="font-size: 11.5px; color: #94a3b8;">Haz clic en un marcador para ver detalles acústicos</span>
+                        <span style="font-size: 11.5px; color: #94a3b8;">Haz clic para ver detalles</span>
                     </div>
                 </div>
 
-                <!-- Panel Lateral con Lista de Puntos y Personal Registrador -->
                 <div class="all-loc-sidebar">
-                    <div style="padding: 4px 6px; font-size: 12.5px; font-weight: 800; color: var(--ink); display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                        <span>Puntos Registrados</span>
-                        <span style="font-size: 11px; color: #0284c7;">Clic para enfocar</span>
-                    </div>
+                    <div style="padding: 4px 6px; font-size: 12.5px; font-weight: 800; color: var(--ink); margin-bottom: 8px;">
+                        Puntos de Medición
+
                     <div style="display: flex; flex-direction: column; gap: 8px;">
                         @forelse($measurements as $idx => $m)
-                            <div class="all-loc-point-item" onclick="focusPointOnAllLocationsMap({{ $idx }})">
-                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
-                                     <div style="display: flex; align-items: center; gap: 6px;">
-                                        <span style="font-size: 11.5px; font-weight: 800; background: {{ $m['is_compliant'] ? '#ecfdf5' : '#fef2f2' }}; color: {{ $m['is_compliant'] ? '#065f46' : '#991b1b' }}; border: 1px solid {{ $m['is_compliant'] ? '#a7f3d0' : '#fecaca' }}; padding: 1px 6px; border-radius: 4px;">
-                                            #{{ $m['num'] }}
-                                        </span>
-                                        <strong style="font-size: 12.5px; color: var(--ink);">
-                                            {{ $m['normativa'] }}
-                                        </strong>
-                                    </div>
-                                    <span style="font-size: 11.5px; font-weight: 800; color: {{ $m['is_compliant'] ? '#059669' : '#dc2626' }};">
-                                        {{ $m['leq_d'] }} dBA
+                        <div class="all-loc-point-item" onclick="focusPointOnAllLocationsMap({{ $idx }})" style="cursor:pointer;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="font-size: 11.5px; font-weight: 800; background: {{ ($m['dosis'] !== null && $m['dosis'] <= 1.0) ? '#ecfdf5' : '#fef2f2' }}; color: {{ ($m['dosis'] !== null && $m['dosis'] <= 1.0) ? '#065f46' : '#991b1b' }}; border: 1px solid {{ ($m['dosis'] !== null && $m['dosis'] <= 1.0) ? '#a7f3d0' : '#fecaca' }}; padding: 1px 6px; border-radius: 4px;">
+                                        #{{ $m['num'] }}
                                     </span>
+                                    <strong style="font-size: 12.5px; color: var(--ink);">
+                                        {{ $m['area'] }}
+                                    </strong>
                                 </div>
-                                <div style="font-size: 11.5px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                    {{ $m['tipo_zona'] }} • LMP: {{ $m['limite_normativa'] }}
-                                </div>
-                                <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 11px; color: #0284c7; background: #f0f9ff; padding: 4px 8px; border-radius: 6px; border: 1px solid #e0f2fe;">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                        <circle cx="12" cy="7" r="4" />
-                                    </svg>
-                                    <span style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                        Registrado por: <strong>{{ $m['registered_by'] }}</strong>
-                                    </span>
-                                </div>
+                                <span style="font-size: 11.5px; font-weight: 800; color: {{ ($m['leq_t_db'] !== null && $m['leq_t_db'] <= 85) ? '#059669' : '#dc2626' }};">
+                                    {{ $m['leq_t_db'] !== null ? number_format($m['leq_t_db'], 1) : '—' }} dBA
+                                </span>
                             </div>
+                            <div style="font-size: 11.5px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                {{ $m['punto_medicion'] }} • {{ $m['tipo_ruido'] }}
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 11px; color: #0284c7; background: #f0f9ff; padding: 4px 8px; border-radius: 6px; border: 1px solid #e0f2fe;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                    <circle cx="12" cy="7" r="4" />
+                                </svg>
+                                <span style="font-weight: 600;">Por: <strong>{{ $m['registered_by'] }}</strong></span>
+                            </div>
+                            @if($m['dosis'] !== null)
+                            <div style="display: flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 10px; color: #334155; background: #fafafa; padding: 3px 6px; border-radius: 4px;">
+                                <span style="font-weight: 700;">Dosis:</span> <span style="color: {{ ($m['dosis'] <= 1.0) ? '#059669' : '#dc2626' }}; font-weight: 700;">{{ number_format($m['dosis'], 4) }}</span>
+                            </div>
+                            @endif
+                        </div>
                         @empty
-                            <div style="text-align: center; color: #94a3b8; padding: 20px; font-size: 12.5px;">
-                                No hay puntos registrados en este módulo.
-                            </div>
+                        <div style="text-align: center; color: #94a3b8; padding: 20px; font-size: 12.5px;">
+                            No hay puntos registrados.
+                        </div>
                         @endforelse
                     </div>
                 </div>
@@ -91,8 +91,9 @@
         </div>
 
         <div class="modal-footer-custom">
-            <button type="button" class="btn-primary-hero-action" onclick="closeAllLocationsModal()" style="padding: 8px 18px; font-size: 13px;">Cerrar</button>
+            <button type="button" class="btn-primary-hero-action" onclick="closeAllLocationsModal()">Cerrar</button>
         </div>
     </div>
 </div>
 
+                    </div>
