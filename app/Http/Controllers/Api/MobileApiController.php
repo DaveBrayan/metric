@@ -200,41 +200,6 @@ class MobileApiController extends Controller
             }
         }
 
-        $registeredByName = null;
-        if (!empty($staffId)) {
-            $staff = Staff::find($staffId);
-            if ($staff) {
-                $registeredByName = $staff->full_name ?: $staff->name;
-            } else {
-                $user = User::find($staffId);
-                if ($user) {
-                    $registeredByName = $user->name;
-                }
-            }
-        }
-
-        if (empty($registeredByName)) {
-            $candidateName = $rawRegisteredBy ?? $rawCreatedBy;
-            if (!empty($candidateName) && !is_numeric($candidateName)) {
-                $registeredByName = trim($candidateName);
-            } elseif (!empty($candidateName) && is_numeric($candidateName)) {
-                $staff = Staff::find((int) $candidateName);
-                if ($staff) {
-                    $staffId = $staff->id;
-                    $registeredByName = $staff->full_name ?: $staff->name;
-                }
-            }
-        }
-
-        if (empty($registeredByName)) {
-            if ($module->fieldStaff) {
-                $registeredByName = $module->fieldStaff->full_name ?: $module->fieldStaff->name;
-                $staffId = $module->field_staff_id;
-            } else {
-                $registeredByName = 'Técnico de Campo';
-            }
-        }
-
         // Numeración del punto
         $existingCount = $module->noiseMeasurements()->count();
         $pointNumber = $request->input('point_number') ?? str_pad($existingCount + 1, 2, '0', STR_PAD_LEFT);
@@ -364,7 +329,7 @@ class MobileApiController extends Controller
             'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
             'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
             'observations' => $request->input('observations') ?? $request->input('observaciones'),
-            'registered_by' => $registeredByName,
+            'registered_by' => null,
             'staff_id' => $staffId,
         ];
 
