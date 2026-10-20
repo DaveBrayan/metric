@@ -451,52 +451,30 @@ function buildCalculosRow(m, idx) {
     if (n === 0) { r += '<td style="padding:8px 6px;text-align:center;color:#94a3b8;">—</td>'; }
     else if (cumple) { r += '<td style="padding:8px 6px;text-align:center;"><span style="padding:2px 8px;background:#dcfce7;color:#166534;border-radius:4px;font-weight:700;font-size:10px;">CUMPLE</span></td>'; }
     else { r += '<td style="padding:8px 6px;text-align:center;"><span style="padding:2px 8px;background:#fee2e2;color:#991b1b;border-radius:4px;font-weight:700;font-size:10px;">NO CUMPLE</span></td>'; }
-    r += '<td style="padding:8px 6px;text-align:center;"><button class="btn-admin-icon-action theme-cyan" onclick="openCalculosModal(ALL_MEASUREMENTS_DATA[' + idx + '])" title="Detalle" style="padding:4px 8px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></button></td>';
+    r += '<td style="padding:8px 6px;text-align:center;"><button class="btn-admin-icon-action theme-cyan" onclick="openCalculosModal(ALL_MEASUREMENTS_DATA[' + idx + '], ' + idx + ')" title="Matriz de Cálculos" style="padding:4px 8px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></button></td>';
     r += '</tr>';
     return r;
 }
 
 /**
- * Opens the Cálculos modal showing ALL measurements with full NTS-002/17 calculations.
+ * Abre el modal de Cálculos con la matriz completa de 30 puntos 10^(NPSi/10) y fórmulas NTS-002/17.
  */
 window.openCalculosListModal = function () {
-    const modal = document.getElementById('calculosModalRuido');
-    if (!modal) return;
-    const data = window.ALL_MEASUREMENTS_DATA || [];
-    const container = document.getElementById('calculosListContent');
-    if (!container) { modal.style.display = 'flex'; return; }
-    if (data.length === 0) {
-        container.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:40px;">No hay mediciones registradas.</div>';
-        modal.style.display = 'flex'; return;
+    if (typeof openCalculosModal === 'function') {
+        openCalculosModal(null, null);
+    } else {
+        const modal = document.getElementById('calculosModalRuido');
+        if (modal) modal.style.display = 'flex';
     }
-    let html = '<table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr style="background:#e0f2fe;border-bottom:2px solid #0284c7;">';
-    html += '<th style="padding:8px 6px;text-align:center;font-weight:700;color:#0284c7;width:40px;">N°</th>';
-    html += '<th style="padding:8px 6px;text-align:left;font-weight:700;color:#0284c7;">Área</th>';
-    html += '<th style="padding:8px 6px;text-align:left;font-weight:700;color:#0284c7;">Punto</th>';
-    html += '<th style="padding:8px 6px;text-align:center;font-weight:700;color:#0284c7;">NPS Max</th>';
-    html += '<th style="padding:8px 6px;text-align:center;font-weight:700;color:#0284c7;">Σ Energía</th>';
-    html += '<th style="padding:8px 6px;text-align:center;font-weight:700;color:#0284c7;">LAeq,T</th>';
-    html += '<th style="padding:8px 6px;text-align:center;font-weight:700;color:#0284c7;">TPE(h)</th>';
-    html += '<th style="padding:8px 6px;text-align:center;font-weight:700;color:#0284c7;">TMPE(h)</th>';
-    html += '<th style="padding:8px 6px;text-align:center;font-weight:700;color:#0284c7;">Dosis</th>';
-    html += '<th style="padding:8px 6px;text-align:center;font-weight:700;color:#0284c7;">Estado</th>';
-    html += '<th style="padding:8px 6px;text-align:center;font-weight:700;color:#0284c7;width:55px;">Detalle</th>';
-    html += '</tr></thead><tbody>';
-    data.forEach(function (m, idx) { html += buildCalculosRow(m, idx); });
-    html += '</tbody></table>';
-    html += '<div style="margin-top:15px;padding:12px;background:#fafafa;border-radius:8px;border:1px solid #e2e8f0;font-size:10px;color:#64748b;">';
-    html += '<b style="color:#334155;">NTS-002/17:</b> LAeq,T = 10·log₁₀(Σ10^(NPSi/10)/N) · TMPE = 8/2^((LAeq,T−85)/3) · Dosis = TPE/TMPE · Cumple si Dosis ≤ 1</div>';
-    container.innerHTML = html;
-    container.style.display = '';
-    var sv = document.getElementById('calculosSingleContent'); if (sv) sv.style.display = 'none';
-    var ti = document.getElementById('calculosModalTitle'); if (ti) ti.textContent = 'Cálculos y Evaluación — Todas las Mediciones';
-    var su = document.getElementById('calculosModalSubtitle'); if (su) su.textContent = 'NTS-002/17 · Resumen de ' + data.length + ' punto(s)';
-    modal.style.display = 'flex';
 };
 
 window.closeCalculosListModal = function () {
-    const modal = document.getElementById('calculosModalRuido');
-    if (modal) modal.style.display = 'none';
+    if (typeof closeCalculosModal === 'function') {
+        closeCalculosModal();
+    } else {
+        const modal = document.getElementById('calculosModalRuido');
+        if (modal) modal.style.display = 'none';
+    }
 };
 
 
