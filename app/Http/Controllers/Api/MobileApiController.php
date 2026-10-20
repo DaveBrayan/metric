@@ -85,7 +85,7 @@ class MobileApiController extends Controller
                 'tiempo_expos_h' => (float) $item->tiempo_expos_h,
                 'ponderacion' => $item->ponderacion,
                 'respuesta' => $item->respuesta,
-                'mediciones_db' => is_array($item->mediciones_db) ? $item->mediciones_db : json_decode($item->mediciones_db, true) ?: [],
+                'mediciones_db' => is_array($item->mediciones_db) ? $item->mediciones_db : (json_decode($item->mediciones_db, true) ?: []),
                 'leq_t_db' => $item->leq_t_db ? (float) $item->leq_t_db : null,
                 'uso_protectores' => (bool) $item->uso_protectores,
                 'tipo_protector' => $item->tipo_protector,

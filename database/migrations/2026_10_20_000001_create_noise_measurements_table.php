@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('noise_measurements', function (Blueprint $table) {
+        if (!Schema::hasTable('noise_measurements')) {
+            Schema::create('noise_measurements', function (Blueprint $table) {
             $table->id();
             $table->foreignId('module_id')->constrained('measurement_modules')->cascadeOnDelete();
             
@@ -72,7 +73,8 @@ return new class extends Migration
             $table->index('module_id');
             $table->index('measurement_date');
             $table->index('punto_medicion');
-        });
+            });
+        }
     }
 
     /**
