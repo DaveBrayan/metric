@@ -67,7 +67,7 @@ function calculateAcousticLeq(values) {
     return Math.round(leq * 10) / 10;
 }
 
-window.handleNormativaChange = function(prefix) {
+window.handleNormativaChange = function (prefix) {
     const normSelect = document.getElementById(`${prefix}_normativa`);
     const zonaSelect = document.getElementById(`${prefix}_tipo_zona`);
     const horarioInput = document.getElementById(`${prefix}_horario`);
@@ -90,7 +90,7 @@ window.handleNormativaChange = function(prefix) {
     recalcruidoOcupacional(prefix);
 };
 
-window.handleTipoZonaChange = function(prefix) {
+window.handleTipoZonaChange = function (prefix) {
     const normSelect = document.getElementById(`${prefix}_normativa`);
     const zonaSelect = document.getElementById(`${prefix}_tipo_zona`);
     const horarioInput = document.getElementById(`${prefix}_horario`);
@@ -108,7 +108,7 @@ window.handleTipoZonaChange = function(prefix) {
     recalcruidoOcupacional(prefix);
 };
 
-window.addCardinalPointInput = function(prefix, cardinalKey) {
+window.addCardinalPointInput = function (prefix, cardinalKey) {
     const container = document.getElementById(`${prefix}_${cardinalKey}_points_container`);
     if (!container) return;
 
@@ -124,7 +124,7 @@ window.addCardinalPointInput = function(prefix, cardinalKey) {
     recalcruidoOcupacional(prefix);
 };
 
-window.recalcruidoOcupacional = function(prefix) {
+window.recalcruidoOcupacional = function (prefix) {
     const limiteInput = document.getElementById(`${prefix}_limite_normativa`);
     const lmpDisp = document.getElementById(`${prefix}_lmp_display`);
     const leqDisp = document.getElementById(`${prefix}_leq_display`);
@@ -242,7 +242,7 @@ function utmToLatLngJS(utmX, utmY, utmZoneStr = '19K') {
     return { lat: Math.round(lat * 1e7) / 1e7, lng: Math.round(lng * 1e7) / 1e7 };
 }
 
-window.captureCoordinatesGPS = function(prefix) {
+window.captureCoordinatesGPS = function (prefix) {
     if (!navigator.geolocation) {
         alert('Tu navegador no soporta geolocalización GPS.');
         return;
@@ -252,7 +252,7 @@ window.captureCoordinatesGPS = function(prefix) {
         pos => {
             const lat = pos.coords.latitude;
             const lng = pos.coords.longitude;
-            
+
             // Convert LatLng to approximate UTM 19K
             const utmX = Math.round(500000 + (lng + 69) * 111320);
             const utmY = Math.round(10000000 + lat * 110574);
@@ -297,17 +297,17 @@ window.captureCoordinatesGPS = function(prefix) {
 /* ==========================================================================
    3. MODALES DE Ruido Ocupacional
    ========================================================================== */
-window.openCreateMeasurementModal = function() {
+window.openCreateMeasurementModal = function () {
     const m = document.getElementById('createMeasurementModal');
     if (m) m.classList.add('open');
 };
 
-window.closeCreateMeasurementModal = function() {
+window.closeCreateMeasurementModal = function () {
     const m = document.getElementById('createMeasurementModal');
     if (m) m.classList.remove('open');
 };
 
-window.openEditMeasurementModal = function(item) {
+window.openEditMeasurementModal = function (item) {
     const m = document.getElementById('editMeasurementModal');
     if (!m) return;
 
@@ -383,12 +383,12 @@ window.openEditMeasurementModal = function(item) {
     m.classList.add('open');
 };
 
-window.closeEditMeasurementModal = function() {
+window.closeEditMeasurementModal = function () {
     const m = document.getElementById('editMeasurementModal');
     if (m) m.classList.remove('open');
 };
 
-window.confirmDeleteMeasurement = function(id, pointNum) {
+window.confirmDeleteMeasurement = function (id, pointNum) {
     if (typeof Swal !== 'undefined') {
         Swal.fire({
             title: '¿Eliminar medición?',
@@ -422,16 +422,16 @@ window.confirmDeleteMeasurement = function(id, pointNum) {
         }
     }
 };
- 
+
 /**
  * Builds a single row for the Cálculos summary table with NTS-002/17 formulas.
  */
 function buildCalculosRow(m, idx) {
     var med = m.mediciones_db || [];
     var tpe = parseFloat(m.tiempo_expos_h) || 8;
-    var valid = med.map(function(v) { return parseFloat(v); }).filter(function(v) { return !isNaN(v) && v > 0; });
+    var valid = med.map(function (v) { return parseFloat(v); }).filter(function (v) { return !isNaN(v) && v > 0; });
     var n = valid.length, sumaE = 0, npsMax = 0;
-    valid.forEach(function(v) { sumaE += Math.pow(10, v / 10.0); if (v > npsMax) npsMax = v; });
+    valid.forEach(function (v) { sumaE += Math.pow(10, v / 10.0); if (v > npsMax) npsMax = v; });
     var leq = n > 0 ? (10 * Math.log10(sumaE / n)) : 0;
     var tmpe = leq > 0 ? (8 / Math.pow(2, (leq - 85) / 3)) : null;
     var dosis = (tmpe && tmpe > 0) ? (tpe / tmpe) : null;
@@ -459,7 +459,7 @@ function buildCalculosRow(m, idx) {
 /**
  * Opens the Cálculos modal showing ALL measurements with full NTS-002/17 calculations.
  */
-window.openCalculosListModal = function() {
+window.openCalculosListModal = function () {
     const modal = document.getElementById('calculosModalRuido');
     if (!modal) return;
     const data = window.ALL_MEASUREMENTS_DATA || [];
@@ -482,7 +482,7 @@ window.openCalculosListModal = function() {
     html += '<th style="padding:8px 6px;text-align:center;font-weight:700;color:#0284c7;">Estado</th>';
     html += '<th style="padding:8px 6px;text-align:center;font-weight:700;color:#0284c7;width:55px;">Detalle</th>';
     html += '</tr></thead><tbody>';
-    data.forEach(function(m, idx) { html += buildCalculosRow(m, idx); });
+    data.forEach(function (m, idx) { html += buildCalculosRow(m, idx); });
     html += '</tbody></table>';
     html += '<div style="margin-top:15px;padding:12px;background:#fafafa;border-radius:8px;border:1px solid #e2e8f0;font-size:10px;color:#64748b;">';
     html += '<b style="color:#334155;">NTS-002/17:</b> LAeq,T = 10·log₁₀(Σ10^(NPSi/10)/N) · TMPE = 8/2^((LAeq,T−85)/3) · Dosis = TPE/TMPE · Cumple si Dosis ≤ 1</div>';
@@ -494,7 +494,7 @@ window.openCalculosListModal = function() {
     modal.style.display = 'flex';
 };
 
-window.closeCalculosListModal = function() {
+window.closeCalculosListModal = function () {
     const modal = document.getElementById('calculosModalRuido');
     if (modal) modal.style.display = 'none';
 };
@@ -503,7 +503,7 @@ window.closeCalculosListModal = function() {
 /* ==========================================================================
    4. MODAL MAPA GENERAL DE TODAS LAS UBICACIONES
    ========================================================================== */
-window.openAllLocationsModal = function() {
+window.openAllLocationsModal = function () {
     const m = document.getElementById('allLocationsModal');
     if (m) {
         m.classList.add('open');
@@ -511,7 +511,7 @@ window.openAllLocationsModal = function() {
     }
 };
 
-window.closeAllLocationsModal = function() {
+window.closeAllLocationsModal = function () {
     const m = document.getElementById('allLocationsModal');
     if (m) m.classList.remove('open');
 };
@@ -553,7 +553,7 @@ function initAllLocationsMap() {
             const isOk = dosisOk && leqOk;
             const markerColor = isOk ? '#059669' : '#dc2626';
             const iconSvg = `<svg width="24" height="24" viewBox="0 0 24 24" fill="${markerColor}" stroke="#ffffff" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5" fill="#ffffff"/></svg>`;
-            
+
             const customIcon = L.divIcon({
                 className: 'custom-loc-marker',
                 html: iconSvg,
@@ -581,7 +581,7 @@ function initAllLocationsMap() {
     }
 }
 
-window.focusPointOnAllLocationsMap = function(idx) {
+window.focusPointOnAllLocationsMap = function (idx) {
     const marker = allLocationsMarkersList[idx];
     if (marker && allLocationsMapInstance) {
         allLocationsMapInstance.setView(marker.getLatLng(), 16, { animate: true });
@@ -592,7 +592,7 @@ window.focusPointOnAllLocationsMap = function(idx) {
 /* ==========================================================================
    5. MODAL MAPA INDIVIDUAL DE PUNTO
    ========================================================================== */
-window.openMapModal = function(lat, lng, pointName, isCompliant, utmInfo) {
+window.openMapModal = function (lat, lng, pointName, isCompliant, utmInfo) {
     const m = document.getElementById('mapModal');
     if (!m) return;
     m.classList.add('open');
@@ -618,7 +618,7 @@ window.openMapModal = function(lat, lng, pointName, isCompliant, utmInfo) {
     }, 200);
 };
 
-window.closeMapModal = function() {
+window.closeMapModal = function () {
     const m = document.getElementById('mapModal');
     if (m) m.classList.remove('open');
 };
@@ -626,7 +626,7 @@ window.closeMapModal = function() {
 /* ==========================================================================
    6. MODAL VISOR FOTOGRÁFICO
    ========================================================================== */
-window.openPhotoViewerModal = function(url, pointName, caption) {
+window.openPhotoViewerModal = function (url, pointName, caption) {
     const m = document.getElementById('photoViewerModal');
     if (!m) return;
     const img = document.getElementById('photoViewerImage');
@@ -640,7 +640,7 @@ window.openPhotoViewerModal = function(url, pointName, caption) {
     m.classList.add('open');
 };
 
-window.closePhotoViewerModal = function() {
+window.closePhotoViewerModal = function () {
     const m = document.getElementById('photoViewerModal');
     if (m) m.classList.remove('open');
 };
@@ -648,167 +648,166 @@ window.closePhotoViewerModal = function() {
 /* ==========================================================================
    7. MODAL EXPORTAR & TABLAS TÉCNICAS
    ========================================================================== */
-window.openExportModal = function() {
+window.openExportModal = function () {
     const m = document.getElementById('exportModal');
     if (m) m.classList.add('open');
 };
 
-window.closeExportModal = function() {
+window.closeExportModal = function () {
     const m = document.getElementById('exportModal');
     if (m) m.classList.remove('open');
 };
 
-window.openruidoOcupacionalTablesModal = function() {
+window.openruidoOcupacionalTablesModal = function () {
     const m = document.getElementById('ruidoOcupacionalTablesModal');
     if (m) m.classList.add('open');
 };
 
-window.closeruidoOcupacionalTablesModal = function() {
+window.closeruidoOcupacionalTablesModal = function () {
     const m = document.getElementById('ruidoOcupacionalTablesModal');
     if (m) m.classList.remove('open');
 };
 
-window.openPhotoReportModal = function() {
+window.openPhotoReportModal = function () {
     const m = document.getElementById('photoReportModal');
     if (m) m.classList.add('open');
 };
 
-window.closePhotoReportModal = function() {
+window.closePhotoReportModal = function () {
     const m = document.getElementById('photoReportModal');
     if (m) m.classList.remove('open');
 };
 
-window.openTechHeaderEditModal = function() {
+window.openTechHeaderEditModal = function () {
     const m = document.getElementById('techHeaderEditModal');
     if (m) m.classList.add('open');
+};
 
 
-/**
- * Descarga reporte de Ruido Ocupacional en formato Word (.docx)
- */
-window.downloadWordReport = function(measurementId) {
-    const measurement = ALL_MEASUREMENTS_DATA.find(m => m.id === measurementId);
-    if (!measurement) {
-        alert('Medición no encontrada');
-        return;
+    /**
+     * Descarga reporte de Ruido Ocupacional en formato Word (.docx)
+     */
+    window.downloadWordReport = function (measurementId) {
+        const measurement = ALL_MEASUREMENTS_DATA.find(m => m.id === measurementId);
+        if (!measurement) {
+            alert('Medición no encontrada');
+            return;
+        }
+
+        // URL para descargar el documento Word
+        const downloadUrl = `/modulos/${MODULE_ID}/ruido-ocupacional/mediciones/${measurementId}/download-word`;
+
+        // Crear un elemento <a> temporal para descargar
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `Ruido_Ocupacional_P${measurement.num}.docx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        console.log('Descarga iniciada:', link.download);
+    };
+
+
+    window.closeTechHeaderEditModal = function () {
+        const m = document.getElementById('techHeaderEditModal');
+        if (m) m.classList.remove('open');
+    };
+
+    /* ==========================================================================
+       8. FILTROS EN VIVO Y BÚSQUEDA EN TABLA MAESTRA
+       ========================================================================== */
+    window.filterruidoOcupacional = function (type, btn) {
+        currentFilterType = type;
+        document.querySelectorAll('#ruidoFilterGroup .filter-pill-btn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        applyTableFilters();
+    };
+
+    window.searchRuidoOcupacionalLive = function () {
+        const inp = document.getElementById('ruidoSearchInput');
+        currentSearchQuery = (inp?.value || '').toLowerCase().trim();
+        applyTableFilters();
+    };
+
+    function applyTableFilters() {
+        const rows = document.querySelectorAll('#ruidoTableBody .ruido-data-row');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const rowNormativa = (row.getAttribute('data-normativa') || '').toLowerCase();
+            const rowCompliant = row.getAttribute('data-compliant');
+            const rowSearch = (row.getAttribute('data-search') || '').toLowerCase();
+
+            let matchesFilter = true;
+            if (currentFilterType === 'compliant') matchesFilter = (rowCompliant === 'compliant');
+            else if (currentFilterType === 'non-compliant') matchesFilter = (rowCompliant === 'non-compliant');
+            else if (currentFilterType === 'rasim') matchesFilter = rowNormativa.includes('rasim');
+            else if (currentFilterType === 'rmca') matchesFilter = rowNormativa.includes('rmca');
+
+            const matchesSearch = !currentSearchQuery || rowSearch.includes(currentSearchQuery);
+
+            if (matchesFilter && matchesSearch) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        const noRes = document.getElementById('noResultsRow');
+        if (noRes) {
+            noRes.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
+        }
     }
 
-    // URL para descargar el documento Word
-    const downloadUrl = `/modulos/${MODULE_ID}/ruido-ocupacional/mediciones/${measurementId}/download-word`;
-    
-    // Crear un elemento <a> temporal para descargar
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = `Ruido_Ocupacional_P${measurement.num}.docx`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    console.log('Descarga iniciada:', link.download);
-};
-
-
-window.closeTechHeaderEditModal = function() {
-    const m = document.getElementById('techHeaderEditModal');
-    if (m) m.classList.remove('open');
-};
-
-/* ==========================================================================
-   8. FILTROS EN VIVO Y BÚSQUEDA EN TABLA MAESTRA
-   ========================================================================== */
-window.filterruidoOcupacional = function(type, btn) {
-    currentFilterType = type;
-    document.querySelectorAll('#ruidoFilterGroup .filter-pill-btn').forEach(b => b.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    applyTableFilters();
-};
-
-window.searchRuidoOcupacionalLive = function() {
-    const inp = document.getElementById('ruidoSearchInput');
-    currentSearchQuery = (inp?.value || '').toLowerCase().trim();
-    applyTableFilters();
-};
-
-function applyTableFilters() {
-    const rows = document.querySelectorAll('#ruidoTableBody .ruido-data-row');
-    let visibleCount = 0;
-
-    rows.forEach(row => {
-        const rowNormativa = (row.getAttribute('data-normativa') || '').toLowerCase();
-        const rowCompliant = row.getAttribute('data-compliant');
-        const rowSearch = (row.getAttribute('data-search') || '').toLowerCase();
-
-        let matchesFilter = true;
-        if (currentFilterType === 'compliant') matchesFilter = (rowCompliant === 'compliant');
-        else if (currentFilterType === 'non-compliant') matchesFilter = (rowCompliant === 'non-compliant');
-        else if (currentFilterType === 'rasim') matchesFilter = rowNormativa.includes('rasim');
-        else if (currentFilterType === 'rmca') matchesFilter = rowNormativa.includes('rmca');
-
-        const matchesSearch = !currentSearchQuery || rowSearch.includes(currentSearchQuery);
-
-        if (matchesFilter && matchesSearch) {
-            row.style.display = '';
-            visibleCount++;
-        } else {
-            row.style.display = 'none';
+    /* ==========================================================================
+       9. AUTO-GUARDADO DE ENCABEZADO TÉCNICO INLINE
+       ========================================================================== */
+    let autoSaveTimer = null;
+    async function autoSaveHeaderField() {
+        const badge = document.getElementById('headerAutoSaveBadge');
+        if (badge) {
+            badge.classList.add('visible', 'saving');
+            badge.querySelector('span').textContent = 'Guardando...';
         }
+
+        clearTimeout(autoSaveTimer);
+        autoSaveTimer = setTimeout(async () => {
+            const payload = {
+                installation_name: document.getElementById('inline_installation_name')?.value || '',
+                start_date: document.getElementById('inline_start_date')?.value || null,
+                end_date: document.getElementById('inline_end_date')?.value || null,
+                monitoring_type: document.getElementById('inline_monitoring_type')?.value || ''
+            };
+
+            try {
+                const res = await fetch(UPDATE_HEADER_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': CSRF_TOKEN
+                    },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok && badge) {
+                    badge.classList.remove('saving');
+                    badge.querySelector('span').textContent = 'Guardado';
+                    setTimeout(() => {
+                        badge.classList.remove('visible');
+                    }, 2500);
+                }
+            } catch (e) {
+                console.error('Error auto-guardando encabezado:', e);
+                if (badge) {
+                    badge.querySelector('span').textContent = 'Error';
+                }
+            }
+        }, 600);
+    }
+    window.autoSaveHeaderField = autoSaveHeaderField;
+
+    // Inicialización cuando carga el DOM
+    document.addEventListener('DOMContentLoaded', () => {
+        recalcruidoOcupacional('create');
     });
-
-    const noRes = document.getElementById('noResultsRow');
-    if (noRes) {
-        noRes.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
-    }
-}
-
-/* ==========================================================================
-   9. AUTO-GUARDADO DE ENCABEZADO TÉCNICO INLINE
-   ========================================================================== */
-let autoSaveTimer = null;
-async function autoSaveHeaderField() {
-    const badge = document.getElementById('headerAutoSaveBadge');
-    if (badge) {
-        badge.classList.add('visible', 'saving');
-        badge.querySelector('span').textContent = 'Guardando...';
-    }
-
-    clearTimeout(autoSaveTimer);
-    autoSaveTimer = setTimeout(async () => {
-        const payload = {
-            installation_name: document.getElementById('inline_installation_name')?.value || '',
-            start_date: document.getElementById('inline_start_date')?.value || null,
-            end_date: document.getElementById('inline_end_date')?.value || null,
-            monitoring_type: document.getElementById('inline_monitoring_type')?.value || ''
-        };
-
-        try {
-            const res = await fetch(UPDATE_HEADER_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': CSRF_TOKEN
-                },
-                body: JSON.stringify(payload)
-            });
-            if (res.ok && badge) {
-                badge.classList.remove('saving');
-                badge.querySelector('span').textContent = 'Guardado';
-                setTimeout(() => {
-                    badge.classList.remove('visible');
-                }, 2500);
-            }
-        } catch (e) {
-            console.error('Error auto-guardando encabezado:', e);
-            if (badge) {
-                badge.querySelector('span').textContent = 'Error';
-            }
-        }
-    }, 600);
-}
-window.autoSaveHeaderField = autoSaveHeaderField;
-
-// Inicialización cuando carga el DOM
-document.addEventListener('DOMContentLoaded', () => {
-    recalcruidoOcupacional('create');
-});
-
-

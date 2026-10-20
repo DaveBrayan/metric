@@ -51,6 +51,38 @@
                         Ver Catálogo
                     </button>
                 </div>
+                <!-- Opción 3: Informe Word individual -->
+                <div style="border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 16px; transition: all 0.2s ease;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 12px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 44px; height: 44px; border-radius: 10px; background: #eff6ff; color: #2563eb; display: grid; place-items: center; flex-shrink: 0;">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                    <path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div style="font-weight: 800; font-size: 14px; color: var(--ink);">Informe Individual Word (.docx)</div>
+                                <div style="font-size: 12px; color: #64748b;">Descarga el informe técnico de un punto de medición específico.</div>
+                            </div>
+                        </div>
+                    </div>
+                    @if(count($measurements) > 0)
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <select id="wordReportPointSelect" class="custom-form-select" style="flex: 1; font-size: 12.5px;">
+                            @foreach($measurements as $m)
+                            <option value="{{ $m['id'] }}">{{ $m['num'] }} — {{ $m['area'] }} ({{ $m['punto_medicion'] }})</option>
+                            @endforeach
+                        </select>
+                        <button type="button" class="btn-primary-hero-action" onclick="downloadWordReport(document.getElementById('wordReportPointSelect').value)" style="padding: 8px 16px; font-size: 12.5px; white-space: nowrap;">
+                            Descargar (.docx)
+                        </button>
+                    </div>
+                    @else
+                    <div style="text-align: center; color: #94a3b8; font-size: 12px; padding: 8px;">No hay mediciones registradas para descargar.</div>
+                    @endif
+                </div>
             </div>
         </div>
 
