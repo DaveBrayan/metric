@@ -82,188 +82,85 @@ class RuidoOcupacionalController extends Controller
 
         // Mediciones registradas
         $measurements = $module->noiseMeasurements()->with('staff')->get()->map(function ($item, $index) use ($assignedStaff, $currentUser) {
-            $dateFormatted = $item->measurement_date ? $item->measurement_date->format('d/m/Y') : '—';
-
-            $lat = $item->latitude !== null ? (float) $item->latitude : null;
-            $lng = $item->longitude !== null ? (float) $item->longitude : null;
-
-            // Extraer y convertir UTM si falta lat/lng
-            if (($lat === null || $lng === null) && !empty($item->location)) {
-                $loc = trim($item->location);
-                if (str_starts_with($loc, '{') || str_starts_with($loc, '[')) {
-                    $d = json_decode($loc, true);
-                    if (is_array($d)) {
-                        if (!empty($d['latitude']) && !empty($d['longitude'])) {
-                            $lat = (float) $d['latitude'];
-                            $lng = (float) $d['longitude'];
-                        } elseif (!empty($d['lat']) && !empty($d['lng'])) {
-                            $lat = (float) $d['lat'];
-                            $lng = (float) $d['lng'];
-                        } elseif (!empty($d['easting']) && !empty($d['northing'])) {
-                            $conv = $this->utmToLatLng((float)$d['easting'], (float)$d['northing'], $d['utm_zone'] ?? $d['zone'] ?? '19K');
-                            $lat = $conv['lat'];
-                            $lng = $conv['lng'];
-                        }
-                    }
-                } elseif (preg_match('/E:\s*([0-9.]+)/i', $loc, $mE) && preg_match('/N:\s*([0-9.]+)/i', $loc, $mN)) {
-                    preg_match('/Z:\s*([0-9A-Za-z]+)/i', $loc, $mZ);
-                    $conv = $this->utmToLatLng((float)$mE[1], (float)$mN[1], $mZ[1] ?? '19K');
-                    $lat = $conv['lat'];
-                    $lng = $conv['lng'];
-                }
+    $dateFormatted = $item->measurement_date ? $item->measurement_date->format('d/m/Y') : '—';
+    $lat = $item->latitude !== null ? (float) $item->latitude : null;
+    $lng = $item->longitude !== null ? (float) $item->longitude : null;
+    
+    // Ubicación fallback
+    if (($lat === null || $lng === null) && !empty($item->location)) {
+        $loc = trim($item->location);
+        if (str_starts_with($loc, '{') || str_starts_with($loc, '[')) {
+            $d = json_decode($loc, true);
+            if (is_array($d) && !empty($d['latitude']) && !empty($d['longitude'])) {
+                $lat = (float) $d['latitude'];
+                $lng = (float) $d['longitude'];
             }
+        }
+    }
 
-            // Si aún no tiene lat/lng pero tiene norte_x / norte_y
-            if (($lat === null || $lng === null) && !empty($item->norte_x) && !empty($item->norte_y)) {
-                $eNum = (float) preg_replace('/[^0-9.]/', '', $item->norte_x);
-                $nNum = (float) preg_replace('/[^0-9.]/', '', $item->norte_y);
-                if ($eNum > 0 && $nNum > 0) {
-                    $conv = $this->utmToLatLng($eNum, $nNum, $item->zona_banda ?: '19K');
-                    $lat = $conv['lat'];
-                    $lng = $conv['lng'];
-                }
-            }
+    // Imágenes
+    $rawImages = is_array($item->images) ? $item->images : (json_decode($item->images, true) ?: []);
+    if (empty($rawImages) && !empty($item->image_path)) {
+        $rawImages = [$item->image_path];
+    }
+    $imagesUrls = array_values(array_filter(array_map(function ($p) {
+        return $p ? asset($p) : null;
+    }, $rawImages)));
 
-            $rawImages = is_array($item->images) ? $item->images : (json_decode($item->images, true) ?: []);
-            if (empty($rawImages) && !empty($item->image_path)) {
-                $rawImages = [$item->image_path];
-            }
-            $imagesUrls = array_values(array_filter(array_map(function ($p) {
-                return $p ? asset($p) : null;
-            }, $rawImages)));
+    // Mediciones NPS y cálculos NTS-002/17
+    $medicionesDb = is_array($item->mediciones_db) ? $item->mediciones_db : (json_decode($item->mediciones_db, true) ?: []);
+    $medicionesValidas = array_values(array_filter($medicionesDb, function($v) { return is_numeric($v) && (float)$v > 0; }));
+    $leqCalculado = self::calculateLeq($medicionesValidas);
+    $leqFinal = $item->leq_t_db !== null ? (float) $item->leq_t_db : $leqCalculado;
+    $npsMax = !empty($medicionesValidas) ? max($medicionesValidas) : null;
+    $tpe = $item->tiempo_expos_h !== null ? (float) $item->tiempo_expos_h : 8.0;
+    $tmpe = ($leqFinal !== null && $leqFinal > 0) ? (8.0 / pow(2.0, ($leqFinal - 85.0) / 3.0)) : null;
+    $dosis = ($tmpe !== null && $tmpe > 0) ? ($tpe / $tmpe) : null;
 
-            // Procesar puntos cardinales
-            $p1Puntos = is_array($item->p1_norte_puntos) ? $item->p1_norte_puntos : (json_decode($item->p1_norte_puntos, true) ?: []);
-            $p2Puntos = is_array($item->p2_sur_puntos) ? $item->p2_sur_puntos : (json_decode($item->p2_sur_puntos, true) ?: []);
-            $p3Puntos = is_array($item->p3_este_puntos) ? $item->p3_este_puntos : (json_decode($item->p3_este_puntos, true) ?: []);
-            $p4Puntos = is_array($item->p4_oeste_puntos) ? $item->p4_oeste_puntos : (json_decode($item->p4_oeste_puntos, true) ?: []);
+    // Personal que registró
+    $registeredBy = (function () use ($item, $assignedStaff, $currentUser) {
+        if (!empty($item->registered_by) && !is_numeric($item->registered_by)) {
+            return $item->registered_by;
+        }
+        if ($item->staff) {
+            return $item->staff->full_name ?: $item->staff->name;
+        }
+        if (!empty($item->staff_id)) {
+            $st = Staff::find($item->staff_id);
+            if ($st) return $st->full_name ?: $st->name;
+        }
+        if ($assignedStaff && $assignedStaff->isNotEmpty()) {
+            return $assignedStaff->first()->full_name ?: $assignedStaff->first()->name;
+        }
+        return $currentUser ? $currentUser->name : 'Técnico de Campo';
+    })();
 
-            $allPuntos = array_merge($p1Puntos, $p2Puntos, $p3Puntos, $p4Puntos);
-            $leqCalculado = self::calculateLeq($allPuntos);
-            $leqFinal = $item->leq_d !== null ? (float) $item->leq_d : $leqCalculado;
+    return [
+        'id' => $item->id,
+        'num' => $item->point_number ?: str_pad($index + 1, 2, '0', STR_PAD_LEFT),
+        'area' => $item->area ?: 'Área General',
+        'punto_medicion' => $item->punto_medicion ?: 'Punto ' . ($index + 1),
+        'tipo_ruido' => $item->tipo_ruido ?: 'Continuo',
+        'tiempo_expos_h' => $tpe,
+        'ponderacion' => $item->ponderacion ?: 'A',
+        'respuesta' => $item->respuesta ?: 'Lenta',
+        'leq_t_db' => $leqFinal,
+        'nps_max' => $npsMax,
+        'mediciones_db' => $medicionesValidas,
+        'registered_by' => $registeredBy,
+        'latitude' => $lat,
+        'longitude' => $lng,
+        'images' => $imagesUrls,
+        'observations' => $item->observations ?: '',
+        'tmpe' => $tmpe,
+        'dosis' => $dosis,
+        'tpe_supera_tmpe' => ($dosis !== null && $dosis > 1.0),
+        'requiere_dosimetria' => (($dosis !== null && $dosis > 1.0) || ($leqFinal !== null && $leqFinal > 85.0)),
+    ];
+});
 
-            $limite = $item->limite_normativa !== null ? (float) $item->limite_normativa : 68.0;
-            $isCompliant = ($leqFinal !== null) ? ($leqFinal <= $limite) : true;
-            $cumple = ($leqFinal !== null) ? ($isCompliant ? 'SI' : 'NO') : '—';
-
-            $npsMax = !empty($allPuntos) ? max($allPuntos) : ($item->nps_max ?? null);
-            $npsMin = !empty($allPuntos) ? min($allPuntos) : ($item->nps_min ?? null);
-
-            return [
-                'id' => $item->id,
-                'num' => $item->point_number ?: str_pad($index + 1, 2, '0', STR_PAD_LEFT),
-                'date' => $dateFormatted,
-                'raw_date' => $item->measurement_date ? $item->measurement_date->format('Y-m-d') : '',
-                'time' => $item->measurement_time ?: '—',
-                'normativa' => $item->normativa ?: 'RASIM - ANEXO 12-C',
-                'tipo_zona' => $item->tipo_zona ?: 'Industrial - día',
-                'horario' => $item->horario ?: '08:00 a 22:00',
-                'limite_normativa' => number_format($limite, 1, ',', '.'),
-                'raw_limite_normativa' => $limite,
-                'zona_banda' => $item->zona_banda ?: '19K',
-                
-                // Campos adicionales del registro (App Data)
-                'area_trabajo' => $item->area_trabajo ?: 'No especificada',
-                'punto_medicion' => $item->punto_medicion ?: 'Punto ' . str_pad($index + 1, 2, '0', STR_PAD_LEFT),
-                'tipo_ruido' => $item->tipo_ruido ?: 'Fluctuante',
-                'tpe_h' => $item->tpe_h ?: '8',
-                'ponderacion' => $item->ponderacion ?: 'A',
-                'respuesta' => $item->respuesta ?: 'Lento',
-                'nps1' => $item->nps1 ?: '—',
-                'nps2' => $item->nps2 ?: '—',
-                'nps3' => $item->nps3 ?: '—',
-                'nps4' => $item->nps4 ?: '—',
-                'nps5' => $item->nps5 ?: '—',
-                'nps6' => $item->nps6 ?: '—',
-                'nps7' => $item->nps7 ?: '—',
-                'nps8' => $item->nps8 ?: '—',
-                
-                // Colindancias
-                'norte_colindancia' => $item->norte_colindancia ?: 'Calle / Vía Principal',
-                'norte_x' => $item->norte_x ?: '—',
-                'norte_y' => $item->norte_y ?: '—',
-                'sur_colindancia' => $item->sur_colindancia ?: 'Área Industrial Vecina',
-                'sur_x' => $item->sur_x ?: '—',
-                'sur_y' => $item->sur_y ?: '—',
-                'este_colindancia' => $item->este_colindancia ?: 'Terreno Abierto',
-                'este_x' => $item->este_x ?: '—',
-                'este_y' => $item->este_y ?: '—',
-                'oeste_colindancia' => $item->oeste_colindancia ?: 'Instalaciones Comerciales',
-                'oeste_x' => $item->oeste_x ?: '—',
-                'oeste_y' => $item->oeste_y ?: '—',
-                
-                // Puntos Cardinales
-                'p1_norte_inicio' => $item->p1_norte_inicio ?: '—',
-                'p1_norte_fin' => $item->p1_norte_fin ?: '—',
-                'p1_norte_puntos' => $p1Puntos,
-                'p1_norte_leq' => self::calculateLeq($p1Puntos),
-                
-                'p2_sur_inicio' => $item->p2_sur_inicio ?: '—',
-                'p2_sur_fin' => $item->p2_sur_fin ?: '—',
-                'p2_sur_puntos' => $p2Puntos,
-                'p2_sur_leq' => self::calculateLeq($p2Puntos),
-                
-                'p3_este_inicio' => $item->p3_este_inicio ?: '—',
-                'p3_este_fin' => $item->p3_este_fin ?: '—',
-                'p3_este_puntos' => $p3Puntos,
-                'p3_este_leq' => self::calculateLeq($p3Puntos),
-                
-                'p4_oeste_inicio' => $item->p4_oeste_inicio ?: '—',
-                'p4_oeste_fin' => $item->p4_oeste_fin ?: '—',
-                'p4_oeste_puntos' => $p4Puntos,
-                'p4_oeste_leq' => self::calculateLeq($p4Puntos),
-                
-                'mediciones_db' => $allPuntos,
-                'total_readings_count' => count($allPuntos),
-                'leq_d' => $leqFinal !== null ? number_format($leqFinal, 1, ',', '.') : '—',
-                'raw_leq_d' => $leqFinal,
-                'nps_max' => $npsMax !== null ? number_format($npsMax, 1, ',', '.') : '—',
-                'raw_nps_max' => $npsMax,
-                'nps_min' => $npsMin !== null ? number_format($npsMin, 1, ',', '.') : '—',
-                'raw_nps_min' => $npsMin,
-                'cumple' => $cumple,
-                'is_compliant' => $isCompliant,
-                
-                'image_path' => $item->image_path ? asset($item->image_path) : ($imagesUrls[0] ?? null),
-                'raw_image_path' => $item->image_path,
-                'images' => $imagesUrls,
-                'images_count' => count($imagesUrls),
-                'location' => $item->location ?: ($lat && $lng ? "{$lat}, {$lng}" : '—'),
-                'latitude' => $lat,
-                'longitude' => $lng,
-                'observations' => $item->observations ?: 'Sin observaciones registradas.',
-                'raw_observations' => $item->observations,
-                
-                'registered_by' => (function () use ($item, $assignedStaff, $currentUser) {
-                    if (!empty($item->registered_by) && !is_numeric($item->registered_by)) {
-                        return $item->registered_by;
-                    }
-                    if ($item->staff) {
-                        return $item->staff->full_name ?: $item->staff->name;
-                    }
-                    if (!empty($item->staff_id)) {
-                        $st = Staff::find($item->staff_id);
-                        if ($st) return $st->full_name ?: $st->name;
-                    }
-                    if ($assignedStaff && $assignedStaff->isNotEmpty()) {
-                        return $assignedStaff->first()->full_name ?: $assignedStaff->first()->name;
-                    }
-                    return $currentUser ? $currentUser->name : 'Técnico de Campo';
-                })(),
-                'staff_id' => $item->staff_id,
-            ];
-        });
-
-        // Totales y estadísticas de cumplimiento
+        // Estadísticas básicas
         $totalMeasurements = $measurements->count();
-        $compliantMeasurements = $measurements->where('is_compliant', true)->count();
-        $nonCompliantMeasurements = $totalMeasurements - $compliantMeasurements;
-        $complianceRate = $totalMeasurements > 0 ? round(($compliantMeasurements / $totalMeasurements) * 100, 1) : 100.0;
-
-        $allLeqValues = $measurements->pluck('raw_leq_d')->filter()->values()->all();
-        $avgLeq = !empty($allLeqValues) ? round(array_sum($allLeqValues) / count($allLeqValues), 1) : null;
-        $maxLeq = !empty($allLeqValues) ? max($allLeqValues) : null;
-        $minLeq = !empty($allLeqValues) ? min($allLeqValues) : null;
 
         $photoReportSettings = $module->photo_report_settings ?: [];
 
@@ -288,12 +185,6 @@ class RuidoOcupacionalController extends Controller
             'staffList',
             'measurements',
             'totalMeasurements',
-            'compliantMeasurements',
-            'nonCompliantMeasurements',
-            'complianceRate',
-            'avgLeq',
-            'maxLeq',
-            'minLeq',
             'photoReportSettings'
         ));
     }
