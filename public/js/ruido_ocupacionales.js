@@ -785,6 +785,52 @@ window.openTechHeaderEditModal = function () {
     }
     window.autoSaveHeaderField = autoSaveHeaderField;
 
+    /* ==========================================================================
+       VISOR DE FOTOGRAFÍAS (Estilo Iluminación)
+       ========================================================================== */
+    window.openPhotoViewer = function(url, title, caption) {
+        const modal = document.getElementById('photoViewerModal');
+        const img = document.getElementById('photoViewerImg') || document.getElementById('photoViewerImage');
+        const t = document.getElementById('photoViewerTitle');
+        const c = document.getElementById('photoViewerCaption');
+        if (img) img.src = url || '';
+        if (t) t.textContent = title || 'Fotografía de Medición';
+        if (c) c.textContent = caption || 'Registro de sonómetro en campo';
+        if (modal) {
+            modal.style.display = 'flex';
+            modal.classList.add('open');
+        }
+    };
+    window.openPhotoViewerModal = window.openPhotoViewer;
+
+    window.closePhotoViewerModal = function() {
+        const modal = document.getElementById('photoViewerModal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.remove('open');
+        }
+    };
+    window.closePhotoViewer = window.closePhotoViewerModal;
+
+    /* Búsqueda en vivo de la tabla maestra */
+    window.searchRuidoOcupacionalLive = function() {
+        const input = document.getElementById('ruidoSearchInput');
+        const q = input ? input.value.trim().toLowerCase() : '';
+        const rows = document.querySelectorAll('#ruidoTableBody tr.ruido-data-row');
+        let visible = 0;
+        rows.forEach(row => {
+            const text = row.getAttribute('data-search') || row.innerText.toLowerCase();
+            if (!q || text.includes(q)) {
+                row.style.display = '';
+                visible++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        const noRes = document.getElementById('noResultsRow');
+        if (noRes) noRes.style.display = (visible === 0) ? '' : 'none';
+    };
+
     // Inicialización cuando carga el DOM
     document.addEventListener('DOMContentLoaded', () => {
         recalcruidoOcupacional('create');

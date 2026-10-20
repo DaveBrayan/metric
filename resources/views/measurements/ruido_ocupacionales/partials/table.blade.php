@@ -32,7 +32,32 @@
                         <td style="font-size:12px;text-align:center;color:#64748b;font-family:monospace;">{{ $m['ponderacion']??'A' }}</td>
                         <td style="font-size:12px;text-align:center;color:#64748b;font-family:monospace;">{{ $m['respuesta']??'-' }}</td>
                         <td style="font-size:13px;font-weight:800;text-align:center;color:{{ $m['leq_t_db']<=85?'#059669':'#dc2626' }};">{{ number_format($m['leq_t_db'],1) }}</td>
-                        <td style="text-align:center;">@if(isset($m['images'])&&is_array($m['images'])&&count($m['images'])>0)<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 6px;background:#f0f9ff;border-radius:4px;font-size:11px;font-weight:700;color:#0284c7;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>{{ count($m['images']) }}</span>@else<span style="color:#cbd5e1;">—</span>@endif</td>
+                        <td style="text-align: center;">
+                            @php
+                                $imgSrc = !empty($m['image_path']) ? $m['image_path'] : (!empty($m['images']) && count($m['images']) > 0 ? $m['images'][0] : null);
+                                $imgCount = !empty($m['images_count']) ? $m['images_count'] : (!empty($m['images']) ? count($m['images']) : 0);
+                            @endphp
+                            @if(!empty($imgSrc))
+                                <div class="table-thumb-preview"
+                                    onclick="openPhotoViewer('{{ $imgSrc }}', 'Punto {{ $m['num'] }}: {{ addslashes($m['punto_medicion'] ?: $m['area']) }}')"
+                                    title="Ver fotografía ampliada">
+                                    <img src="{{ $imgSrc }}" alt="Foto">
+                                    @if($imgCount > 1)
+                                        <span style="position: absolute; bottom: 2px; right: 2px; background: rgba(15, 23, 42, 0.85); color: #fff; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 4px;">{{ $imgCount }}</span>
+                                    @endif
+                                </div>
+                            @else
+                                <div class="table-thumb-preview" style="cursor: default; opacity: 0.5;"
+                                    title="Sin fotografía registrada">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8"
+                                        stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                                        <circle cx="9" cy="9" r="2" />
+                                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                                    </svg>
+                                </div>
+                            @endif
+                        </td>
                         <td style="font-size:11px;font-weight:600;color:#334155;">{{ $m['registered_by'] }}</td>
                         <td style="display:flex;align-items:center;justify-content:flex-end;gap:6px;">
                             <button class="btn-admin-icon-action theme-amber" onclick='openEditMeasurementModal(@json($m))' title="Editar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>

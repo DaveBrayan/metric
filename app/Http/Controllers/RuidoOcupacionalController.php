@@ -151,6 +151,8 @@ class RuidoOcupacionalController extends Controller
         'latitude' => $lat,
         'longitude' => $lng,
         'images' => $imagesUrls,
+        'image_path' => !empty($imagesUrls) ? $imagesUrls[0] : null,
+        'images_count' => count($imagesUrls),
         'observations' => $item->observations ?: '',
         'tmpe' => $tmpe,
         'dosis' => $dosis,

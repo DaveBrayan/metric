@@ -769,3 +769,34 @@ textarea.custom-form-input {
     transform: translateY(-1px);
 }
 
+/* ==========================================================================
+   MINIATURA FOTOGRÁFICA EN TABLA (Estilo Iluminación)
+   ========================================================================== */
+.table-thumb-preview {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    border: 1.5px solid #cbd5e1;
+    overflow: hidden;
+    background: #f8fafc;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.table-thumb-preview:hover {
+    transform: scale(1.08);
+    border-color: #0284c7;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+}
+
+.table-thumb-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
