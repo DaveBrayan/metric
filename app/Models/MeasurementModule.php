@@ -77,6 +77,11 @@ class MeasurementModule extends Model
         return $this->hasMany(DosimetryMeasurement::class, 'module_id')->orderBy('id', 'asc');
     }
 
+    public function noiseMeasurements(): HasMany
+    {
+        return $this->hasMany(NoiseMeasurement::class, 'module_id')->orderBy('id', 'asc');
+    }
+
     public function ruidoAmbientalMeasurements(): HasMany
     {
         return $this->hasMany(RuidoAmbientalMeasurement::class, 'module_id')->orderBy('id', 'asc');

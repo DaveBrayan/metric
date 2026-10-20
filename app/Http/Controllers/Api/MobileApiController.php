@@ -24,6 +24,7 @@ use App\Models\ParticulasAmbientalesMeasurement;
 use App\Models\VibracionMeasurement;
 use App\Models\RuidoAmbientalMeasurement;
 use App\Models\ContaminantesQuimicosMeasurement;
+use App\\Models\\NoiseMeasurement;
 use App\Http\Controllers\VentilationController;
 use App\Http\Controllers\HeatStressController;
 use App\Http\Controllers\ColdStressController;
@@ -52,6 +53,370 @@ class MobileApiController extends Controller
             'status' => 'online',
             'timestamp' => Carbon::now()->toIso8601String(),
             'client_ip' => $request->ip(),
+        ]);
+    }
+
+    /**
+     * Obtener lista de mediciones de Ruido Ocupacional de un módulo.
+     */
+    public function getNoiseMeasurements(Request $request, $moduleId)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+        $measurements = $module->noiseMeasurements()->with('staff')->get()->map(function ($item, $index) {
+            $rawImages = is_array($item->images) ? $item->images : (json_decode($item->images, true) ?: []);
+            if (empty($rawImages) && !empty($item->image_path)) {
+                $rawImages = [$item->image_path];
+            }
+            $imagesUrls = array_values(array_filter(array_map(function($p) {
+                return $p ? asset($p) : null;
+            }, $rawImages)));
+
+            return [
+                'id' => $item->id,
+                'point_number' => $item->point_number,
+                'measurement_date' => $item->measurement_date ? $item->measurement_date->format('Y-m-d') : null,
+                'measurement_time' => $item->measurement_time,
+                'area' => $item->area,
+                'maquinaria_equipo' => $item->maquinaria_equipo,
+                'actividad' => $item->actividad,
+                'descripcion_actividad' => $item->descripcion_actividad,
+                'tipo_ruido' => $item->tipo_ruido,
+                'punto_medicion' => $item->punto_medicion,
+                'tiempo_expos_h' => (float)$item->tiempo_expos_h,
+                'ponderacion' => $item->ponderacion,
+                'respuesta' => $item->respuesta,
+                'mediciones_db' => is_array($item->mediciones_db) ? $item->mediciones_db : json_decode($item->mediciones_db, true) ?: [],
+                'leq_t_db' => $item->leq_t_db ? (float)$item->leq_t_db : null,
+                'uso_protectores' => (bool)$item->uso_protectores,
+                'tipo_protector' => $item->tipo_protector,
+                'nrr_db' => $item->nrr_db ? (float)$item->nrr_db : null,
+                'cumple' => (bool)$item->cumple,
+                'image_path' => $item->image_path ? asset($item->image_path) : ($imagesUrls[0] ?? null),
+                'images' => $imagesUrls,
+                'location' => $item->location,
+                'latitude' => $item->latitude !== null ? (float)$item->latitude : null,
+                'longitude' => $item->longitude !== null ? (float)$item->longitude : null,
+                'utm_zone' => $item->utm_zone,
+                'utm_easting' => $item->utm_easting !== null ? (float)$item->utm_easting : null,
+                'utm_northing' => $item->utm_northing !== null ? (float)$item->utm_northing : null,
+                'observations' => $item->observations,
+                'registered_by' => $item->registered_by,
+                'staff_id' => $item->staff_id,
+                'created_at' => $item->created_at,
+                'updated_at' => $item->updated_at,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $measurements,
+            'total' => $measurements->count(),
+            'points_completed' => $module->points_completed,
+        ]);
+    }
+
+    /**
+     * Guardar o actualizar una medición de Ruido Ocupacional desde la aplicación móvil.
+     */
+    public function storeNoiseMeasurement(Request $request, $moduleId)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+
+        // Procesar inputs compatibles
+        $area = $request->input('area');
+        $maquinariaEquipo = $request->input('maquinaria_equipo');
+        $actividad = $request->input('actividad');
+        $descripcionActividad = $request->input('descripcion_actividad');
+        
+        $tipoRuido = $request->input('tipo_ruido') ?? 'Fluctuante';
+        $puntoMedicion = $request->input('punto_medicion') ?? 'P-01';
+        $tiempoExposH = (float) ($request->input('tiempo_expos_h') ?? 8.0);
+        $ponderacion = $request->input('ponderacion') ?? 'A';
+        $respuesta = $request->input('respuesta') ?? 'Lento';
+        
+        // Mediciones array (dB)
+        $rawReadings = $request->input('mediciones_db') ?? [];
+        if (is_string($rawReadings)) {
+            $rawReadings = json_decode($rawReadings, true) ?: [];
+        }
+        $readings = is_array($rawReadings) ? array_map('floatval', array_filter($rawReadings, 'is_numeric')) : [];
+        
+        // LEQ equivalente
+        $leqT = $request->input('leq_t_db') ?? $request->input('leq_db');
+        $leqT = $leqT !== null ? (float) $leqT : null;
+        
+        // Protección
+        $usoProtectores = (bool) ($request->input('uso_protectores') ?? false);
+        $tipoProtector = $request->input('tipo_protector');
+        $nrrDb = $request->input('nrr_db');
+        if ($nrrDb !== null && $nrrDb !== '') {
+            $nrrDb = (float) $nrrDb;
+        } else {
+            $nrrDb = null;
+        }
+        
+        // Cumplimiento (basado en LEQ vs límite del módulo - typically 85 dB)
+        $lmpLimit = (float) ($module->lmp_limit ?? 85.0);
+        $cumple = ($leqT !== null) ? ($leqT <= $lmpLimit) : true;
+        
+        // Fecha y hora
+        $measuredAt = $request->input('measured_at') ?? $request->input('measurement_date');
+        $measurementDate = Carbon::now()->format('Y-m-d');
+        $measurementTime = Carbon::now()->format('H:i');
+
+        if (!empty($measuredAt)) {
+            try {
+                $dt = Carbon::parse($measuredAt);
+                $measurementDate = $dt->format('Y-m-d');
+                $measurementTime = $dt->format('H:i');
+            } catch (\Throwable $e) {}
+        }
+
+        // Staff / Registrador
+        $staffId = $request->input('staff_id');
+        $rawCreatedBy = $request->input('created_by');
+        $rawRegisteredBy = $request->input('registered_by');
+        $rawUserId = $request->input('user_id');
+
+        if (empty($staffId)) {
+            if (is_numeric($rawCreatedBy)) {
+                $staffId = (int) $rawCreatedBy;
+            } elseif (is_numeric($rawRegisteredBy)) {
+                $staffId = (int) $rawRegisteredBy;
+            } elseif (is_numeric($rawUserId)) {
+                $staffId = (int) $rawUserId;
+            }
+        }
+
+        if (empty($staffId)) {
+            $authHeader = $request->header('Authorization');
+            if ($authHeader && preg_match('/Bearer\\s+mtoken_([a-zA-Z0-9+\\/=]+)/i', $authHeader, $matches)) {
+                $decodedToken = base64_decode($matches[1]);
+                $tokenParts = explode(':', $decodedToken);
+                if (!empty($tokenParts[0]) && is_numeric($tokenParts[0])) {
+                    $staffId = (int) $tokenParts[0];
+                }
+            }
+        }
+
+        $registeredByName = null;
+        if (!empty($staffId)) {
+            $staff = Staff::find($staffId);
+            if ($staff) {
+                $registeredByName = $staff->full_name ?: $staff->name;
+            } else {
+                $user = User::find($staffId);
+                if ($user) {
+                    $registeredByName = $user->name;
+                }
+            }
+        }
+
+        if (empty($registeredByName)) {
+            $candidateName = $rawRegisteredBy ?? $rawCreatedBy;
+            if (!empty($candidateName) && !is_numeric($candidateName)) {
+                $registeredByName = trim($candidateName);
+            } elseif (!empty($candidateName) && is_numeric($candidateName)) {
+                $staff = Staff::find((int) $candidateName);
+                if ($staff) {
+                    $staffId = $staff->id;
+                    $registeredByName = $staff->full_name ?: $staff->name;
+                }
+            }
+        }
+
+        if (empty($registeredByName)) {
+            if ($module->fieldStaff) {
+                $registeredByName = $module->fieldStaff->full_name ?: $module->fieldStaff->name;
+                $staffId = $module->field_staff_id;
+            } else {
+                $registeredByName = 'Técnico de Campo';
+            }
+        }
+
+        // Numeración del punto
+        $existingCount = $module->noiseMeasurements()->count();
+        $pointNumber = $request->input('point_number') ?? str_pad($existingCount + 1, 2, '0', STR_PAD_LEFT);
+
+        // Procesamiento de imágenes
+        $uploadedImages = [];
+        $uploadDir = public_path('uploads/measurements');
+        if (!File::isDirectory($uploadDir)) {
+            File::makeDirectory($uploadDir, 0755, true, true);
+        }
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                if ($file->isValid()) {
+                    $filename = 'noise_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+                    $file->move($uploadDir, $filename);
+                    $uploadedImages[] = 'uploads/measurements/' . $filename;
+                }
+            }
+        }
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            if ($file->isValid()) {
+                $filename = 'noise_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+                $file->move($uploadDir, $filename);
+                $uploadedImages[] = 'uploads/measurements/' . $filename;
+            }
+        }
+
+        $inputUrls = $request->input('image_urls') ?? [];
+        if (is_string($inputUrls)) {
+            $inputUrls = json_decode($inputUrls, true);
+        }
+        if (is_array($inputUrls)) {
+            foreach ($inputUrls as $u) {
+                if (is_string($u) && !in_array($u, $uploadedImages)) {
+                    $uploadedImages[] = $u;
+                }
+            }
+        }
+
+        $imagePath = $uploadedImages[0] ?? null;
+
+        // Ubicación y Coordenadas
+        $latitude = $request->input('latitude');
+        $longitude = $request->input('longitude');
+        $locationRaw = $request->input('location');
+        $utmZone = $request->input('utm_zone') ?? $request->input('zone');
+        $utmEasting = $request->input('utm_easting') ?? $request->input('easting');
+        $utmNorthing = $request->input('utm_northing') ?? $request->input('northing');
+
+        // Parsear si location vino en formato array, objeto o JSON
+        if (is_array($locationRaw)) {
+            $latitude = $latitude ?? ($locationRaw['lat'] ?? ($locationRaw['latitude'] ?? null));
+            $longitude = $longitude ?? ($locationRaw['lng'] ?? ($locationRaw['longitude'] ?? null));
+            $utmZone = $utmZone ?? ($locationRaw['utm_zone'] ?? ($locationRaw['zone'] ?? null));
+            $utmEasting = $utmEasting ?? ($locationRaw['easting'] ?? ($locationRaw['utm_easting'] ?? null));
+            $utmNorthing = $utmNorthing ?? ($locationRaw['northing'] ?? ($locationRaw['utm_northing'] ?? null));
+            if (!empty($locationRaw['formatted'])) {
+                $locationRaw = $locationRaw['formatted'];
+            }
+        } elseif (is_string($locationRaw) && (str_starts_with(trim($locationRaw), '{') || str_starts_with(trim($locationRaw), '['))) {
+            $decodedLoc = json_decode($locationRaw, true);
+            if (is_array($decodedLoc)) {
+                $latitude = $latitude ?? ($decodedLoc['lat'] ?? ($decodedLoc['latitude'] ?? null));
+                $longitude = $longitude ?? ($decodedLoc['lng'] ?? ($decodedLoc['longitude'] ?? null));
+                $utmZone = $utmZone ?? ($decodedLoc['utm_zone'] ?? ($decodedLoc['zone'] ?? null));
+                $utmEasting = $utmEasting ?? ($decodedLoc['easting'] ?? ($decodedLoc['utm_easting'] ?? null));
+                $utmNorthing = $utmNorthing ?? ($decodedLoc['northing'] ?? ($decodedLoc['utm_northing'] ?? null));
+                if (!empty($decodedLoc['formatted'])) {
+                    $locationRaw = $decodedLoc['formatted'];
+                }
+            }
+        }
+
+        // Si tenemos UTM pero falta latitude/longitude, convertirlos
+        if (($latitude === null || $longitude === null) && !empty($utmEasting) && !empty($utmNorthing)) {
+            $conv = $this->utmToLatLng($utmEasting, $utmNorthing, $utmZone ?: '20K');
+            $latitude = $conv['lat'];
+            $longitude = $conv['lng'];
+        }
+
+        // Construir location string
+        if (!empty($utmEasting) && !empty($utmNorthing) && !empty($utmZone)) {
+            $eFormatted = is_numeric($utmEasting) ? number_format((float)$utmEasting, 3, '.', '') : $utmEasting;
+            $nFormatted = is_numeric($utmNorthing) ? number_format((float)$utmNorthing, 3, '.', '') : $utmNorthing;
+            $locationRaw = "E: {$eFormatted}, N: {$nFormatted}, Z: {$utmZone}";
+        } elseif (!is_string($locationRaw) || empty($locationRaw)) {
+            if ($latitude !== null && $longitude !== null) {
+                $locationRaw = "{$latitude}, {$longitude}";
+            } else {
+                $locationRaw = null;
+            }
+        }
+
+        $measurementId = $request->input('id') ?? $request->input('remote_id');
+        $measurement = null;
+        if (!empty($measurementId)) {
+            $measurement = $module->noiseMeasurements()->find($measurementId);
+        }
+
+        $data = [
+            'point_number' => $measurement ? $measurement->point_number : $pointNumber,
+            'measurement_date' => $measurementDate,
+            'measurement_time' => $measurementTime,
+            'area' => $area,
+            'maquinaria_equipo' => $maquinariaEquipo,
+            'actividad' => $actividad,
+            'descripcion_actividad' => $descripcionActividad,
+            'tipo_ruido' => $tipoRuido,
+            'punto_medicion' => $puntoMedicion,
+            'tiempo_expos_h' => $tiempoExposH,
+            'ponderacion' => $ponderacion,
+            'respuesta' => $respuesta,
+            'mediciones_db' => !empty($readings) ? $readings : null,
+            'leq_t_db' => $leqT,
+            'uso_protectores' => $usoProtectores,
+            'tipo_protector' => $tipoProtector,
+            'nrr_db' => $nrrDb,
+            'cumple' => $cumple,
+            'image_path' => $imagePath,
+            'images' => !empty($uploadedImages) ? $uploadedImages : null,
+            'location' => $locationRaw,
+            'latitude' => $latitude !== null ? (float)$latitude : null,
+            'longitude' => $longitude !== null ? (float)$longitude : null,
+            'utm_zone' => $utmZone,
+            'utm_easting' => $utmEasting !== null ? (float)$utmEasting : null,
+            'utm_northing' => $utmNorthing !== null ? (float)$utmNorthing : null,
+            'observations' => $request->input('observations') ?? $request->input('observaciones'),
+            'registered_by' => $registeredByName,
+            'staff_id' => $staffId,
+        ];
+
+        if ($measurement) {
+            $measurement->update($data);
+            $statusCode = 200;
+        } else {
+            $measurement = $module->noiseMeasurements()->create($data);
+            $statusCode = 201;
+        }
+
+        // Actualizar puntos completados
+        $module->points_completed = $module->noiseMeasurements()->count();
+        $module->save();
+
+        $finalImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
+        $finalUrls = array_values(array_filter(array_map(function($p) {
+            if (!$p) return null;
+            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+            return asset($p);
+        }, $finalImages)));
+
+        return response()->json([
+            'success' => true,
+            'message' => "Medición de ruido ocupacional #{$measurement->point_number} guardada exitosamente.",
+            'id' => $measurement->id,
+            'remote_id' => (string) $measurement->id,
+            'point_number' => $measurement->point_number,
+            'leq_t_db' => $measurement->leq_t_db,
+            'cumple' => $measurement->cumple,
+            'image_urls' => $finalUrls,
+            'points_completed' => $module->points_completed,
+        ], $statusCode);
+    }
+
+    /**
+     * Eliminar una medición de Ruido Ocupacional.
+     */
+    public function destroyNoiseMeasurement($moduleId, $id)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+        $measurement = $module->noiseMeasurements()->find($id);
+
+        if ($measurement) {
+            $measurement->delete();
+            $module->points_completed = $module->noiseMeasurements()->count();
+            $module->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Medición de ruido ocupacional eliminada correctamente.',
+            'points_completed' => $module->points_completed,
         ]);
     }
 

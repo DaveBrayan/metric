@@ -85,6 +85,14 @@ Route::post('/modules/{moduleId}/dosimetria', [MobileApiController::class, 'stor
 Route::delete('/modules/{moduleId}/dosimetry/{id}', [MobileApiController::class, 'destroyDosimetryMeasurement']);
 Route::delete('/modules/{moduleId}/dosimetria/{id}', [MobileApiController::class, 'destroyDosimetryMeasurement']);
 
+// Monitoreo de Ruido Ocupacional
+Route::get('/modules/{moduleId}/noise', [MobileApiController::class, 'getNoiseMeasurements']);
+Route::get('/modules/{moduleId}/ruido', [MobileApiController::class, 'getNoiseMeasurements']);
+Route::post('/modules/{moduleId}/noise', [MobileApiController::class, 'storeNoiseMeasurement']);
+Route::post('/modules/{moduleId}/ruido', [MobileApiController::class, 'storeNoiseMeasurement']);
+Route::delete('/modules/{moduleId}/noise/{id}', [MobileApiController::class, 'destroyNoiseMeasurement']);
+Route::delete('/modules/{moduleId}/ruido/{id}', [MobileApiController::class, 'destroyNoiseMeasurement']);
+
 // Monitoreo de Ruido Ambiental
 Route::get('/modules/{moduleId}/ambient-noise', [MobileApiController::class, 'getAmbientNoiseMeasurements']);
 Route::get('/modules/{moduleId}/ruido-ambiental', [MobileApiController::class, 'getAmbientNoiseMeasurements']);
