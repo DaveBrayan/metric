@@ -548,7 +548,9 @@ function initAllLocationsMap() {
         }
 
         if (lat && lng) {
-            const isOk = item.is_compliant;
+            const dosisOk = (item.dosis !== null && item.dosis !== undefined && item.dosis <= 1.0);
+            const leqOk = (item.leq_t_db !== null && item.leq_t_db !== undefined && item.leq_t_db <= 85);
+            const isOk = dosisOk && leqOk;
             const markerColor = isOk ? '#059669' : '#dc2626';
             const iconSvg = `<svg width="24" height="24" viewBox="0 0 24 24" fill="${markerColor}" stroke="#ffffff" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5" fill="#ffffff"/></svg>`;
             
@@ -563,8 +565,8 @@ function initAllLocationsMap() {
             marker.bindPopup(`
                 <div style="font-family: sans-serif; min-width: 170px;">
                     <div style="font-weight: 800; font-size: 13px; color: #0f172a; margin-bottom: 2px;">#${item.num} — Ruido Ocupacional</div>
-                    <div style="font-size: 11.5px; color: #64748b;">${item.normativa} • ${item.tipo_zona}</div>
-                    <div style="margin-top: 5px; font-weight: 700; color: ${isOk ? '#059669' : '#dc2626'}; font-size: 12px;">Leq: ${item.leq_d} dBA (LMP: ${item.limite_normativa})</div>
+                    <div style="font-size: 11.5px; color: #64748b;">${item.area} • ${item.punto_medicion}</div>
+                    <div style="margin-top: 5px; font-weight: 700; color: ${isOk ? '#059669' : '#dc2626'}; font-size: 12px;">LAeq: ${item.leq_t_db !== null ? item.leq_t_db.toFixed(1) : '—'} dBA | Dosis: ${item.dosis !== null ? item.dosis.toFixed(2) : '—'}</div>
                     <div style="font-size: 11px; color: #0284c7; margin-top: 4px;">Reg: ${item.registered_by}</div>
                 </div>
             `);
