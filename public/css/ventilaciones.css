@@ -1991,6 +1991,7 @@ table.modern-table tbody td {
     overflow: hidden;
 }
 
+/* ENCABEZADO EJECUTIVO OFICIAL DEL REPORTE FOTOGRÁFICO */
 .sheet-header-box {
     background: linear-gradient(135deg, #09131f 0%, #0f1c2e 55%, #132742 100%);
     border-radius: 8px;
@@ -2000,7 +2001,7 @@ table.modern-table tbody td {
     align-items: center;
     justify-content: space-between;
     gap: 14px;
-    border: 1px solid rgba(16, 185, 223, 0.35);
+    border: 1px solid rgba(16, 185, 223, 0.4);
     position: relative;
     box-shadow: 0 4px 16px rgba(15, 28, 46, 0.2);
     overflow: hidden;
@@ -2016,285 +2017,423 @@ table.modern-table tbody td {
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, #10b9df 0%, #0896b5 50%, #91c51b 100%);
+    background: linear-gradient(90deg, #10b9df, #0284c7, #38bdf8);
 }
 
 .sheet-header-left {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 
-.sheet-logo-badge {
-    width: 34px;
-    height: 34px;
+.sheet-header-logo-badge {
+    width: 36px;
+    height: 36px;
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #10b9df;
+    background: rgba(16, 185, 223, 0.18);
+    border: 1.5px solid rgba(16, 185, 223, 0.45);
+    display: grid;
+    place-items: center;
+    color: #38bdf8;
     flex-shrink: 0;
 }
 
-.sheet-header-title h2 {
-    font-family: 'Outfit', sans-serif;
-    font-size: 13.5px;
-    font-weight: 800;
-    color: #ffffff;
-    margin: 0 0 1px 0;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-}
-
-.sheet-header-title p {
-    font-size: 10px;
-    color: #94a3b8;
-    margin: 0;
-    font-weight: 500;
-}
-
-.sheet-header-meta {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 9.5px;
-    color: #cbd5e1;
-}
-
-.sheet-meta-item {
+.sheet-header-titles {
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
+    gap: 1px;
 }
 
-.sheet-meta-label {
+.sheet-header-brand-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     font-size: 8.5px;
+    font-weight: 800;
+    letter-spacing: 0.7px;
     text-transform: uppercase;
-    color: #94a3b8;
+}
+
+.sheet-company-title {
+    color: #f8fafc;
+}
+
+.sheet-brand-dot {
+    color: #10b9df;
+    font-size: 9px;
+}
+
+.sheet-system-tag {
+    color: #38bdf8;
+}
+
+.sheet-header-titles h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 13.5px;
+    font-weight: 900;
+    letter-spacing: -0.2px;
+    color: #ffffff;
+    margin: 0;
+    line-height: 1.15;
+}
+
+.sheet-header-subtitle-row {
+    margin-top: 1px;
+}
+
+.sheet-tech-tag {
+    font-size: 7.5px;
     font-weight: 700;
-    letter-spacing: 0.04em;
+    color: #94a3b8;
+    letter-spacing: 0.4px;
+}
+
+/* Ficha Técnica de Metadatos del Encabezado */
+.sheet-header-meta-card {
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 6px;
+    padding: 5px 8px;
+    min-width: 330px;
+    max-width: 370px;
+    flex-shrink: 0;
+}
+
+.sheet-meta-card-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 7.5px;
+    font-weight: 800;
+    color: #38bdf8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+    padding-bottom: 2px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sheet-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px 8px;
+}
+
+.sheet-meta-row {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    font-size: 7.5px;
+    line-height: 1.25;
+}
+
+.sheet-meta-lbl {
+    color: #94a3b8;
+    font-weight: 800;
+    font-size: 7px;
+    white-space: nowrap;
 }
 
 .sheet-meta-val {
-    font-weight: 700;
-    color: #ffffff;
-    max-width: 180px;
+    color: #f1f5f9;
+    font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.sheet-meta-val.meta-page-pill {
-    font-family: 'Outfit', monospace, sans-serif;
-    background: rgba(16, 185, 223, 0.2);
-    color: #38bdf8;
-    border: 1px solid rgba(56, 189, 248, 0.4);
-    padding: 1px 6px;
-    border-radius: 4px;
-    font-weight: 800;
-    font-size: 9.5px;
-}
-
+/* ==========================================================================
+   CUADRÍCULAS DE FOTOGRAFÍAS EN EL REPORTE (2x3, 2x4, 3x3, 3x4)
+   ========================================================================== */
 .sheet-photos-grid {
     display: grid;
-    gap: 8px;
-    flex: 1 1 auto;
+    flex: 1;
+    gap: 7px;
+    margin-bottom: 5px;
+    width: 100%;
     align-content: stretch;
-    justify-content: stretch;
-    margin-bottom: 6px;
-    overflow: hidden;
-    min-height: 0;
+    box-sizing: border-box;
 }
 
+.sheet-photos-grid.dist-2x3,
 .sheet-photos-grid.grid-dist-2x3 {
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: repeat(3, 1fr);
 }
 
+.sheet-photos-grid.dist-2x4,
 .sheet-photos-grid.grid-dist-2x4 {
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: repeat(4, 1fr);
+    gap: 5px;
 }
 
+.sheet-photos-grid.dist-3x3,
 .sheet-photos-grid.grid-dist-3x3 {
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(3, 1fr);
+    gap: 5px;
 }
 
+.sheet-photos-grid.dist-3x4,
 .sheet-photos-grid.grid-dist-3x4 {
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(4, 1fr);
+    gap: 4px;
 }
 
+/* Tarjeta individual en Hoja Carta */
+.sheet-card-item,
 .sheet-photo-card {
     background: #ffffff;
-    border: 1.2px solid #cbd5e1;
+    border: 1px solid #cbd5e1;
     border-radius: 6px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    height: 100%;
-    min-height: 0;
     box-sizing: border-box;
+    page-break-inside: avoid;
+    break-inside: avoid;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
 }
 
-.sheet-photo-info-top {
-    padding: 3px 6px;
-    background: #f8fafc;
+.sheet-card-item .photo-card-info-top,
+.sheet-photo-card .sheet-photo-info-top {
+    padding: 3.5px 7px;
+    background: #ffffff;
     border-bottom: 1px solid #e2e8f0;
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
+    gap: 1.5px;
     font-size: 8.5px;
-    line-height: 1.2;
+    line-height: 1.25;
     flex-shrink: 0;
 }
 
-.sheet-photo-info-top .sheet-info-row {
-    display: flex;
-    align-items: baseline;
-    gap: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.sheet-card-item .photo-info-label {
+    font-size: 8px;
+    font-weight: 800;
+    color: #475569;
 }
 
-.sheet-photo-info-top .sheet-info-label {
-    font-weight: 800;
+.sheet-card-item .photo-info-value {
+    font-size: 8px;
     color: #0f172a;
+}
+
+.sheet-card-item .photo-code {
     font-size: 8.5px;
-    flex-shrink: 0;
-}
-
-.sheet-photo-info-top .sheet-info-val {
-    color: #1e293b;
-    font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.sheet-photo-info-top .sheet-code {
-    font-family: 'Outfit', sans-serif;
     font-weight: 800;
-    color: #0896b5;
+    color: #0284c7;
+    background: #e0f2fe;
+    padding: 1px 5px;
+    border-radius: 3px;
+    display: inline-block;
 }
 
-.sheet-photo-img-box {
+.sheet-card-item .photo-card-img-box,
+.sheet-photo-card .sheet-photo-img-box {
+    flex: 1;
     width: 100%;
-    flex: 1 1 0;
     min-height: 0;
     background: #090d16;
-    position: relative;
-    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
+    position: relative;
 }
 
-.sheet-photo-img-box img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
+.sheet-card-item .photo-card-img-box img,
+.sheet-photo-card .sheet-photo-img-box img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    display: block !important;
 }
 
-.sheet-photo-info-bottom {
-    padding: 3px 6px;
-    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+.sheet-card-item .photo-card-info-bottom,
+.sheet-photo-card .sheet-photo-info-bottom {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
     border-top: 1px solid #e2e8f0;
+    padding: 2.5px 6px;
+    font-size: 8px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 4px;
-    font-size: 8.5px;
     flex-shrink: 0;
 }
 
-.sheet-dt-text {
-    font-weight: 800;
-    color: #0f172a;
-    font-size: 8px;
+.sheet-card-item .photo-dt-label {
     display: inline-flex;
     align-items: center;
     gap: 3px;
-}
-
-.sheet-dt-pill {
-    font-family: 'Outfit', monospace, sans-serif;
-    font-weight: 700;
+    font-weight: 800;
+    color: #0f172a;
     font-size: 8px;
-    color: #0369a1;
-    background: #e0f2fe;
-    border: 0.5px solid #bae6fd;
-    padding: 0 4px;
-    border-radius: 3px;
 }
 
-.sheet-footer-bar {
-    border-top: 1px solid #cbd5e1;
-    padding-top: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 8.5px;
-    color: #64748b;
-    font-weight: 600;
+.sheet-card-item .photo-dt-icon {
+    color: #0284c7;
     flex-shrink: 0;
 }
 
+.sheet-card-item .photo-dt-pill {
+    font-family: 'Outfit', monospace, sans-serif;
+    font-size: 8px;
+    font-weight: 700;
+    color: #0369a1;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    padding: 0.5px 4px;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
+/* Densidades altas: ajuste de espaciados */
+.dist-2x4 .sheet-card-item .photo-card-info-top,
+.dist-3x3 .sheet-card-item .photo-card-info-top {
+    padding: 2.5px 5px;
+    font-size: 8px;
+    gap: 1px;
+}
+
+.dist-3x4 .sheet-card-item .photo-card-info-top {
+    padding: 2px 4px;
+    font-size: 7.5px;
+    gap: 1px;
+}
+
+.dist-3x4 .sheet-card-item .photo-info-label,
+.dist-3x4 .sheet-card-item .photo-info-value {
+    font-size: 7.5px;
+}
+
+.dist-3x4 .sheet-card-item .photo-code {
+    font-size: 7.5px;
+    padding: 0.5px 4px;
+}
+
+.dist-2x4 .sheet-card-item .photo-card-info-bottom,
+.dist-3x3 .sheet-card-item .photo-card-info-bottom {
+    padding: 2px 5px;
+}
+
+.dist-3x4 .sheet-card-item .photo-card-info-bottom {
+    padding: 1.5px 4px;
+}
+
+.dist-3x4 .sheet-card-item .photo-dt-label,
+.dist-3x4 .sheet-card-item .photo-dt-pill {
+    font-size: 7px;
+}
+
+/* PIE DE PÁGINA ELEGANTE DEL REPORTE FOTOGRÁFICO */
+.sheet-footer-box {
+    border-top: 1.5px solid #0284c7;
+    padding-top: 4px;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 8px;
+    color: #64748b;
+    flex-shrink: 0;
+    page-break-before: avoid !important;
+    break-before: avoid !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+}
+
+.sheet-footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.sheet-footer-page-num {
+    background: #0284c7;
+    color: #ffffff;
+    font-weight: 800;
+    padding: 1.5px 6px;
+    border-radius: 4px;
+}
+
 /* ==========================================================================
-   7. IMPRESIÓN Y EXPORTACIÓN PDF DE HOJAS CARTA
+   REGLAS EXCLUSIVAS DE IMPRESIÓN (@media print) PARA FORMATO CARTA (LETTER)
    ========================================================================== */
 @media print {
-    body * {
-        visibility: hidden !important;
+    @page {
+        size: letter portrait;
+        margin: 6mm 7mm 6mm 7mm !important;
     }
 
-    #photoReportModal,
-    #photoReportModal .modal-dialog-illumination,
-    #photoReportModal .modal-dialog-ventilation,
-    #photoReportModal .modal-body-custom,
-    #photoReportModal .photo-report-container,
-    #photoSheetsViewContainer,
-    #photoSheetsViewContainer *,
-    .photo-report-sheet,
-    .photo-report-sheet * {
-        visibility: visible !important;
-    }
-
-    #photoReportModal {
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
+    html, body {
         width: 100% !important;
         height: auto !important;
         margin: 0 !important;
         padding: 0 !important;
-        background: transparent !important;
-        display: block !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
 
-    .photo-report-sheet {
-        page-break-after: always !important;
-        break-after: page !important;
-        margin: 0 auto !important;
-        box-shadow: none !important;
+    /* Ocultar cualquier UI de la aplicación */
+    header, nav, aside, footer,
+    .navbar, .sidebar, .app-header, .app-footer,
+    .illumination-header-banner,
+    .illumination-technical-cards,
+    .illumination-table-container,
+    .header-action-group,
+    .pagination-bar-illumination,
+    .modal-backdrop-custom,
+    #photoReportModal,
+    #exportOptionsModal,
+    #createMeasurementModal,
+    #editMeasurementModal,
+    #photoViewerModal,
+    #allLocationsModal,
+    #mapModal,
+    #ventilationTablesModal {
+        display: none !important;
+    }
+
+    /* Mostrar únicamente el contenedor de impresión */
+    #photoReportPrintArea {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    #photoReportPrintArea .photo-report-sheet {
+        display: flex !important;
+        width: 100% !important;
+        height: 265mm !important;
+        min-height: 265mm !important;
+        max-height: 265mm !important;
+        margin: 0 0 0 0 !important;
+        padding: 0 0 0 0 !important;
         border: none !important;
         border-radius: 0 !important;
-        width: 100% !important;
-        height: 100vh !important;
+        box-shadow: none !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
     }
 
-    .modal-header-custom,
-    .photo-report-toolbar,
-    .modal-footer-custom {
-        display: none !important;
+    #photoReportPrintArea .photo-report-sheet:last-child {
+        page-break-after: auto !important;
+        break-after: auto !important;
     }
 }
 

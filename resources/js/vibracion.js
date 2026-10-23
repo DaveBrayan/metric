@@ -825,13 +825,19 @@ window.closeNormativeTablesModal = function() {
 };
 
 window.openExportModal = function() {
-    const modal = document.getElementById('exportModal');
-    if (modal) modal.style.display = 'flex';
+    const modal = document.getElementById('exportOptionsModal') || document.getElementById('exportModal');
+    if (modal) {
+        modal.classList.add('open', 'active');
+        modal.style.display = 'flex';
+    }
 };
 
 window.closeExportModal = function() {
-    const modal = document.getElementById('exportModal');
-    if (modal) modal.style.display = 'none';
+    const modal = document.getElementById('exportOptionsModal') || document.getElementById('exportModal');
+    if (modal) {
+        modal.classList.remove('open', 'active');
+        modal.style.display = 'none';
+    }
 };
 
 window.openPhotoViewerModal = function(photos, title) {
@@ -1030,6 +1036,8 @@ window.exportVibracionExcel = async function() {
     link.download = `Planilla_Vibracion_${headerInfo.installationName || 'Proyecto'}_${new Date().toISOString().slice(0, 10)}.xlsx`;
     link.click();
 };
+window.downloadExcelPlanilla = window.exportVibracionExcel;
+
 
 /* ==========================================================================
    9. UTILIDADES DE CONVERSIÓN GEOGRÁFICA (WGS84 <-> UTM)
@@ -1115,3 +1123,885 @@ function utmToLatLng(easting, northing, zoneStr) {
 
     return { lat, lng: lon };
 }
+
+/* ==========================================================================
+   10. MODAL DE EXPORTACIÓN Y REPORTE FOTOGRÁFICO MOSAICO CARTA (VIBRACIÓN)
+   ========================================================================== */
+function openExportModal() {
+    const modal = document.getElementById('exportOptionsModal') || document.getElementById('exportModal');
+    if (modal) {
+        modal.classList.add('open', 'active');
+        modal.style.display = 'flex';
+    }
+}
+window.openExportModal = openExportModal;
+
+function closeExportModal() {
+    const modal = document.getElementById('exportOptionsModal') || document.getElementById('exportModal');
+    if (modal) {
+        modal.classList.remove('open', 'active');
+        modal.style.display = 'none';
+    }
+}
+window.closeExportModal = closeExportModal;
+
+function openPhotoViewer(src, caption = '') {
+    const modal = document.getElementById('photoViewerModal');
+    const img = document.getElementById('mainViewerImage') || document.getElementById('photoViewerImg');
+    const title = document.getElementById('photoViewerTitle');
+    if (!modal || !img) return;
+
+    img.src = src;
+    if (title) title.textContent = caption || 'Evidencia Fotográfica de Vibración';
+    modal.classList.add('open', 'active');
+    modal.style.display = 'flex';
+}
+window.openPhotoViewer = openPhotoViewer;
+
+function closePhotoViewer() {
+    const modal = document.getElementById('photoViewerModal');
+    if (modal) {
+        modal.classList.remove('open', 'active');
+        modal.style.display = 'none';
+    }
+}
+window.closePhotoViewer = closePhotoViewer;
+window.closePhotoViewerModal = closePhotoViewer;
+
+const photoReportConfig = {
+    grid: '2x3',
+    selectedPoints: new Set(),
+    photoIndices: {},
+    currentTab: 'interactive',
+    isInitialized: false
+};
+let photoReportAutoSaveTimeout = null;
+
+function openPhotoReportModal() {
+    closeExportModal();
+    const modal = document.getElementById('photoReportModal');
+    if (modal) {
+        modal.classList.add('open', 'active');
+        modal.style.display = 'flex';
+        initPhotoReportEngine();
+    }
+}
+window.openPhotoReportModal = openPhotoReportModal;
+window.openPhotoReportConfigModal = openPhotoReportModal;
+
+function closePhotoReportModal() {
+    const modal = document.getElementById('photoReportModal');
+    if (modal) {
+        modal.classList.remove('open', 'active');
+        modal.style.display = 'none';
+    }
+}
+window.closePhotoReportModal = closePhotoReportModal;
+window.closePhotoReportConfigModal = closePhotoReportModal;
+
+/**
+ * Inicializar motor de reporte fotográfico con datos guardados
+ */
+function initPhotoReportEngine() {
+    if (!photoReportConfig.isInitialized) {
+        let saved = null;
+        if (typeof window.PHOTO_REPORT_INITIAL_SETTINGS === 'object' && window.PHOTO_REPORT_INITIAL_SETTINGS && Object.keys(window.PHOTO_REPORT_INITIAL_SETTINGS).length > 0) {
+            saved = window.PHOTO_REPORT_INITIAL_SETTINGS;
+        }
+        if (!saved) {
+            try {
+                const local = localStorage.getItem('metric_vibracion_photo_' + (window.MODULE_ID || '1'));
+                if (local) saved = JSON.parse(local);
+            } catch (e) {
+                console.warn('Error reading localStorage', e);
+            }
+        }
+
+        const validGrids = ['2x3', '2x4', '3x3', '3x4'];
+        if (saved && saved.grid && validGrids.includes(saved.grid)) {
+            photoReportConfig.grid = saved.grid;
+        } else {
+            photoReportConfig.grid = '2x3';
+        }
+
+        // Puntos seleccionados para el PDF
+        photoReportConfig.selectedPoints.clear();
+        const allItems = window.ALL_MEASUREMENTS_DATA || [];
+        if (saved && Array.isArray(saved.selected_points) && saved.selected_points.length > 0) {
+            saved.selected_points.forEach(id => photoReportConfig.selectedPoints.add(Number(id)));
+        } else {
+            allItems.forEach(m => photoReportConfig.selectedPoints.add(Number(m.id)));
+        }
+
+        // Índices de fotos por punto
+        photoReportConfig.photoIndices = {};
+        if (saved && saved.photo_indices && typeof saved.photo_indices === 'object') {
+            for (const [k, v] of Object.entries(saved.photo_indices)) {
+                photoReportConfig.photoIndices[Number(k)] = Number(v) || 0;
+            }
+        }
+
+        photoReportConfig.isInitialized = true;
+    }
+
+    updateGridSelectorButtonsUI();
+    renderInteractiveGrid();
+    renderPhotoSheets();
+    updateSelectionCounterUI();
+}
+window.initPhotoReportEngine = initPhotoReportEngine;
+
+function getPointImages(m) {
+    if (Array.isArray(m.images) && m.images.length > 0) {
+        return m.images.filter(Boolean);
+    }
+    if (Array.isArray(m.image_paths) && m.image_paths.length > 0) {
+        return m.image_paths.filter(Boolean);
+    }
+    if (m.image_path) {
+        return [m.image_path];
+    }
+    if (Array.isArray(m.raw_images) && m.raw_images.length > 0) {
+        return m.raw_images.filter(Boolean);
+    }
+    return [];
+}
+
+function formatPointCode(num) {
+    if (!num) return 'VIB-01';
+    const str = String(num).trim();
+    if (str.toUpperCase().startsWith('VIB-') || str.toUpperCase().startsWith('V-') || str.toUpperCase().startsWith('P-')) {
+        return str.toUpperCase();
+    }
+    const numericPart = str.replace(/[^0-9]/g, '');
+    if (numericPart) {
+        return 'VIB-' + numericPart.padStart(2, '0');
+    }
+    return '#' + str;
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function addslashes(str) {
+    return (str || '').replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
+}
+
+function getPhotosPerPage(grid) {
+    switch (grid) {
+        case '2x4': return 8;
+        case '3x3': return 9;
+        case '3x4': return 12;
+        case '2x3':
+        default: return 6;
+    }
+}
+
+function changeGridDistribution(newGrid) {
+    const validGrids = ['2x3', '2x4', '3x3', '3x4'];
+    if (!validGrids.includes(newGrid)) return;
+
+    photoReportConfig.grid = newGrid;
+    updateGridSelectorButtonsUI();
+    renderPhotoSheets();
+    updateSelectionCounterUI();
+    triggerAutoSavePhotoReportConfig();
+}
+window.changeGridDistribution = changeGridDistribution;
+
+function updateGridSelectorButtonsUI() {
+    const buttons = document.querySelectorAll('#gridDistSelector .btn-grid-dist');
+    buttons.forEach(btn => {
+        if (btn.dataset.grid === photoReportConfig.grid) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
+
+function togglePointSelection(pointId, isChecked) {
+    pointId = Number(pointId);
+    if (isChecked) {
+        photoReportConfig.selectedPoints.add(pointId);
+    } else {
+        photoReportConfig.selectedPoints.delete(pointId);
+    }
+
+    const card = document.getElementById('photoPointCard_' + pointId);
+    if (card) {
+        if (isChecked) {
+            card.classList.remove('excluded');
+        } else {
+            card.classList.add('excluded');
+        }
+    }
+
+    updateSelectionCounterUI();
+    renderPhotoSheets();
+    triggerAutoSavePhotoReportConfig();
+}
+window.togglePointSelection = togglePointSelection;
+
+function selectAllPoints(select) {
+    const allItems = window.ALL_MEASUREMENTS_DATA || [];
+    allItems.forEach(m => {
+        const id = Number(m.id);
+        const chk = document.getElementById('chkPoint_' + id);
+        const card = document.getElementById('photoPointCard_' + id);
+        if (select) {
+            photoReportConfig.selectedPoints.add(id);
+            if (chk) chk.checked = true;
+            if (card) card.classList.remove('excluded');
+        } else {
+            photoReportConfig.selectedPoints.delete(id);
+            if (chk) chk.checked = false;
+            if (card) card.classList.add('excluded');
+        }
+    });
+
+    updateSelectionCounterUI();
+    renderPhotoSheets();
+    triggerAutoSavePhotoReportConfig();
+}
+window.selectAllPoints = selectAllPoints;
+
+function updateSelectionCounterUI() {
+    const count = photoReportConfig.selectedPoints.size;
+    const total = (window.ALL_MEASUREMENTS_DATA || []).length;
+    const textEl = document.getElementById('photoSelectionCountText');
+    if (textEl) {
+        textEl.textContent = `${count} de ${total} seleccionadas`;
+    }
+
+    const perPage = getPhotosPerPage(photoReportConfig.grid);
+    const totalPages = Math.ceil(count / perPage) || 0;
+    const pagesInd = document.getElementById('photoReportPagesIndicator');
+    if (pagesInd) {
+        pagesInd.textContent = `Hojas Carta: ${totalPages} (${photoReportConfig.grid})`;
+    }
+}
+
+function navigatePointPhoto(pointId, delta, event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    pointId = Number(pointId);
+    const allItems = window.ALL_MEASUREMENTS_DATA || [];
+    const item = allItems.find(m => Number(m.id) === pointId);
+    if (!item) return;
+
+    const images = getPointImages(item);
+    if (images.length <= 1) return;
+
+    const curr = photoReportConfig.photoIndices[pointId] || 0;
+    const next = (curr + delta + images.length) % images.length;
+    photoReportConfig.photoIndices[pointId] = next;
+
+    const imgEl = document.getElementById('photoImg_' + pointId);
+    if (imgEl) {
+        imgEl.src = images[next];
+    }
+    const countEl = document.getElementById('photoCountPill_' + pointId);
+    if (countEl) {
+        countEl.textContent = `Foto ${next + 1} de ${images.length}`;
+    }
+
+    renderPhotoSheets();
+    triggerAutoSavePhotoReportConfig();
+}
+window.navigatePointPhoto = navigatePointPhoto;
+
+function switchPhotoReportTab(tab) {
+    photoReportConfig.currentTab = tab;
+    const tabBtnInteractive = document.getElementById('tabBtnInteractive');
+    const tabBtnSheets = document.getElementById('tabBtnSheets');
+    const interactiveView = document.getElementById('photoInteractiveView');
+    const sheetsView = document.getElementById('photoSheetsView');
+
+    if (tab === 'sheets') {
+        if (tabBtnInteractive) tabBtnInteractive.classList.remove('active');
+        if (tabBtnSheets) tabBtnSheets.classList.add('active');
+        if (interactiveView) interactiveView.style.display = 'none';
+        if (sheetsView) {
+            sheetsView.style.display = 'block';
+            renderPhotoSheets();
+        }
+    } else {
+        if (tabBtnInteractive) tabBtnInteractive.classList.add('active');
+        if (tabBtnSheets) tabBtnSheets.classList.remove('active');
+        if (interactiveView) interactiveView.style.display = 'block';
+        if (sheetsView) sheetsView.style.display = 'none';
+    }
+}
+window.switchPhotoReportTab = switchPhotoReportTab;
+
+function renderInteractiveGrid() {
+    const container = document.getElementById('photoInteractiveGridContainer');
+    if (!container) return;
+
+    const allItems = window.ALL_MEASUREMENTS_DATA || [];
+    if (allItems.length === 0) {
+        container.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 45px 20px; color: #94a3b8; background: #ffffff; border-radius: 12px; border: 1.5px dashed #cbd5e1;">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="margin-bottom: 8px;"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                <p style="margin: 0; font-size: 13.5px; font-weight: 600;">No hay puntos de monitoreo de vibración registrados para generar el reporte fotográfico.</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+    allItems.forEach(m => {
+        const pointId = Number(m.id);
+        const images = getPointImages(m);
+        const selectedIdx = photoReportConfig.photoIndices[pointId] || 0;
+        const currentImg = images[selectedIdx] || images[0] || '';
+        const isSelected = photoReportConfig.selectedPoints.has(pointId);
+        const codeFormatted = formatPointCode(m.num || m.codigo);
+        const hasMultiplePhotos = images.length > 1;
+
+        const estadoStr = String(m.estado || 'CUMPLE').toUpperCase();
+        let estadoBadge = `<span style="font-size: 10px; font-weight: 800; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; padding: 2px 7px; border-radius: 4px;">CUMPLE</span>`;
+        if (estadoStr.includes('ACCIÓN') || estadoStr.includes('ACCION')) {
+            estadoBadge = `<span style="font-size: 10px; font-weight: 800; background: #fffbeb; color: #b45309; border: 1px solid #fde68a; padding: 2px 7px; border-radius: 4px;">NIVEL DE ACCIÓN</span>`;
+        } else if (estadoStr.includes('SUPERA') || estadoStr.includes('NO CUMPLE')) {
+            estadoBadge = `<span style="font-size: 10px; font-weight: 800; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; padding: 2px 7px; border-radius: 4px;">SUPERA LÍMITE</span>`;
+        }
+
+        const a8Val = m.a8 !== null && m.a8 !== undefined && !isNaN(m.a8) ? parseFloat(m.a8).toFixed(2) : '—';
+        const tipoLabel = m.tipo_label || (m.tipo === 'mano_brazo' ? 'Mano - Brazo' : 'Cuerpo Entero');
+
+        html += `
+            <div class="photo-point-card ${isSelected ? '' : 'excluded'}" id="photoPointCard_${pointId}">
+                <!-- Barra de Selección para el PDF -->
+                <div class="photo-card-select-bar">
+                    <label class="photo-select-checkbox-lbl" title="Marcar para incluir en el reporte PDF">
+                        <input type="checkbox" id="chkPoint_${pointId}" ${isSelected ? 'checked' : ''} onchange="togglePointSelection(${pointId}, this.checked)">
+                        <span>Incluir en PDF</span>
+                    </label>
+                    <span style="font-size: 11px; font-weight: 800; color: #0284c7; background: #e0f2fe; padding: 2px 7px; border-radius: 4px;">
+                        ${codeFormatted}
+                    </span>
+                </div>
+
+                <!-- ARRIBA DE LA FOTO: Puesto, Área, Máquina, Tipo y A(8) -->
+                <div class="photo-card-info-top">
+                    <div class="photo-info-row">
+                        <span class="photo-info-label">Puesto:</span>
+                        <span class="photo-info-value" title="${escapeHtml(m.puesto_trabajo || m.workstation || 'Operador')}" style="font-weight: 800; color: #0f172a;">${escapeHtml(m.puesto_trabajo || m.workstation || 'Operador')}</span>
+                    </div>
+                    <div class="photo-info-row">
+                        <span class="photo-info-label">Área:</span>
+                        <span class="photo-info-value" title="${escapeHtml(m.area || 'General')}">${escapeHtml(m.area || 'General')} ${m.maquina_equipo && m.maquina_equipo !== '—' ? '• ' + escapeHtml(m.maquina_equipo) : ''}</span>
+                    </div>
+                    <div class="photo-info-row" style="margin-top: 2px; flex-wrap: wrap; gap: 4px;">
+                        ${estadoBadge}
+                        <span style="font-size: 9.5px; font-weight: 700; background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; padding: 1.5px 5px; border-radius: 4px;">
+                            ${escapeHtml(tipoLabel)}
+                        </span>
+                        <span style="font-size: 9.5px; font-weight: 700; background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; padding: 1.5px 5px; border-radius: 4px;">
+                            A(8): <strong>${a8Val} m/s²</strong>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- MARCO DE FOTOGRAFÍA CON CARRUSEL DE FLECHAS -->
+                <div class="photo-card-img-box">
+                    ${currentImg ? `
+                        <img id="photoImg_${pointId}" src="${currentImg}" alt="${codeFormatted}" onclick="openPhotoViewer('${currentImg}', '${codeFormatted}: ${addslashes(m.puesto_trabajo || m.workstation || '')}')" title="Clic para ampliar fotografía">
+                        <button type="button" class="photo-zoom-btn" onclick="openPhotoViewer('${currentImg}', '${codeFormatted}: ${addslashes(m.puesto_trabajo || m.workstation || '')}')" title="Ampliar">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                        </button>
+                    ` : `
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; color: #64748b;">
+                            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                            <span style="font-size: 11px; margin-top: 4px; font-weight: 600;">Sin fotografía</span>
+                        </div>
+                    `}
+
+                    <!-- Flechas para alternar qué foto va al PDF -->
+                    ${hasMultiplePhotos ? `
+                        <button type="button" class="photo-nav-arrow left" onclick="navigatePointPhoto(${pointId}, -1, event)" title="Foto anterior">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                        </button>
+                        <button type="button" class="photo-nav-arrow right" onclick="navigatePointPhoto(${pointId}, 1, event)" title="Siguiente foto">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                        </button>
+                        <div class="photo-count-pill" id="photoCountPill_${pointId}">
+                            Foto ${selectedIdx + 1} de ${images.length}
+                        </div>
+                    ` : (images.length === 1 ? `
+                        <div class="photo-count-pill">Foto 1 de 1</div>
+                    ` : '')}
+                </div>
+
+                <!-- DEBAJO DE LA FOTO: Fecha, Hora y Trabajador -->
+                <div class="photo-card-info-bottom">
+                    <span class="photo-dt-label">
+                        <svg class="photo-dt-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        ${escapeHtml(m.date || '—')} ${escapeHtml(m.time && m.time !== '—' ? m.time : '')}
+                    </span>
+                    <span class="photo-dt-pill" title="${escapeHtml(m.trabajador_evaluado || m.maquina_equipo || '')}">${escapeHtml(m.trabajador_evaluado || m.maquina_equipo || 'Operador')}</span>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+window.renderInteractiveGrid = renderInteractiveGrid;
+
+function renderPhotoSheets() {
+    const sheetsContainer = document.getElementById('photoSheetsContainer');
+    const printContainer = document.getElementById('photoReportPrintArea');
+
+    const allItems = window.ALL_MEASUREMENTS_DATA || [];
+    const tech = window.TECHNICAL_HEADER_DATA || {};
+    const selectedItems = allItems.filter(m => photoReportConfig.selectedPoints.has(Number(m.id)));
+    const perPage = getPhotosPerPage(photoReportConfig.grid);
+
+    if (selectedItems.length === 0) {
+        const emptyHtml = `
+            <div style="text-align: center; padding: 50px 20px; color: #94a3b8; background: #ffffff; border-radius: 10px; border: 1.5px dashed #cbd5e1; max-width: 600px; margin: 30px auto;">
+                <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="margin-bottom: 8px;"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                <h3 style="font-size: 15px; margin: 0 0 6px 0; color: #334155;">No hay fotografías seleccionadas para el PDF</h3>
+                <p style="margin: 0; font-size: 12.5px;">Activa las casillas "Incluir en PDF" o haz clic en "Todas" para armar las hojas del reporte.</p>
+            </div>
+        `;
+        if (sheetsContainer) sheetsContainer.innerHTML = emptyHtml;
+        if (printContainer) printContainer.innerHTML = '';
+        return;
+    }
+
+    const pages = [];
+    for (let i = 0; i < selectedItems.length; i += perPage) {
+        pages.push(selectedItems.slice(i, i + perPage));
+    }
+
+    const totalPages = pages.length;
+    const now = new Date();
+    const dateEmissionFormatted = now.toLocaleDateString('es-BO', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + now.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' });
+
+    let sheetsHtml = '';
+
+    pages.forEach((pageItems, pageIdx) => {
+        const pageNum = pageIdx + 1;
+
+        sheetsHtml += `
+            <div class="photo-report-sheet">
+                <!-- ENCABEZADO EJECUTIVO OFICIAL CON COLORES DEL TEMA -->
+                <div class="sheet-header-box">
+                    <div class="sheet-header-left">
+                        <div class="sheet-header-logo-badge">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                            </svg>
+                        </div>
+                        <div class="sheet-header-titles">
+                            <div class="sheet-header-brand-row">
+                                <span class="sheet-company-title">PACHABOL S.R.L.</span>
+                                <span class="sheet-brand-dot">•</span>
+                                <span class="sheet-system-tag">Higiene &amp; Seguridad Ocupacional</span>
+                            </div>
+                            <h1>REPORTE FOTOGRÁFICO — MONITOREO DE VIBRACIÓN</h1>
+                            <div class="sheet-header-subtitle-row">
+                                <span class="sheet-tech-tag">METRIC v2 • CUERPO ENTERO &amp; MANO-BRAZO (ISO 2631-1 &amp; ISO 5349-1)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ficha Técnica de Metadatos del Encabezado -->
+                    <div class="sheet-header-meta-card">
+                        <div class="sheet-meta-card-header">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            <span>Datos Técnicos de Monitoreo</span>
+                        </div>
+                        <div class="sheet-meta-grid">
+                            <div class="sheet-meta-row">
+                                <span class="sheet-meta-lbl">INSTALACIÓN:</span>
+                                <span class="sheet-meta-val" title="${escapeHtml(tech.installationName || 'No registrada')}">${escapeHtml(tech.installationName || 'No registrada')}</span>
+                            </div>
+                            <div class="sheet-meta-row">
+                                <span class="sheet-meta-lbl">EQUIPO:</span>
+                                <span class="sheet-meta-val">${escapeHtml(tech.equipmentName || 'Acelerómetro Triaxial')} (${escapeHtml(tech.equipmentModel || 'SV 106A')})</span>
+                            </div>
+                            <div class="sheet-meta-row">
+                                <span class="sheet-meta-lbl">FECHA:</span>
+                                <span class="sheet-meta-val">${escapeHtml(tech.startDateFormatted || '—')}${tech.endDateFormatted && tech.endDateFormatted !== tech.startDateFormatted ? ' al ' + escapeHtml(tech.endDateFormatted) : ''}</span>
+                            </div>
+                            <div class="sheet-meta-row">
+                                <span class="sheet-meta-lbl">SERIE / MARCA:</span>
+                                <span class="sheet-meta-val">${escapeHtml(tech.equipmentSerial || '—')} • ${escapeHtml(tech.equipmentBrand || 'Svantek')}</span>
+                            </div>
+                            <div class="sheet-meta-row">
+                                <span class="sheet-meta-lbl">TIPO:</span>
+                                <span class="sheet-meta-val">${escapeHtml(tech.monitoringType || 'Seguimiento de Vibraciones')}</span>
+                            </div>
+                            <div class="sheet-meta-row">
+                                <span class="sheet-meta-lbl">NORMATIVA:</span>
+                                <span class="sheet-meta-val">ISO 2631-1 (Cuerpo Entero) • ISO 5349-1 (Mano - Brazo)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CUADRÍCULA DE FOTOGRAFÍAS EN MOSAICO -->
+                <div class="sheet-photos-grid dist-${photoReportConfig.grid}">
+                    ${pageItems.map(m => {
+                        const pointId = Number(m.id);
+                        const images = getPointImages(m);
+                        const selectedIdx = photoReportConfig.photoIndices[pointId] || 0;
+                        const chosenImg = images[selectedIdx] || images[0] || '';
+                        const codeFormatted = formatPointCode(m.num || m.codigo);
+                        const estadoStr = String(m.estado || 'CUMPLE').toUpperCase();
+                        const a8Val = m.a8 !== null && m.a8 !== undefined && !isNaN(m.a8) ? parseFloat(m.a8).toFixed(2) : '—';
+                        const tipoLabel = m.tipo_label || (m.tipo === 'mano_brazo' ? 'Mano - Brazo' : 'Cuerpo Entero');
+
+                        let estadoColor = '#166534';
+                        if (estadoStr.includes('ACCIÓN') || estadoStr.includes('ACCION')) estadoColor = '#b45309';
+                        if (estadoStr.includes('SUPERA') || estadoStr.includes('NO CUMPLE')) estadoColor = '#991b1b';
+
+                        return `
+                            <div class="sheet-card-item">
+                                <!-- ARRIBA DE LA FOTO: Código, Puesto, Tipo y A(8) -->
+                                <div class="photo-card-info-top">
+                                    <div class="photo-info-row" style="justify-content: space-between;">
+                                        <div style="display: flex; align-items: baseline; gap: 4px; overflow: hidden;">
+                                            <span class="photo-info-value photo-code">${codeFormatted}</span>
+                                            <span class="photo-info-value" title="${escapeHtml(m.puesto_trabajo || m.workstation || 'Operador')}" style="font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(m.puesto_trabajo || m.workstation || 'Operador')}</span>
+                                        </div>
+                                    </div>
+                                    <div class="photo-info-row">
+                                        <span class="photo-info-label">Área:</span>
+                                        <span class="photo-info-value" title="${escapeHtml(m.area || 'General')}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(m.area || 'General')} ${m.maquina_equipo && m.maquina_equipo !== '—' ? '• ' + escapeHtml(m.maquina_equipo) : ''}</span>
+                                    </div>
+                                    <div class="photo-info-row" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 7.5px;">
+                                        ${escapeHtml(tipoLabel)} • A(8): <strong>${a8Val} m/s²</strong> • <span style="font-weight: 800; color: ${estadoColor};">${escapeHtml(estadoStr)}</span>
+                                    </div>
+                                </div>
+
+                                <!-- FOTOGRAFÍA -->
+                                <div class="photo-card-img-box">
+                                    ${chosenImg ? `
+                                        <img src="${chosenImg}" alt="${codeFormatted}">
+                                    ` : `
+                                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8;">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/></svg>
+                                            <span style="font-size: 9.5px; font-weight: 600; margin-top: 2px;">Sin fotografía</span>
+                                        </div>
+                                    `}
+                                </div>
+
+                                <!-- DEBAJO DE LA FOTO: Fecha, Hora y Trabajador/Máquina -->
+                                <div class="photo-card-info-bottom">
+                                    <span class="photo-dt-label">
+                                        <svg class="photo-dt-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                                        </svg>
+                                        ${escapeHtml(m.date || '—')} ${escapeHtml(m.time && m.time !== '—' ? m.time : '')}
+                                    </span>
+                                    <span class="photo-dt-pill" title="${escapeHtml(m.trabajador_evaluado || m.maquina_equipo || '')}">${escapeHtml(m.trabajador_evaluado || m.maquina_equipo || 'Operador')}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+
+                <!-- PIE DE PÁGINA ELEGANTE OFICIAL DEL PDF -->
+                <div class="sheet-footer-box">
+                    <div class="sheet-footer-brand">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        <span>METRIC v2 — Pachabol S.R.L. • Monitoreo de Vibración Ocupacional</span>
+                    </div>
+                    <div style="font-style: italic; color: #64748b; font-size: 8px;">
+                        Reporte Fotográfico Técnico • Formato Hoja Carta (${photoReportConfig.grid})
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 8px;">
+                        <span class="sheet-footer-page-num">Página ${pageNum} de ${totalPages}</span>
+                        <span>${dateEmissionFormatted}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    if (sheetsContainer) sheetsContainer.innerHTML = sheetsHtml;
+    if (printContainer) printContainer.innerHTML = sheetsHtml;
+}
+window.renderPhotoSheets = renderPhotoSheets;
+
+function triggerAutoSavePhotoReportConfig() {
+    if (photoReportAutoSaveTimeout) clearTimeout(photoReportAutoSaveTimeout);
+    photoReportAutoSaveTimeout = setTimeout(() => {
+        savePhotoReportSettingsToServer(false);
+    }, 650);
+}
+
+async function savePhotoReportSettingsToServer(showToast = false) {
+    const btnSave = document.getElementById('btnSaveReportSettings');
+    if (btnSave && showToast) {
+        btnSave.disabled = true;
+        btnSave.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 0.8s linear infinite;"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
+            <span>Guardando...</span>
+        `;
+    }
+
+    const payload = {
+        grid: photoReportConfig.grid,
+        selected_points: Array.from(photoReportConfig.selectedPoints),
+        photo_indices: photoReportConfig.photoIndices
+    };
+
+    try {
+        localStorage.setItem('metric_vibracion_photo_' + (window.MODULE_ID || '1'), JSON.stringify(payload));
+    } catch (e) {
+        console.warn('Error saving to localStorage', e);
+    }
+
+    try {
+        const res = await fetch(`/modulos/${window.MODULE_ID}/vibracion/photo-report-settings`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': CSRF_TOKEN
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (showToast) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '¡Configuración Guardada!',
+                    text: `Distribución (${photoReportConfig.grid}), puntos seleccionados y fotos preferidas almacenados exitosamente.`,
+                    icon: 'success',
+                    confirmButtonText: 'Aceptar',
+                    timer: 2500,
+                    timerProgressBar: true,
+                    buttonsStyling: false,
+                    customClass: { popup: 'metric-swal-popup', confirmButton: 'metric-swal-btn-confirm' }
+                });
+            }
+        }
+    } catch (err) {
+        console.error('Error guardando configuración de reporte fotográfico:', err);
+        if (showToast) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Guardado local',
+                    text: 'La configuración se guardó en tu navegador. Puedes continuar con la exportación.',
+                    icon: 'info',
+                    confirmButtonText: 'Aceptar',
+                    timer: 2500,
+                    buttonsStyling: false,
+                    customClass: { popup: 'metric-swal-popup', confirmButton: 'metric-swal-btn-confirm' }
+                });
+            }
+        }
+    } finally {
+        if (btnSave && showToast) {
+            btnSave.disabled = false;
+            btnSave.innerHTML = `
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                <span>Guardar Selección</span>
+            `;
+        }
+    }
+}
+window.savePhotoReportSettingsToServer = savePhotoReportSettingsToServer;
+
+async function downloadPhotoReportPDF() {
+    if (!photoReportConfig.selectedPoints || photoReportConfig.selectedPoints.size === 0) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Sin selección',
+                text: 'Debes seleccionar al menos una fotografía para generar y descargar el reporte en PDF.',
+                icon: 'warning',
+                confirmButtonText: 'Entendido',
+                buttonsStyling: false,
+                customClass: { popup: 'metric-swal-popup', confirmButton: 'metric-swal-btn-confirm' }
+            });
+        } else {
+            alert('Debes seleccionar al menos una fotografía para descargar el PDF.');
+        }
+        return;
+    }
+
+    const btnDownload = document.getElementById('btnDownloadPhotoReportPdf');
+    const origBtnHtml = btnDownload ? btnDownload.innerHTML : '';
+
+    try {
+        if (btnDownload) {
+            btnDownload.disabled = true;
+            btnDownload.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="animation: spin 0.8s linear infinite;">
+                    <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                </svg>
+                <span>Generando PDF...</span>
+            `;
+        }
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Generando Reporte PDF',
+                html: `
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px 0;">
+                        <span style="font-size:13px;color:#475569;">Compilando hojas tamaño carta en alta resolución...</span>
+                        <span id="pdfGenProgressText" style="font-size:11.5px;font-weight:700;color:#0284c7;">Preparando páginas...</span>
+                    </div>
+                `,
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
+                customClass: { popup: 'metric-swal-popup' }
+            });
+        }
+
+        switchPhotoReportTab('sheets');
+        renderPhotoSheets();
+
+        await new Promise(r => setTimeout(r, 150));
+
+        const sheetsContainer = document.getElementById('photoSheetsContainer');
+        if (!sheetsContainer) {
+            throw new Error('No se encontró el contenedor de hojas del reporte fotográfico.');
+        }
+
+        const sheets = Array.from(sheetsContainer.querySelectorAll('.photo-report-sheet'));
+        if (sheets.length === 0) {
+            throw new Error('No hay hojas generadas para exportar en el reporte.');
+        }
+
+        const JsPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : window.jsPDF;
+        if (!JsPDF) {
+            throw new Error('La librería jsPDF no está disponible en la página.');
+        }
+        if (typeof html2canvas === 'undefined') {
+            throw new Error('La librería html2canvas no está disponible en la página.');
+        }
+
+        const pdf = new JsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'letter',
+            compress: true
+        });
+
+        const letterWidthMm = 215.9;
+        const letterHeightMm = 279.4;
+
+        for (let i = 0; i < sheets.length; i++) {
+            const sheet = sheets[i];
+
+            const progressEl = document.getElementById('pdfGenProgressText');
+            if (progressEl) {
+                progressEl.textContent = `Procesando hoja ${i + 1} de ${sheets.length}...`;
+            }
+
+            const sheetImages = Array.from(sheet.querySelectorAll('img'));
+            await Promise.all(sheetImages.map(img => {
+                if (img.complete) return Promise.resolve();
+                return new Promise(resolve => {
+                    img.onload = resolve;
+                    img.onerror = resolve;
+                });
+            }));
+
+            const prevBoxShadow = sheet.style.boxShadow;
+            const prevBorderRadius = sheet.style.borderRadius;
+            const prevBorder = sheet.style.border;
+            const prevMargin = sheet.style.margin;
+
+            sheet.style.boxShadow = 'none';
+            sheet.style.borderRadius = '0';
+            sheet.style.border = 'none';
+            sheet.style.margin = '0';
+
+            const canvas = await html2canvas(sheet, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff'
+            });
+
+            sheet.style.boxShadow = prevBoxShadow;
+            sheet.style.borderRadius = prevBorderRadius;
+            sheet.style.border = prevBorder;
+            sheet.style.margin = prevMargin;
+
+            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+            if (i > 0) {
+                pdf.addPage('letter', 'portrait');
+            }
+
+            pdf.addImage(imgData, 'JPEG', 0, 0, letterWidthMm, letterHeightMm, undefined, 'FAST');
+        }
+
+        const tech = window.TECHNICAL_HEADER_DATA || {};
+        const installationClean = (tech.installationName || 'Instalacion').trim().replace(/[^a-zA-Z0-9_\-]/g, '_').substring(0, 30);
+        const dateStr = new Date().toISOString().slice(0, 10);
+        const fileName = `Reporte_Fotografico_Vibracion_${installationClean}_${dateStr}.pdf`;
+
+        pdf.save(fileName);
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '¡Descarga Exitosa!',
+                text: `El reporte fotográfico (${sheets.length} ${sheets.length === 1 ? 'hoja carta' : 'hojas carta'}) se ha descargado en formato PDF.`,
+                icon: 'success',
+                confirmButtonText: 'Aceptar',
+                timer: 3000,
+                timerProgressBar: true,
+                buttonsStyling: false,
+                customClass: { popup: 'metric-swal-popup', confirmButton: 'metric-swal-btn-confirm' }
+            });
+        }
+    } catch (err) {
+        console.error('Error generando o descargando PDF:', err);
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Error al exportar PDF',
+                text: 'Ocurrió un error al generar el archivo PDF: ' + (err.message || 'Error desconocido'),
+                icon: 'error',
+                confirmButtonText: 'Aceptar',
+                buttonsStyling: false,
+                customClass: { popup: 'metric-swal-popup', confirmButton: 'metric-swal-btn-danger' }
+            });
+        } else {
+            alert('Error generando PDF: ' + err.message);
+        }
+    } finally {
+        if (btnDownload && origBtnHtml) {
+            btnDownload.disabled = false;
+            btnDownload.innerHTML = origBtnHtml;
+        }
+    }
+}
+window.downloadPhotoReportPDF = downloadPhotoReportPDF;
+
+function printPhotoReport() {
+    downloadPhotoReportPDF();
+}
+window.printPhotoReport = printPhotoReport;

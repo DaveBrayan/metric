@@ -1,7 +1,7 @@
     <!-- ==========================================================================
          MODAL 7: REPORTE FOTOGRÁFICO DE VENTILACIÓN (MOSAICO CARTA)
          ========================================================================== -->
-    <div class="modal-backdrop-custom" id="photoReportModal" role="dialog" aria-modal="true"
+    <div class="modal-backdrop-custom" id="photoReportModal" role="dialog" aria-modal="true" style="display: none;"
         aria-labelledby="photoReportModalTitle">
         <div class="modal-dialog-ventilation" style="max-width: 1280px; width: 98%;">
             <!-- Header del Modal -->
@@ -33,16 +33,6 @@
                             <polyline points="7 3 7 8 15 8" />
                         </svg>
                         <span>Guardar Selección</span>
-                    </button>
-                    <button type="button" class="btn-toolbar-action btn-toolbar-primary btn-print-action"
-                        onclick="printPhotoReport()" title="Imprimir o guardar en PDF (Tamaño Carta)">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="6 9 6 2 18 2 18 9" />
-                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                            <rect width="12" height="8" x="6" y="14" />
-                        </svg>
-                        <span>Imprimir / Guardar PDF</span>
                     </button>
                     <button type="button" class="btn-close-modal" onclick="closePhotoReportModal()"
                         aria-label="Cerrar">✕</button>
@@ -155,15 +145,15 @@
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <button type="button" class="btn-secondary-subtle" onclick="closePhotoReportModal()">Cerrar</button>
-                    <button type="submit" class="btn-primary-hero-action" onclick="printPhotoReport()"
-                        style="padding: 6px 16px; font-size: 12.5px;">
+                    <button type="button" class="btn-primary-hero-action" id="btnDownloadPhotoReportPdf" onclick="downloadPhotoReportPDF()"
+                        style="padding: 6px 16px; font-size: 12.5px;" title="Descargar reporte fotográfico en PDF (Tamaño Carta)">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2.2">
-                            <polyline points="6 9 6 2 18 2 18 9" />
-                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                            <rect width="12" height="8" x="6" y="14" />
+                            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
                         </svg>
-                        <span>Imprimir / PDF</span>
+                        <span>Descargar PDF</span>
                     </button>
                 </div>
             </div>

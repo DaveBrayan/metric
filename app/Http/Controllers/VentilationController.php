@@ -731,17 +731,29 @@ class VentilationController extends Controller
             'orientation' => 'nullable|string|in:landscape,portrait',
             'selected_points' => 'nullable|array',
             'photo_indices' => 'nullable|array',
+            'settings' => 'nullable|array',
         ]);
 
         $currentSettings = $module->photo_report_settings ?: [];
 
-        $newSettings = [
-            'grid' => $validated['grid'] ?? ($currentSettings['grid'] ?? '2x3'),
-            'orientation' => $validated['orientation'] ?? ($currentSettings['orientation'] ?? 'landscape'),
-            'selected_points' => array_key_exists('selected_points', $validated) ? $validated['selected_points'] : ($currentSettings['selected_points'] ?? []),
-            'photo_indices' => array_key_exists('photo_indices', $validated) ? $validated['photo_indices'] : ($currentSettings['photo_indices'] ?? []),
-            'updated_at' => now()->toIso8601String(),
-        ];
+        if (!empty($validated['settings'])) {
+            $newSettings = $validated['settings'];
+        } else {
+            $newSettings = [
+                'grid' => $validated['grid'] ?? ($currentSettings['grid'] ?? '2x3'),
+                'orientation' => $validated['orientation'] ?? ($currentSettings['orientation'] ?? 'landscape'),
+                'selected_points' => array_key_exists('selected_points', $validated) ? $validated['selected_points'] : ($currentSettings['selected_points'] ?? []),
+                'photo_indices' => array_key_exists('photo_indices', $validated) ? $validated['photo_indices'] : ($currentSettings['photo_indices'] ?? []),
+                'updated_at' => now()->toIso8601String(),
+            ];
+        }
+
+        // Preservar llaves de equipo técnico si ya existían
+        foreach (['equipment_name', 'equipment_brand', 'equipment_model', 'equipment_serial'] as $eqKey) {
+            if (isset($currentSettings[$eqKey]) && !isset($newSettings[$eqKey])) {
+                $newSettings[$eqKey] = $currentSettings[$eqKey];
+            }
+        }
 
         $module->photo_report_settings = $newSettings;
         $module->save();
@@ -1183,3 +1195,5 @@ class VentilationController extends Controller
         ]);
     }
 }
+
+

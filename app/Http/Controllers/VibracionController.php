@@ -186,6 +186,15 @@ class VibracionController extends Controller
         $superaCount = $measurements->where('estado', 'SUPERA LÍMITE')->count();
         $avgA8 = $totalMeasurements > 0 ? round($measurements->avg('a8'), 3) : 0.0;
 
+        // Configuración guardada para el Reporte Fotográfico
+        $savedSettings = $module->photo_report_settings ?: [];
+        $photoReportSettings = [
+            'grid' => $savedSettings['grid'] ?? '2x3',
+            'orientation' => $savedSettings['orientation'] ?? 'landscape',
+            'selected_points' => $savedSettings['selected_points'] ?? $measurements->pluck('id')->toArray(),
+            'photo_indices' => $savedSettings['photo_indices'] ?? (object)[],
+        ];
+
         return view('measurements.vibraciones.index', compact(
             'module',
             'project',
@@ -210,7 +219,8 @@ class VibracionController extends Controller
             'superaCount',
             'avgA8',
             'userName',
-            'userRole'
+            'userRole',
+            'photoReportSettings'
         ));
     }
 
@@ -508,13 +518,35 @@ class VibracionController extends Controller
         $module = MeasurementModule::findOrFail($moduleId);
 
         $validated = $request->validate([
-            'settings' => 'required|array',
+            'grid' => 'nullable|string|in:2x3,2x4,3x3,3x4',
+            'orientation' => 'nullable|string|in:landscape,portrait',
+            'selected_points' => 'nullable|array',
+            'photo_indices' => 'nullable|array',
+            'settings' => 'nullable|array',
         ]);
 
-        $module->photo_report_settings = $validated['settings'];
+        $currentSettings = $module->photo_report_settings ?: [];
+
+        if (!empty($validated['settings'])) {
+            $newSettings = $validated['settings'];
+        } else {
+            $newSettings = [
+                'grid' => $validated['grid'] ?? ($currentSettings['grid'] ?? '2x3'),
+                'orientation' => $validated['orientation'] ?? ($currentSettings['orientation'] ?? 'landscape'),
+                'selected_points' => array_key_exists('selected_points', $validated) ? $validated['selected_points'] : ($currentSettings['selected_points'] ?? []),
+                'photo_indices' => array_key_exists('photo_indices', $validated) ? $validated['photo_indices'] : ($currentSettings['photo_indices'] ?? []),
+                'updated_at' => now()->toIso8601String(),
+            ];
+        }
+
+        $module->photo_report_settings = $newSettings;
         $module->save();
 
-        return response()->json(['success' => true, 'message' => 'Configuración fotográfica guardada con éxito.']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Configuración fotográfica guardada con éxito.',
+            'settings' => $newSettings,
+        ]);
     }
 
     /**

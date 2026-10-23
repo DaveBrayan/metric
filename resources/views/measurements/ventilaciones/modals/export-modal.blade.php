@@ -1,7 +1,7 @@
     <!-- ==========================================================================
          MODAL 5: OPCIONES DE EXPORTACIÓN DE VENTILACIÓN
          ========================================================================== -->
-    <div class="modal-backdrop-custom" id="exportOptionsModal" role="dialog" aria-modal="true"
+    <div class="modal-backdrop-custom" id="exportOptionsModal" role="dialog" aria-modal="true" style="display: none;"
         aria-labelledby="exportModalTitle">
         <div class="modal-dialog-ventilation" style="max-width: 680px;">
             <div class="modal-header-custom">

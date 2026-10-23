@@ -44,6 +44,9 @@
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <!-- ExcelJS for High-Fidelity Excel Export -->
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+    <!-- html2canvas and jsPDF for Direct High-Fidelity PDF Generation -->
+    <script src="{{ asset('js/html2canvas.min.js') }}"></script>
+    <script src="{{ asset('js/jspdf.umd.min.js') }}"></script>
 
     <!-- Configuración inicial de datos del servidor para el cliente -->
     <script>
