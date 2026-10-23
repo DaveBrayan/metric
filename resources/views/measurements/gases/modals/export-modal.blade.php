@@ -58,7 +58,7 @@
                     </div>
 
                     <!-- Opción 2: Reporte Fotográfico -->
-                    <div class="export-option-card" onclick="openPhotoReportConfigModal()">
+                    <div class="export-option-card" onclick="openPhotoReportModal()">
                         <div>
                             <div class="export-card-top">
                                 <div class="export-card-icon photo-icon">
