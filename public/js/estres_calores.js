@@ -1128,6 +1128,8 @@ const photoReportConfig = {
     grid: '2x3',
     selectedPoints: new Set(),
     photoIndices: {},
+    globalFit: 'contain',
+    pointFits: {},
     currentTab: 'interactive',
     isInitialized: false
 };
@@ -1192,30 +1194,79 @@ function initPhotoReportEngine() {
             }
         }
 
+        if (saved) {
+            if (saved.image_fit === 'cover' || saved.global_fit === 'cover') {
+                photoReportConfig.globalFit = 'cover';
+            } else {
+                photoReportConfig.globalFit = 'contain';
+            }
+
+            photoReportConfig.pointFits = {};
+            const fits = saved.photo_fits || saved.point_fits;
+            if (fits && typeof fits === 'object') {
+                for (const [k, v] of Object.entries(fits)) {
+                    if (v === 'cover' || v === 'contain') {
+                        photoReportConfig.pointFits[Number(k)] = v;
+                    }
+                }
+            }
+        }
+
         photoReportConfig.isInitialized = true;
     }
 
     updateGridSelectorButtonsUI();
+    updateGlobalFitButtonsUI();
     renderInteractiveGrid();
     renderPhotoSheets();
     updateSelectionCounterUI();
 }
 window.initPhotoReportEngine = initPhotoReportEngine;
 
+function normalizeImageUrl(p) {
+    if (!p || typeof p !== 'string') return p;
+    p = p.trim();
+    if (p.startsWith('http://') || p.startsWith('https://') || p.startsWith('data:') || p.startsWith('blob:') || p.startsWith('/')) {
+        return p;
+    }
+    return '/' + p;
+}
+
 function getPointImages(m) {
-    if (Array.isArray(m.images) && m.images.length > 0) {
-        return m.images.filter(Boolean);
+    if (!m) return [];
+    let list = [];
+    if (Array.isArray(m.photos) && m.photos.length > 0) {
+        list = m.photos;
+    } else if (Array.isArray(m.images) && m.images.length > 0) {
+        list = m.images;
+    } else if (Array.isArray(m.photo_paths) && m.photo_paths.length > 0) {
+        list = m.photo_paths;
+    } else if (Array.isArray(m.image_paths) && m.image_paths.length > 0) {
+        list = m.image_paths;
+    } else if (m.image_path) {
+        list = [m.image_path];
+    } else if (m.photo_url) {
+        list = [m.photo_url];
+    } else if (m.photo) {
+        list = [m.photo];
+    } else if (typeof m.photo_paths === 'string' && m.photo_paths.trim().startsWith('[')) {
+        try {
+            const parsed = JSON.parse(m.photo_paths);
+            if (Array.isArray(parsed)) list = parsed;
+        } catch (e) {}
+    } else if (typeof m.photos === 'string' && m.photos.trim().startsWith('[')) {
+        try {
+            const parsed = JSON.parse(m.photos);
+            if (Array.isArray(parsed)) list = parsed;
+        } catch (e) {}
+    } else if (typeof m.images === 'string' && m.images.trim().startsWith('[')) {
+        try {
+            const parsed = JSON.parse(m.images);
+            if (Array.isArray(parsed)) list = parsed;
+        } catch (e) {}
     }
-    if (Array.isArray(m.image_paths) && m.image_paths.length > 0) {
-        return m.image_paths.filter(Boolean);
-    }
-    if (m.image_path) {
-        return [m.image_path];
-    }
-    if (m.photo_url) {
-        return [m.photo_url];
-    }
-    return [];
+
+    return list.filter(Boolean).map(normalizeImageUrl);
 }
 
 function formatHeatStressPointCode(num) {
@@ -1274,6 +1325,70 @@ function updateGridSelectorButtonsUI() {
         }
     });
 }
+
+function getPointImageFit(pointId) {
+    pointId = Number(pointId);
+    if (photoReportConfig.pointFits && (photoReportConfig.pointFits[pointId] === 'cover' || photoReportConfig.pointFits[pointId] === 'contain')) {
+        return photoReportConfig.pointFits[pointId];
+    }
+    return photoReportConfig.globalFit || 'contain';
+}
+window.getPointImageFit = getPointImageFit;
+
+function updateGlobalFitButtonsUI() {
+    const buttons = document.querySelectorAll('#photoGlobalFitSelector .btn-photo-fit-global');
+    buttons.forEach(btn => {
+        if (btn.dataset.fit === (photoReportConfig.globalFit || 'contain')) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
+window.updateGlobalFitButtonsUI = updateGlobalFitButtonsUI;
+
+function setGlobalImageFit(fit) {
+    if (fit !== 'contain' && fit !== 'cover') return;
+    photoReportConfig.globalFit = fit;
+    photoReportConfig.pointFits = {};
+    updateGlobalFitButtonsUI();
+    renderInteractiveGrid();
+    renderPhotoSheets();
+    triggerAutoSavePhotoReportConfig();
+}
+window.setGlobalImageFit = setGlobalImageFit;
+
+function setPointImageFit(pointId, fit, event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    pointId = Number(pointId);
+    if (fit !== 'contain' && fit !== 'cover') return;
+
+    photoReportConfig.pointFits[pointId] = fit;
+
+    const card = document.getElementById('photoPointCard_' + pointId);
+    if (card) {
+        const imgBox = card.querySelector('.photo-card-img-box');
+        if (imgBox) {
+            imgBox.classList.remove('fit-contain', 'fit-cover');
+            imgBox.classList.add('fit-' + fit);
+        }
+        const btns = card.querySelectorAll('.btn-card-fit');
+        btns.forEach(b => {
+            if (b.dataset.fit === fit) {
+                b.classList.add('active');
+            } else {
+                b.classList.remove('active');
+            }
+        });
+    }
+
+    renderPhotoSheets();
+    triggerAutoSavePhotoReportConfig();
+}
+window.setPointImageFit = setPointImageFit;
 
 function togglePointSelection(pointId, isChecked) {
     pointId = Number(pointId);
@@ -1432,6 +1547,8 @@ function renderInteractiveGrid() {
         const tempGlobo = m.gt_c != null ? `${Number(m.gt_c).toFixed(1)}°C` : '—';
         const ambiente = m.interior_exterior || 'Interior';
 
+        const pointFit = getPointImageFit(pointId);
+
         html += `
             <div class="photo-point-card ${isSelected ? '' : 'excluded'}" id="photoPointCard_${pointId}">
                 <div class="photo-card-select-bar">
@@ -1439,9 +1556,21 @@ function renderInteractiveGrid() {
                         <input type="checkbox" id="chkPoint_${pointId}" ${isSelected ? 'checked' : ''} onchange="togglePointSelection(${pointId}, this.checked)">
                         <span>Incluir en PDF</span>
                     </label>
-                    <span style="font-size: 11px; font-weight: 800; color: #0284c7; background: #e0f2fe; padding: 2px 7px; border-radius: 4px;">
-                        ${codeFormatted}
-                    </span>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <div class="photo-card-fit-toggle" title="Ajuste de foto para este punto">
+                            <button type="button" class="btn-card-fit ${pointFit === 'contain' ? 'active' : ''}" data-fit="contain" onclick="setPointImageFit(${pointId}, 'contain', event)" title="Contener: Foto completa sin recortar">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="18" height="18" x="3" y="3" rx="2" stroke-dasharray="2 2"/><rect width="10" height="10" x="7" y="7" rx="1"/></svg>
+                                <span>Contener</span>
+                            </button>
+                            <button type="button" class="btn-card-fit ${pointFit === 'cover' ? 'active' : ''}" data-fit="cover" onclick="setPointImageFit(${pointId}, 'cover', event)" title="Expandir: Llenar el recuadro sin distorsionar">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                                <span>Expandir</span>
+                            </button>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; color: #0284c7; background: #e0f2fe; padding: 2px 7px; border-radius: 4px;">
+                            ${codeFormatted}
+                        </span>
+                    </div>
                 </div>
 
                 <div class="photo-card-info-top">
@@ -1465,10 +1594,10 @@ function renderInteractiveGrid() {
                     </div>
                 </div>
 
-                <div class="photo-card-img-box">
+                <div class="photo-card-img-box fit-${pointFit}" id="photoCardImgBox_${pointId}">
                     ${currentImg ? `
-                        <img id="photoImg_${pointId}" src="${currentImg}" alt="${codeFormatted}" onclick="openPhotoViewer('${currentImg}', '${codeFormatted}: ${addslashes(puesto)}')" title="Clic para ampliar fotografía">
-                        <button type="button" class="photo-zoom-btn" onclick="openPhotoViewer('${currentImg}', '${codeFormatted}: ${addslashes(puesto)}')" title="Ampliar">
+                        <img id="photoImg_${pointId}" src="${currentImg}" alt="${codeFormatted}" onclick="openPhotoViewer(this.src, '${codeFormatted}: ${addslashes(puesto)}')" title="Clic para ampliar fotografía">
+                        <button type="button" class="photo-zoom-btn" onclick="openPhotoViewer(document.getElementById('photoImg_${pointId}')?.src || '${currentImg}', '${codeFormatted}: ${addslashes(puesto)}')" title="Ampliar">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
                         </button>
                     ` : `
@@ -1611,6 +1740,8 @@ function renderPhotoSheets() {
                         const tempGlobo = m.gt_c != null ? `${Number(m.gt_c).toFixed(1)}°` : '—';
                         const ambiente = m.interior_exterior || 'Interior';
 
+                        const pointFit = getPointImageFit(pointId);
+
                         return `
                             <div class="sheet-card-item">
                                 <div class="photo-card-info-top">
@@ -1632,9 +1763,9 @@ function renderPhotoSheets() {
                                     </div>
                                 </div>
 
-                                <div class="photo-card-img-box">
+                                <div class="photo-card-img-box fit-${pointFit}">
                                     ${currentImg ? `
-                                        <img src="${currentImg}" alt="${codeFormatted}">
+                                        <img src="${currentImg}" alt="${codeFormatted}" crossorigin="anonymous">
                                     ` : `
                                         <div style="color: #64748b; font-size: 8.5px; font-weight: 700; text-align: center; padding: 10px;">
                                             Sin fotografía
@@ -1701,7 +1832,9 @@ async function savePhotoReportSettingsToServer(showToast = false) {
     const payload = {
         grid: photoReportConfig.grid,
         selected_points: Array.from(photoReportConfig.selectedPoints),
-        photo_indices: photoReportConfig.photoIndices
+        photo_indices: photoReportConfig.photoIndices,
+        image_fit: photoReportConfig.globalFit,
+        photo_fits: photoReportConfig.pointFits
     };
 
     try {

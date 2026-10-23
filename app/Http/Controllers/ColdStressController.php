@@ -164,6 +164,9 @@ class ColdStressController extends Controller
                 'staff_id' => $item->staff_id,
                 'staff_name' => $staffName,
                 'photos' => $photos,
+                'images' => $photos,
+                'image_path' => $photos[0] ?? null,
+                'photo_paths' => $photos,
             ];
         });
 
@@ -176,6 +179,8 @@ class ColdStressController extends Controller
             'grid' => '2x3',
             'selected_points' => [],
             'photo_indices' => [],
+            'image_fit' => 'contain',
+            'photo_fits' => [],
         ];
 
         return view('measurements.estres_frios.index', compact(
@@ -471,6 +476,8 @@ class ColdStressController extends Controller
                 'grid' => $request->input('grid', '2x3'),
                 'selected_points' => $request->input('selected_points', []),
                 'photo_indices' => $request->input('photo_indices', []),
+                'image_fit' => $request->input('image_fit', 'contain'),
+                'photo_fits' => $request->input('photo_fits', []),
             ];
         }
         $module->photo_report_settings = $settings;
