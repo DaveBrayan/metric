@@ -532,6 +532,8 @@ class ErgonomiaRebaController extends Controller
             'orientation' => $savedSettings['orientation'] ?? 'landscape',
             'selected_points' => $savedSettings['selected_points'] ?? ($savedSettings['selectedPoints'] ?? array_column($measurementsList, 'id')),
             'photo_indices' => $savedSettings['photo_indices'] ?? (object)[],
+            'image_fit' => $savedSettings['image_fit'] ?? 'contain',
+            'photo_fits' => $savedSettings['photo_fits'] ?? [],
         ];
 
         return view('measurements.ergonomia_reba.index', [
@@ -951,6 +953,8 @@ class ErgonomiaRebaController extends Controller
             'orientation' => 'nullable|string|in:landscape,portrait',
             'selected_points' => 'nullable|array',
             'photo_indices' => 'nullable|array',
+            'image_fit' => 'nullable|string|in:contain,cover',
+            'photo_fits' => 'nullable|array',
             'settings' => 'nullable|array',
         ]);
 
@@ -964,6 +968,8 @@ class ErgonomiaRebaController extends Controller
                 'orientation' => $validated['orientation'] ?? ($currentSettings['orientation'] ?? 'landscape'),
                 'selected_points' => array_key_exists('selected_points', $validated) ? $validated['selected_points'] : ($currentSettings['selected_points'] ?? ($currentSettings['selectedPoints'] ?? [])),
                 'photo_indices' => array_key_exists('photo_indices', $validated) ? $validated['photo_indices'] : ($currentSettings['photo_indices'] ?? []),
+                'image_fit' => $validated['image_fit'] ?? ($currentSettings['image_fit'] ?? 'contain'),
+                'photo_fits' => array_key_exists('photo_fits', $validated) ? $validated['photo_fits'] : ($currentSettings['photo_fits'] ?? []),
                 'updated_at' => now()->toIso8601String(),
             ];
         }

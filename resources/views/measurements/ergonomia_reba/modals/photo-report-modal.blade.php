@@ -70,6 +70,36 @@
                     </div>
                 </div>
 
+                <!-- Selector de Ajuste General de Fotos (Contener vs Expandir) -->
+                <div class="photo-toolbar-group">
+                    <span class="photo-toolbar-label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect width="18" height="18" x="3" y="3" rx="2" />
+                            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                            <circle cx="9" cy="9" r="2" />
+                        </svg>
+                        Ajuste General:
+                    </span>
+                    <div class="photo-fit-selector" id="photoGlobalFitSelector">
+                        <button type="button" class="btn-photo-fit-global active" data-fit="contain" onclick="setGlobalImageFit('contain')" title="Contener: Imagen completa visible sin recortar">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                                <rect width="18" height="18" x="3" y="3" rx="2" stroke-dasharray="2 2" />
+                                <rect width="10" height="10" x="7" y="7" rx="1" />
+                            </svg>
+                            <span>Contener</span>
+                        </button>
+                        <button type="button" class="btn-photo-fit-global" data-fit="cover" onclick="setGlobalImageFit('cover')" title="Expandir: Llena todo el card sin distorsionar la imagen">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                                <polyline points="15 3 21 3 21 9" />
+                                <polyline points="9 21 3 21 3 15" />
+                                <line x1="21" y1="3" x2="14" y2="10" />
+                                <line x1="3" y1="21" x2="10" y2="14" />
+                            </svg>
+                            <span>Expandir</span>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Herramientas de Selección de Fotos para el PDF -->
                 <div class="photo-toolbar-group">
                     <button type="button" class="btn-toolbar-action" onclick="selectAllPoints(true)"

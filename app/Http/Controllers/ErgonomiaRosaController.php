@@ -571,10 +571,13 @@ class ErgonomiaRosaController extends Controller
             }
         }
 
-        $photoReportSettings = $module->photo_report_settings ?? [
-            'grid' => '2x3',
-            'selected_points' => array_column($measurementsList, 'id'),
-            'photo_indices' => [],
+        $savedSettings = $module->photo_report_settings ?: [];
+        $photoReportSettings = [
+            'grid' => $savedSettings['grid'] ?? ($savedSettings['distribution'] ?? '2x3'),
+            'selected_points' => $savedSettings['selected_points'] ?? array_column($measurementsList, 'id'),
+            'photo_indices' => $savedSettings['photo_indices'] ?? [],
+            'image_fit' => $savedSettings['image_fit'] ?? 'contain',
+            'photo_fits' => $savedSettings['photo_fits'] ?? [],
         ];
 
         return view('measurements.ergonomia_rosa.index', [
@@ -968,6 +971,8 @@ class ErgonomiaRosaController extends Controller
             'grid' => $payload['grid'] ?? '2x3',
             'selected_points' => $payload['selected_points'] ?? [],
             'photo_indices' => $payload['photo_indices'] ?? [],
+            'image_fit' => $payload['image_fit'] ?? 'contain',
+            'photo_fits' => $payload['photo_fits'] ?? [],
         ];
 
         $module->photo_report_settings = $settings;

@@ -2684,6 +2684,83 @@
     color: #0284c7;
 }
 
+/* Selector Global de Ajuste de Foto (Contener vs Expandir) */
+.photo-fit-selector {
+    display: flex;
+    gap: 4px;
+    background: #e2e8f0;
+    padding: 2px;
+    border-radius: 8px;
+}
+
+.btn-photo-fit-global {
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s ease;
+}
+
+.btn-photo-fit-global:hover {
+    color: #0f172a;
+}
+
+.btn-photo-fit-global.active {
+    background: #ffffff;
+    color: #0284c7;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.btn-photo-fit-global svg {
+    flex-shrink: 0;
+}
+
+/* Control Toggle de Ajuste por Card Individual */
+.photo-card-fit-toggle {
+    display: inline-flex;
+    background: #e2e8f0;
+    padding: 2px;
+    border-radius: 6px;
+    gap: 2px;
+}
+
+.btn-card-fit {
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    padding: 2.5px 7px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #475569;
+    cursor: pointer;
+    line-height: 1.2;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.btn-card-fit:hover {
+    color: #0f172a;
+}
+
+.btn-card-fit.active {
+    background: #ffffff;
+    color: #0284c7;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.btn-card-fit svg {
+    flex-shrink: 0;
+}
+
 .btn-toolbar-action {
     display: inline-flex;
     align-items: center;
@@ -2881,10 +2958,24 @@
 .photo-card-img-box img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    object-position: center;
     display: block;
     cursor: zoom-in;
     transition: transform 0.2s ease;
+    margin: 0 auto;
+}
+
+.photo-card-img-box.fit-contain img {
+    object-fit: contain !important;
+    object-position: center !important;
+}
+
+.photo-card-img-box.fit-cover img {
+    object-fit: cover !important;
+    object-position: center !important;
 }
 
 .photo-card-img-box img:hover {
@@ -3182,47 +3273,54 @@
 
 /* Cuadrículas de Mosaico */
 .sheet-photos-grid {
+    flex: 1 1 0px !important;
+    min-height: 0 !important;
+    height: 0 !important;
     display: grid;
-    flex: 1;
-    gap: 7px;
+    align-content: stretch;
     margin-bottom: 5px;
     width: 100%;
-    align-content: stretch;
     box-sizing: border-box;
+    overflow: hidden !important;
 }
 
 .sheet-photos-grid.dist-2x3 {
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(3, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    gap: 8px;
 }
 
 .sheet-photos-grid.dist-2x4 {
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(4, 1fr);
-    gap: 5px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(4, minmax(0, 1fr));
+    gap: 6px;
 }
 
 .sheet-photos-grid.dist-3x3 {
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(3, 1fr);
-    gap: 5px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    gap: 6px;
 }
 
 .sheet-photos-grid.dist-3x4 {
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(4, 1fr);
-    gap: 4px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(4, minmax(0, 1fr));
+    gap: 5px;
 }
 
 /* Tarjeta individual en Hoja Carta */
 .sheet-card-item {
     background: #ffffff;
-    border: 1px solid #cbd5e1;
+    border: 1.5px solid #cbd5e1;
     border-radius: 6px;
-    overflow: hidden;
+    overflow: hidden !important;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
+    min-height: 0 !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    box-shadow: 0 1px 3px rgba(15, 28, 46, 0.04);
     page-break-inside: avoid;
     break-inside: avoid;
     -webkit-print-color-adjust: exact !important;
@@ -3236,7 +3334,7 @@
     gap: 1.5px;
     font-size: 8.5px;
     line-height: 1.25;
-    flex-shrink: 0;
+    flex-shrink: 0 !important;
 }
 
 .sheet-card-item .photo-info-label {
@@ -3261,22 +3359,37 @@
 }
 
 .sheet-card-item .photo-card-img-box {
-    flex: 1;
-    width: 100%;
-    min-height: 0;
+    flex: 1 1 0px !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    height: 0 !important;
     background: #090d16;
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
+    overflow: hidden !important;
     position: relative;
 }
 
 .sheet-card-item .photo-card-img-box img {
     width: 100% !important;
     height: 100% !important;
-    object-fit: cover !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
+    object-position: center !important;
     display: block !important;
+    margin: 0 auto;
+}
+
+.sheet-card-item .photo-card-img-box.fit-contain img {
+    object-fit: contain !important;
+    object-position: center !important;
+}
+
+.sheet-card-item .photo-card-img-box.fit-cover img {
+    object-fit: cover !important;
+    object-position: center !important;
 }
 
 .sheet-card-item .photo-card-info-bottom {
@@ -3288,7 +3401,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 4px;
-    flex-shrink: 0;
+    flex-shrink: 0 !important;
 }
 
 .sheet-card-item .photo-dt-label {

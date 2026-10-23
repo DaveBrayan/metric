@@ -1873,6 +1873,102 @@ async function savePhotoReportSettingsToServer(showToast = false) {
 }
 window.savePhotoReportSettingsToServer = savePhotoReportSettingsToServer;
 
+function fixSheetImagesForCanvas(sheet) {
+    const revertList = [];
+    const boxes = sheet.querySelectorAll('.sheet-card-item .photo-card-img-box');
+
+    boxes.forEach(box => {
+        const img = box.querySelector('img');
+        if (!img) return;
+
+        const nw = img.naturalWidth;
+        const nh = img.naturalHeight;
+        if (!nw || !nh) return;
+
+        const isCover = box.classList.contains('fit-cover');
+        const boxRect = box.getBoundingClientRect();
+        const boxWidth = boxRect.width || box.clientWidth;
+        const boxHeight = boxRect.height || box.clientHeight;
+        if (boxWidth <= 0 || boxHeight <= 0) return;
+
+        const imgRatio = nw / nh;
+        const boxRatio = boxWidth / boxHeight;
+
+        let scaledWidth = boxWidth;
+        let scaledHeight = boxHeight;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        if (isCover) {
+            // Expandir / Cover: Fill container completely without distortion
+            if (imgRatio > boxRatio) {
+                // Image is wider than container ratio -> scale by height
+                scaledHeight = boxHeight;
+                scaledWidth = boxHeight * imgRatio;
+                offsetX = (boxWidth - scaledWidth) / 2;
+                offsetY = 0;
+            } else {
+                // Image is taller than container ratio -> scale by width
+                scaledWidth = boxWidth;
+                scaledHeight = boxWidth / imgRatio;
+                offsetX = 0;
+                offsetY = (boxHeight - scaledHeight) / 2;
+            }
+        } else {
+            // Contener / Contain: Fit entirely inside container without distortion
+            if (imgRatio > boxRatio) {
+                // Image is wider than container ratio -> scale by width
+                scaledWidth = boxWidth;
+                scaledHeight = boxWidth / imgRatio;
+                offsetX = 0;
+                offsetY = (boxHeight - scaledHeight) / 2;
+            } else {
+                // Image is taller than container ratio -> scale by height
+                scaledHeight = boxHeight;
+                scaledWidth = boxHeight * imgRatio;
+                offsetX = (boxWidth - scaledWidth) / 2;
+                offsetY = 0;
+            }
+        }
+
+        const prevBoxStyle = box.getAttribute('style') || '';
+        const prevImgStyle = img.getAttribute('style') || '';
+
+        box.style.setProperty('position', 'relative', 'important');
+        box.style.setProperty('overflow', 'hidden', 'important');
+
+        img.style.setProperty('position', 'absolute', 'important');
+        img.style.setProperty('left', `${offsetX}px`, 'important');
+        img.style.setProperty('top', `${offsetY}px`, 'important');
+        img.style.setProperty('width', `${scaledWidth}px`, 'important');
+        img.style.setProperty('height', `${scaledHeight}px`, 'important');
+        img.style.setProperty('max-width', 'none', 'important');
+        img.style.setProperty('max-height', 'none', 'important');
+        img.style.setProperty('min-width', '0', 'important');
+        img.style.setProperty('min-height', '0', 'important');
+        img.style.setProperty('object-fit', 'fill', 'important');
+        img.style.setProperty('margin', '0', 'important');
+        img.style.setProperty('display', 'block', 'important');
+
+        revertList.push(() => {
+            if (prevBoxStyle) {
+                box.setAttribute('style', prevBoxStyle);
+            } else {
+                box.removeAttribute('style');
+            }
+            if (prevImgStyle) {
+                img.setAttribute('style', prevImgStyle);
+            } else {
+                img.removeAttribute('style');
+            }
+        });
+    });
+
+    return function restoreAll() {
+        revertList.forEach(fn => fn());
+    };
+}
+
 async function downloadPhotoReportPDF() {
     if (!photoReportConfig.selectedPoints || photoReportConfig.selectedPoints.size === 0) {
         if (typeof Swal !== 'undefined') {
@@ -1983,12 +2079,18 @@ async function downloadPhotoReportPDF() {
             sheet.style.border = 'none';
             sheet.style.margin = '0';
 
-            const canvas = await html2canvas(sheet, {
-                scale: 2,
-                useCORS: true,
-                logging: false,
-                backgroundColor: '#ffffff'
-            });
+            const restoreImages = fixSheetImagesForCanvas(sheet);
+            let canvas;
+            try {
+                canvas = await html2canvas(sheet, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                });
+            } finally {
+                restoreImages();
+            }
 
             sheet.style.boxShadow = prevBoxShadow;
             sheet.style.borderRadius = prevBorderRadius;
