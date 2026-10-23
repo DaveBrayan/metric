@@ -510,7 +510,8 @@
     box-sizing: border-box;
 }
 
-.modal-backdrop-custom.open {
+.modal-backdrop-custom.open,
+.modal-backdrop-custom.active {
     display: flex !important;
 }
 
@@ -1239,103 +1240,115 @@
     margin-top: 2px;
 }
 
-/* 6. Export Options Grid */
+/* 6. Modal de Opciones de Exportación */
 .export-options-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    gap: 18px;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
     .export-options-grid {
         grid-template-columns: 1fr;
     }
 }
 
 .export-option-card {
+    background: #ffffff;
     border: 1.5px solid #e2e8f0;
     border-radius: 14px;
-    padding: 20px;
+    padding: 22px 20px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     gap: 16px;
+    transition: all 0.25s ease;
     cursor: pointer;
-    transition: all 0.2s ease;
-    background: #ffffff;
+    position: relative;
+    overflow: hidden;
 }
 
 .export-option-card:hover {
     border-color: #0284c7;
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.15);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 24px -4px rgba(2, 132, 199, 0.14);
+}
+
+.export-option-card.excel-theme:hover {
+    border-color: #059669;
+    box-shadow: 0 12px 24px -4px rgba(5, 150, 105, 0.14);
 }
 
 .export-card-top {
     display: flex;
-    gap: 14px;
     align-items: flex-start;
+    gap: 14px;
 }
 
 .export-card-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
     display: grid;
     place-items: center;
     flex-shrink: 0;
 }
 
-.excel-icon {
+.export-card-icon.excel-icon {
     background: #ecfdf5;
     color: #059669;
+    border: 1px solid #a7f3d0;
 }
 
-.pdf-icon {
-    background: #e0f2fe;
+.export-card-icon.photo-icon {
+    background: #f0f9ff;
     color: #0284c7;
+    border: 1px solid #bae6fd;
 }
 
 .export-card-body h3 {
-    font-size: 15px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 15.5px;
     font-weight: 800;
     color: var(--ink, #0f172a);
-    margin: 4px 0;
+    margin: 0 0 4px 0;
 }
 
 .export-card-body p {
-    font-size: 12px;
+    font-size: 12.5px;
     color: #64748b;
-    line-height: 1.4;
+    line-height: 1.45;
     margin: 0;
 }
 
 .export-card-badge {
     display: inline-block;
-    font-size: 10.5px;
+    font-size: 10px;
     font-weight: 800;
-    padding: 2px 7px;
-    border-radius: 6px;
+    letter-spacing: 0.5px;
     text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 4px;
+    margin-bottom: 6px;
 }
 
-.badge-excel {
+.export-card-badge.badge-excel {
     background: #d1fae5;
     color: #065f46;
 }
 
-.badge-pdf {
+.export-card-badge.badge-photo {
     background: #e0f2fe;
     color: #0369a1;
 }
 
 .export-card-btn {
     width: 100%;
-    padding: 10px;
-    border-radius: 9999px;
-    font-size: 12.5px;
-    font-weight: 800;
-    display: flex;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
@@ -1344,26 +1357,26 @@
     transition: all 0.2s ease;
 }
 
-.excel-btn {
-    background: #ecfdf5;
-    color: #059669;
-    border: 1px solid #a7f3d0;
-}
-
-.excel-btn:hover {
-    background: #059669;
+.export-card-btn.excel-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: #ffffff;
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
 }
 
-.pdf-btn {
-    background: #f0f9ff;
-    color: #0284c7;
-    border: 1px solid #bae6fd;
+.export-card-btn.excel-btn:hover {
+    background: #047857;
+    box-shadow: 0 6px 16px rgba(5, 150, 105, 0.35);
 }
 
-.pdf-btn:hover {
+.export-card-btn.photo-btn {
+    background: linear-gradient(135deg, #10b9df 0%, #0284c7 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+}
+
+.export-card-btn.photo-btn:hover {
     background: #0284c7;
-    color: #ffffff;
+    box-shadow: 0 6px 16px rgba(2, 132, 199, 0.35);
 }
 
 /* 7. Botones de Acción en Tablas */
@@ -2598,5 +2611,855 @@
     border: 1px solid #86efac;
     flex-shrink: 0;
 }
+
+/* ==========================================================================
+   REPORTE FOTOGRÁFICO MOSAICO CARTA — ERGONOMÍA REBA
+   ========================================================================== */
+.photo-report-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 10px 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.photo-toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.photo-toolbar-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.grid-dist-selector {
+    display: flex;
+    gap: 4px;
+    background: #e2e8f0;
+    padding: 2px;
+    border-radius: 8px;
+}
+
+.btn-grid-dist {
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    transition: all 0.2s ease;
+}
+
+.btn-grid-dist:hover {
+    color: #0f172a;
+}
+
+.btn-grid-dist.active {
+    background: #ffffff;
+    color: #0284c7;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.btn-grid-dist .dist-sub {
+    font-size: 10px;
+    font-weight: 500;
+    color: #94a3b8;
+}
+
+.btn-grid-dist.active .dist-sub {
+    color: #0284c7;
+}
+
+.btn-toolbar-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-toolbar-action:hover {
+    border-color: #0284c7;
+    color: #0284c7;
+    background: #f0f9ff;
+}
+
+.btn-toolbar-primary {
+    background: #0284c7;
+    border-color: #0284c7;
+    color: #ffffff;
+}
+
+.btn-toolbar-primary:hover {
+    background: #0369a1;
+    border-color: #0369a1;
+    color: #ffffff;
+}
+
+.photo-selection-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #334155;
+}
+
+.photo-view-tabs {
+    display: flex;
+    gap: 2px;
+    background: #e2e8f0;
+    padding: 2px;
+    border-radius: 8px;
+}
+
+.photo-tab-btn {
+    border: none;
+    background: transparent;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s ease;
+}
+
+.photo-tab-btn:hover {
+    color: #0f172a;
+}
+
+.photo-tab-btn.active {
+    background: #ffffff;
+    color: #0284c7;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.photo-report-container {
+    padding: 20px 24px;
+    max-height: calc(85vh - 160px);
+    overflow-y: auto;
+    background: #f1f5f9;
+}
+
+/* Modo 1: Cuadrícula Interactiva */
+.photo-interactive-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 16px;
+}
+
+.photo-point-card {
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 2px 6px rgba(15, 28, 46, 0.04);
+    transition: all 0.18s ease;
+    position: relative;
+}
+
+.photo-point-card.excluded {
+    opacity: 0.65;
+    border-color: #e2e8f0;
+    background: #f8fafc;
+}
+
+.photo-point-card.excluded .photo-card-img-box {
+    filter: grayscale(85%);
+}
+
+.photo-point-card:hover {
+    border-color: #94a3b8;
+    box-shadow: 0 4px 12px rgba(15, 28, 46, 0.08);
+}
+
+.photo-card-select-bar {
+    padding: 7px 10px;
+    background: #f1f5f9;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.photo-select-checkbox-lbl {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #1e293b;
+    user-select: none;
+}
+
+.photo-select-checkbox-lbl input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #0284c7;
+}
+
+.photo-card-info-top {
+    padding: 8px 10px;
+    background: #ffffff;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 11px;
+    line-height: 1.35;
+}
+
+.photo-info-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.photo-info-label {
+    font-weight: 800;
+    color: #0f172a;
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.photo-info-value {
+    color: #1e293b;
+    font-weight: 600;
+    word-break: break-word;
+}
+
+.photo-info-value.photo-code {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    color: #0284c7;
+}
+
+.photo-card-img-box {
+    width: 100%;
+    height: 175px;
+    background: #090d16;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.photo-card-img-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    cursor: zoom-in;
+    transition: transform 0.2s ease;
+}
+
+.photo-card-img-box img:hover {
+    transform: scale(1.02);
+}
+
+.photo-nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.72);
+    backdrop-filter: blur(4px);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: all 0.16s ease;
+    z-index: 5;
+}
+
+.photo-nav-arrow:hover {
+    background: rgba(2, 132, 199, 0.9);
+    border-color: #ffffff;
+    transform: translateY(-50%) scale(1.08);
+}
+
+.photo-nav-arrow.left {
+    left: 8px;
+}
+
+.photo-nav-arrow.right {
+    right: 8px;
+}
+
+.photo-count-pill {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(4px);
+    color: #ffffff;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 4;
+    pointer-events: none;
+}
+
+.photo-zoom-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: rgba(15, 23, 42, 0.7);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    z-index: 4;
+    transition: background 0.15s ease;
+}
+
+.photo-zoom-btn:hover {
+    background: #0284c7;
+}
+
+.photo-card-info-bottom {
+    padding: 6px 10px;
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    font-size: 11px;
+}
+
+.photo-dt-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4.5px;
+    font-weight: 800;
+    color: #0f172a;
+    font-size: 10.5px;
+    letter-spacing: -0.01em;
+}
+
+.photo-dt-icon {
+    color: #0284c7;
+    flex-shrink: 0;
+}
+
+.photo-dt-pill {
+    font-family: 'Outfit', monospace, sans-serif;
+    font-weight: 700;
+    font-size: 10.5px;
+    color: #0369a1;
+    background: #e0f2fe;
+    border: 1px solid #bae6fd;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+}
+
+/* ==========================================================================
+   VISTA PREVIA Y HOJAS TAMAÑO CARTA (LETTER SHEET PREVIEW & PRINT)
+   ========================================================================== */
+.photo-sheets-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+    padding: 15px 0;
+}
+
+.photo-report-sheet {
+    width: 816px;
+    height: 1056px;
+    min-height: 1056px;
+    max-height: 1056px;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 10px 35px rgba(15, 28, 46, 0.12);
+    padding: 12px 16px 10px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-sizing: border-box;
+    position: relative;
+    margin: 0 auto 30px auto;
+    overflow: hidden;
+}
+
+/* Encabezado Ejecutivo */
+.sheet-header-box {
+    background: linear-gradient(135deg, #09131f 0%, #0f1c2e 55%, #132742 100%);
+    border-radius: 8px;
+    padding: 8px 14px 7px 14px;
+    margin-bottom: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    border: 1px solid rgba(16, 185, 223, 0.4);
+    position: relative;
+    box-shadow: 0 4px 16px rgba(15, 28, 46, 0.2);
+    overflow: hidden;
+    flex-shrink: 0;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+}
+
+.sheet-header-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #10b9df, #0284c7, #38bdf8);
+}
+
+.sheet-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sheet-header-logo-badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(16, 185, 223, 0.18);
+    border: 1.5px solid rgba(16, 185, 223, 0.45);
+    display: grid;
+    place-items: center;
+    color: #38bdf8;
+    flex-shrink: 0;
+}
+
+.sheet-header-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.sheet-header-brand-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 8.5px;
+    font-weight: 800;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+}
+
+.sheet-company-title {
+    color: #f8fafc;
+}
+
+.sheet-brand-dot {
+    color: #10b9df;
+    font-size: 9px;
+}
+
+.sheet-system-tag {
+    color: #38bdf8;
+}
+
+.sheet-header-titles h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 13.5px;
+    font-weight: 900;
+    letter-spacing: -0.2px;
+    color: #ffffff;
+    margin: 0;
+    line-height: 1.15;
+}
+
+.sheet-header-subtitle-row {
+    margin-top: 1px;
+}
+
+.sheet-tech-tag {
+    font-size: 7.5px;
+    font-weight: 700;
+    color: #94a3b8;
+    letter-spacing: 0.4px;
+}
+
+/* Ficha Técnica */
+.sheet-header-meta-card {
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 6px;
+    padding: 5px 8px;
+    min-width: 330px;
+    max-width: 370px;
+    flex-shrink: 0;
+}
+
+.sheet-meta-card-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 7.5px;
+    font-weight: 800;
+    color: #38bdf8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+    padding-bottom: 2px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sheet-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px 8px;
+}
+
+.sheet-meta-row {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    font-size: 7.5px;
+    line-height: 1.25;
+}
+
+.sheet-meta-lbl {
+    color: #94a3b8;
+    font-weight: 800;
+    font-size: 7px;
+    white-space: nowrap;
+}
+
+.sheet-meta-val {
+    color: #f1f5f9;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Cuadrículas de Mosaico */
+.sheet-photos-grid {
+    display: grid;
+    flex: 1;
+    gap: 7px;
+    margin-bottom: 5px;
+    width: 100%;
+    align-content: stretch;
+    box-sizing: border-box;
+}
+
+.sheet-photos-grid.dist-2x3 {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+}
+
+.sheet-photos-grid.dist-2x4 {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 5px;
+}
+
+.sheet-photos-grid.dist-3x3 {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 5px;
+}
+
+.sheet-photos-grid.dist-3x4 {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 4px;
+}
+
+/* Tarjeta individual en Hoja Carta */
+.sheet-card-item {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+}
+
+.sheet-card-item .photo-card-info-top {
+    padding: 3.5px 7px;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    gap: 1.5px;
+    font-size: 8.5px;
+    line-height: 1.25;
+    flex-shrink: 0;
+}
+
+.sheet-card-item .photo-info-label {
+    font-size: 8px;
+    font-weight: 800;
+    color: #475569;
+}
+
+.sheet-card-item .photo-info-value {
+    font-size: 8px;
+    color: #0f172a;
+}
+
+.sheet-card-item .photo-code {
+    font-size: 8.5px;
+    font-weight: 800;
+    color: #0284c7;
+    background: #e0f2fe;
+    padding: 1px 5px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+.sheet-card-item .photo-card-img-box {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    background: #090d16;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+}
+
+.sheet-card-item .photo-card-img-box img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    display: block !important;
+}
+
+.sheet-card-item .photo-card-info-bottom {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border-top: 1px solid #e2e8f0;
+    padding: 2.5px 6px;
+    font-size: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.sheet-card-item .photo-dt-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-weight: 800;
+    color: #0f172a;
+    font-size: 8px;
+}
+
+.sheet-card-item .photo-dt-icon {
+    color: #0284c7;
+    flex-shrink: 0;
+}
+
+.sheet-card-item .photo-dt-pill {
+    font-family: 'Outfit', monospace, sans-serif;
+    font-size: 8px;
+    font-weight: 700;
+    color: #0369a1;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    padding: 0.5px 4px;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
+/* Densidades altas */
+.dist-2x4 .sheet-card-item .photo-card-info-top,
+.dist-3x3 .sheet-card-item .photo-card-info-top {
+    padding: 2.5px 5px;
+    font-size: 8px;
+    gap: 1px;
+}
+
+.dist-3x4 .sheet-card-item .photo-card-info-top {
+    padding: 2px 4px;
+    font-size: 7.5px;
+    gap: 1px;
+}
+
+.dist-3x4 .sheet-card-item .photo-info-label,
+.dist-3x4 .sheet-card-item .photo-info-value {
+    font-size: 7.5px;
+}
+
+.dist-3x4 .sheet-card-item .photo-code {
+    font-size: 7.5px;
+    padding: 0.5px 4px;
+}
+
+.dist-2x4 .sheet-card-item .photo-card-info-bottom,
+.dist-3x3 .sheet-card-item .photo-card-info-bottom {
+    padding: 2px 5px;
+}
+
+.dist-3x4 .sheet-card-item .photo-card-info-bottom {
+    padding: 1.5px 4px;
+}
+
+.dist-3x4 .sheet-card-item .photo-dt-label,
+.dist-3x4 .sheet-card-item .photo-dt-pill {
+    font-size: 7px;
+}
+
+/* Pie de página */
+.sheet-footer-box {
+    border-top: 1.5px solid #0284c7;
+    padding-top: 4px;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 8px;
+    color: #64748b;
+    flex-shrink: 0;
+    page-break-before: avoid !important;
+    break-before: avoid !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+}
+
+.sheet-footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.sheet-footer-page-num {
+    background: #0284c7;
+    color: #ffffff;
+    font-weight: 800;
+    padding: 1.5px 6px;
+    border-radius: 4px;
+}
+
+/* Reglas de Impresión (@media print) */
+@media print {
+    @page {
+        size: letter portrait;
+        margin: 6mm 7mm 6mm 7mm !important;
+    }
+
+    html, body {
+        width: 100% !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    header, nav, aside, footer,
+    .navbar, .sidebar, .app-header, .app-footer,
+    .illumination-header-banner,
+    .illumination-technical-cards,
+    .illumination-table-container,
+    .header-action-group,
+    .pagination-bar-illumination,
+    .modal-backdrop-custom,
+    #photoReportModal,
+    #exportOptionsModal,
+    #createMeasurementModal,
+    #editMeasurementModal,
+    #photoViewerModal,
+    #allLocationsModal,
+    #mapModal,
+    #rebaTablesModal,
+    #rebaPromptsModal {
+        display: none !important;
+    }
+
+    #photoReportPrintArea {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    #photoReportPrintArea .photo-report-sheet {
+        display: flex !important;
+        width: 100% !important;
+        height: 265mm !important;
+        min-height: 265mm !important;
+        max-height: 265mm !important;
+        margin: 0 0 0 0 !important;
+        padding: 0 0 0 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
+
+    #photoReportPrintArea .photo-report-sheet:last-child {
+        page-break-after: auto !important;
+        break-after: auto !important;
+    }
+}
+
 
 

@@ -1,98 +1,171 @@
-<!-- ==========================================================================
-     MODAL 7: REPORTE FOTOGRÁFICO DE EVALUACIONES REBA (MOSAICO CARTA)
-     ========================================================================== -->
-<div class="modal-backdrop-custom" id="photoReportModal" role="dialog" aria-modal="true"
-    aria-labelledby="photoReportModalTitle">
-    <div class="modal-dialog-illumination" style="max-width: 1280px; width: 98%; max-height: 92vh; display: flex; flex-direction: column;">
-        <!-- Header del Modal -->
-        <div class="modal-header-custom">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <div
-                    style="width: 38px; height: 38px; border-radius: 9px; background: #e0f2fe; color: #0284c7; display: grid; place-items: center; flex-shrink: 0;">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                        <circle cx="12" cy="13" r="4" />
-                    </svg>
-                </div>
-                <div>
-                    <h2 id="photoReportModalTitle"
-                        style="font-size: 17px; margin: 0; font-weight: 800; color: #0f172a;">Catálogo Fotográfico — Ergonomía REBA</h2>
-                    <span style="font-size: 12px; color: #64748b; font-weight: 500;">Distribución en mosaico (2x3, 2x4, 3x3, 3x4) en formato de hoja Carta para exportación PDF</span>
-                </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <button type="button" class="btn-primary-hero-action" onclick="window.print()"
-                    title="Imprimir o guardar en PDF (Tamaño Carta)">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="6 9 6 2 18 2 18 9" />
-                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                        <rect width="12" height="8" x="6" y="14" />
-                    </svg>
-                    <span>Imprimir / Guardar PDF</span>
-                </button>
-                <button type="button" class="btn-close-modal" onclick="closePhotoReportModal()"
-                    aria-label="Cerrar">✕</button>
-            </div>
-        </div>
-
-        <div class="modal-body-custom" style="flex: 1; overflow-y: auto; padding: 20px 24px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 16px;">
+    <!-- ==========================================================================
+         MODAL: REPORTE FOTOGRÁFICO DE EVALUACIONES REBA (MOSAICO CARTA)
+         ========================================================================== -->
+    <div class="modal-backdrop-custom" id="photoReportModal" role="dialog" aria-modal="true" style="display: none;"
+        aria-labelledby="photoReportModalTitle">
+        <div class="modal-dialog-illumination" style="max-width: 1280px; width: 98%;">
+            <!-- Header del Modal -->
+            <div class="modal-header-custom">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <label style="font-size: 12.5px; font-weight: 800; color: #0f172a;">Distribución de Mosaico por Hoja:</label>
-                    <select id="rebaMosaicDistributionSelect" class="reba-input-control" style="width: 150px; height: 36px; padding: 4px 8px;" onchange="changeRebaMosaicGrid(this.value)">
-                        <option value="2x3">2 x 3 (6 fotos)</option>
-                        <option value="2x4">2 x 4 (8 fotos)</option>
-                        <option value="3x3">3 x 3 (9 fotos)</option>
-                        <option value="3x4">3 x 4 (12 fotos)</option>
-                    </select>
-                </div>
-                <div style="font-size: 12px; color: #64748b; font-weight: 600;">
-                    Total puestos: <strong>{{ count($measurements) }}</strong>
-                </div>
-            </div>
-
-            <!-- Grid de Fotos Demo -->
-            <div id="rebaPhotoMosaicGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
-                @foreach($measurements as $m)
-                    <div style="border: 1.5px solid #cbd5e1; border-radius: 12px; overflow: hidden; background: #ffffff; box-shadow: 0 2px 8px rgba(15, 28, 46, 0.04);">
-                        <div style="height: 160px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
-                            @if(!empty($m['image_path']))
-                                <img src="{{ $m['image_path'] }}" alt="{{ $m['puesto_trabajo'] }}" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;"
-                                    onclick="openPhotoViewer('{{ $m['image_path'] }}', 'Puesto {{ $m['num'] }}: {{ addslashes($m['puesto_trabajo']) }}')">
-                            @else
-                                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; color: #94a3b8;">
-                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-                                        <circle cx="9" cy="9" r="2" />
-                                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                                    </svg>
-                                    <span style="font-size: 11px; font-weight: 600;">Sin fotografía</span>
-                                </div>
-                            @endif
-                            <span class="reba-score-pill {{ $m['badge_class'] ?? 'risk-medio' }}" style="position: absolute; top: 8px; right: 8px; font-size: 11px; padding: 2px 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
-                                Score {{ $m['score_final'] ?? 1 }}
-                            </span>
-                        </div>
-                        <div style="padding: 12px 14px;">
-                            <div style="font-size: 11px; font-weight: 800; color: #0284c7; text-transform: uppercase;">
-                                Puesto #{{ $m['num'] }}
-                            </div>
-                            <div style="font-weight: 800; font-size: 13px; color: #0f172a; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                {{ $m['puesto_trabajo'] }}
-                            </div>
-                            <div style="font-size: 11.5px; color: #64748b; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                {{ $m['area_sector'] }}
-                            </div>
-                        </div>
+                    <div
+                        style="width: 38px; height: 38px; border-radius: 9px; background: #e0f2fe; color: #0284c7; display: grid; place-items: center; flex-shrink: 0;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                            <circle cx="12" cy="13" r="4" />
+                        </svg>
                     </div>
-                @endforeach
+                    <div>
+                        <h2 id="photoReportModalTitle"
+                            style="font-size: 17px; margin: 0; font-weight: 800; color: #0f172a;">Reporte Fotográfico — Ergonomía REBA</h2>
+                        <span style="font-size: 12px; color: #64748b; font-weight: 500;">Distribución en mosaico (2x3, 2x4, 3x3, 3x4) en formato de hoja Carta para exportación PDF</span>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button type="button" class="btn-toolbar-action" id="btnSaveReportSettings"
+                        onclick="savePhotoReportSettingsToServer(true)" title="Guardar distribución y selección de fotos">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                            <polyline points="17 21 17 13 7 13 7 21" />
+                            <polyline points="7 3 7 8 15 8" />
+                        </svg>
+                        <span>Guardar Selección</span>
+                    </button>
+                    <button type="button" class="btn-close-modal" onclick="closePhotoReportModal()"
+                        aria-label="Cerrar">✕</button>
+                </div>
             </div>
-        </div>
 
-        <div class="modal-footer-custom" style="justify-content: flex-end;">
-            <button type="button" class="btn-secondary-subtle" onclick="closePhotoReportModal()">Cerrar</button>
+            <!-- Toolbar con Selectores de Distribución, Selección de Fotos y Pestañas -->
+            <div class="photo-report-toolbar">
+                <!-- Selector de Distribución Mosaico -->
+                <div class="photo-toolbar-group">
+                    <span class="photo-toolbar-label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect width="7" height="7" x="3" y="3" rx="1" />
+                            <rect width="7" height="7" x="14" y="3" rx="1" />
+                            <rect width="7" height="7" x="14" y="14" rx="1" />
+                            <rect width="7" height="7" x="3" y="14" rx="1" />
+                        </svg>
+                        Distribución Mosaico:
+                    </span>
+                    <div class="grid-dist-selector" id="gridDistSelector">
+                        <button type="button" class="btn-grid-dist" data-grid="2x3" onclick="changeGridDistribution('2x3')">
+                            <span>2x3</span>
+                            <span class="dist-sub">(6 fotos)</span>
+                        </button>
+                        <button type="button" class="btn-grid-dist" data-grid="2x4" onclick="changeGridDistribution('2x4')">
+                            <span>2x4</span>
+                            <span class="dist-sub">(8 fotos)</span>
+                        </button>
+                        <button type="button" class="btn-grid-dist" data-grid="3x3" onclick="changeGridDistribution('3x3')">
+                            <span>3x3</span>
+                            <span class="dist-sub">(9 fotos)</span>
+                        </button>
+                        <button type="button" class="btn-grid-dist" data-grid="3x4" onclick="changeGridDistribution('3x4')">
+                            <span>3x4</span>
+                            <span class="dist-sub">(12 fotos)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Herramientas de Selección de Fotos para el PDF -->
+                <div class="photo-toolbar-group">
+                    <button type="button" class="btn-toolbar-action" onclick="selectAllPoints(true)"
+                        title="Seleccionar todas las fotos para el PDF">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        <span>Todas</span>
+                    </button>
+                    <button type="button" class="btn-toolbar-action" onclick="selectAllPoints(false)"
+                        title="Deseleccionar todas las fotos">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                        <span>Ninguna</span>
+                    </button>
+                    <div class="photo-selection-pill" id="photoSelectionCountPill">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                            <circle cx="12" cy="13" r="4" />
+                        </svg>
+                        <span id="photoSelectionCountText">0 de 0 seleccionadas</span>
+                    </div>
+                </div>
+
+                <!-- Alternador de Vista: Configurar vs Hojas Carta -->
+                <div class="photo-toolbar-group">
+                    <div class="photo-view-tabs">
+                        <button type="button" class="photo-tab-btn active" id="tabBtnInteractive"
+                            onclick="switchPhotoReportTab('interactive')">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <rect width="18" height="18" x="3" y="3" rx="2" />
+                                <path d="M3 9h18" />
+                                <path d="M9 21V9" />
+                            </svg>
+                            <span>Configurar Mosaico</span>
+                        </button>
+                        <button type="button" class="photo-tab-btn" id="tabBtnSheets"
+                            onclick="switchPhotoReportTab('sheets')">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                            </svg>
+                            <span>Vista Previa Hojas Carta</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contenedor Principal de Contenido del Reporte -->
+            <div class="photo-report-container">
+                <!-- VISTA 1: Selector Interactivo con Flechas y Checkboxes -->
+                <div id="photoInteractiveView">
+                    <div class="photo-interactive-grid" id="photoInteractiveGridContainer">
+                        <!-- Generado dinámicamente por JavaScript -->
+                    </div>
+                </div>
+
+                <!-- VISTA 2: Vista Previa de Hojas Tamaño Carta Paginadas -->
+                <div id="photoSheetsView" style="display: none;">
+                    <div class="photo-sheets-container" id="photoSheetsContainer">
+                        <!-- Generado dinámicamente por JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer del Modal -->
+            <div class="modal-footer-custom" style="justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: #64748b;">
+                    <span>METRIC v2 Pachabol — Ergonomía REBA (NTP 601 / ISO 11226 / UNE-EN 1005-4)</span>
+                    <span>•</span>
+                    <span id="photoReportPagesIndicator" style="font-weight: 700; color: #0284c7;">Hojas calculadas: 0</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button type="button" class="btn-secondary-subtle" onclick="closePhotoReportModal()">Cerrar</button>
+                    <button type="button" class="btn-primary-hero-action" id="btnDownloadPhotoReportPdf" onclick="downloadPhotoReportPDF()"
+                        style="padding: 6px 16px; font-size: 12.5px;" title="Descargar reporte fotográfico en PDF (Tamaño Carta)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        <span>Descargar PDF</span>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
-</div>
+
+    <!-- Área Exclusiva de Impresión PDF (Hojas Tamaño Carta para @media print) -->
+    <div id="photoReportPrintArea" style="display: none;">
+        <!-- Se inyectan dinámicamente aquí las hojas .photo-report-sheet para imprimir -->
+    </div>

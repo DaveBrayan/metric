@@ -526,9 +526,12 @@ class ErgonomiaRebaController extends Controller
             }
         }
 
+        $savedSettings = $module->photo_report_settings ?: [];
         $photoReportSettings = [
-            'distribution' => '2x3',
-            'selectedPoints' => array_column($measurementsList, 'id'),
+            'grid' => $savedSettings['grid'] ?? ($savedSettings['distribution'] ?? '2x3'),
+            'orientation' => $savedSettings['orientation'] ?? 'landscape',
+            'selected_points' => $savedSettings['selected_points'] ?? ($savedSettings['selectedPoints'] ?? array_column($measurementsList, 'id')),
+            'photo_indices' => $savedSettings['photo_indices'] ?? (object)[],
         ];
 
         return view('measurements.ergonomia_reba.index', [
@@ -941,9 +944,37 @@ class ErgonomiaRebaController extends Controller
      */
     public function savePhotoReportSettings(Request $request, $moduleId)
     {
+        $module = MeasurementModule::findOrFail($moduleId);
+
+        $validated = $request->validate([
+            'grid' => 'nullable|string|in:2x3,2x4,3x3,3x4',
+            'orientation' => 'nullable|string|in:landscape,portrait',
+            'selected_points' => 'nullable|array',
+            'photo_indices' => 'nullable|array',
+            'settings' => 'nullable|array',
+        ]);
+
+        $currentSettings = $module->photo_report_settings ?: [];
+
+        if (!empty($validated['settings'])) {
+            $newSettings = $validated['settings'];
+        } else {
+            $newSettings = [
+                'grid' => $validated['grid'] ?? ($currentSettings['grid'] ?? ($currentSettings['distribution'] ?? '2x3')),
+                'orientation' => $validated['orientation'] ?? ($currentSettings['orientation'] ?? 'landscape'),
+                'selected_points' => array_key_exists('selected_points', $validated) ? $validated['selected_points'] : ($currentSettings['selected_points'] ?? ($currentSettings['selectedPoints'] ?? [])),
+                'photo_indices' => array_key_exists('photo_indices', $validated) ? $validated['photo_indices'] : ($currentSettings['photo_indices'] ?? []),
+                'updated_at' => now()->toIso8601String(),
+            ];
+        }
+
+        $module->photo_report_settings = $newSettings;
+        $module->save();
+
         return response()->json([
             'success' => true,
             'message' => 'Configuración de catálogo fotográfico guardada con éxito.',
+            'settings' => $newSettings,
         ]);
     }
 

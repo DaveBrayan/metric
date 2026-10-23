@@ -172,7 +172,11 @@ class ColdStressController extends Controller
         $nonCompliantCount = $totalMeasurements - $compliantCount;
 
         $project = $module->project;
-        $photoReportSettings = $module->photo_report_settings ?: [];
+        $photoReportSettings = $module->photo_report_settings ?: [
+            'grid' => '2x3',
+            'selected_points' => [],
+            'photo_indices' => [],
+        ];
 
         return view('measurements.estres_frios.index', compact(
             'module',
@@ -461,7 +465,15 @@ class ColdStressController extends Controller
     public function savePhotoReportSettings(Request $request, $moduleId)
     {
         $module = MeasurementModule::findOrFail($moduleId);
-        $module->photo_report_settings = $request->input('settings', []);
+        $settings = $request->input('settings');
+        if (!$settings) {
+            $settings = [
+                'grid' => $request->input('grid', '2x3'),
+                'selected_points' => $request->input('selected_points', []),
+                'photo_indices' => $request->input('photo_indices', []),
+            ];
+        }
+        $module->photo_report_settings = $settings;
         $module->save();
 
         return response()->json([

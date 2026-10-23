@@ -42,6 +42,9 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     {{-- ExcelJS para Exportación de Planilla Oficial --}}
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+    <!-- html2canvas and jsPDF for Direct High-Fidelity PDF Generation -->
+    <script src="{{ asset('js/html2canvas.min.js') }}"></script>
+    <script src="{{ asset('js/jspdf.umd.min.js') }}"></script>
 
     {{-- Configuración e Inyección de Datos Reactivos --}}
     <script>
@@ -62,10 +65,7 @@
                 monitoringType: @json($monitoringType ?? 'Ergonomía REBA'),
                 registeredByHeader: @json($registeredByHeader ?? '')
             },
-            photoReportSettings: {
-                distribution: "2x3",
-                selectedPoints: @json(collect($measurements ?? [])->pluck('id'))
-            },
+            photoReportSettings: @json($photoReportSettings ?? []),
             registeredByHeader: @json($registeredByHeader ?? '')
         };
 

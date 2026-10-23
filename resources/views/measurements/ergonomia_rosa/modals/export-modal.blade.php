@@ -1,5 +1,5 @@
 <!-- ==========================================================================
-     MODAL: OPCIONES DE EXPORTACIÓN (PLANILLA EXCEL & REPORTE FOTOGRÁFICO ROSA)
+     MODAL: OPCIONES DE EXPORTACIÓN (PLANILLA EXCEL & REPORTE FOTOGRÁFICO)
      ========================================================================== -->
 <div class="modal-backdrop-custom" id="exportOptionsModal" role="dialog" aria-modal="true"
     aria-labelledby="exportModalTitle">
@@ -7,8 +7,8 @@
         <div class="modal-header-custom">
             <div style="display: flex; align-items: center; gap: 10px;">
                 <div
-                    style="width: 36px; height: 36px; border-radius: 9px; background: #ecfdf5; color: #059669; display: grid; place-items: center;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    style="width: 34px; height: 34px; border-radius: 9px; background: #ecfdf5; color: #059669; display: grid; place-items: center;">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                         stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                         <polyline points="7 10 12 15 17 10" />
@@ -16,12 +16,8 @@
                     </svg>
                 </div>
                 <div>
-                    <h2 id="exportModalTitle" style="font-size: 17px; margin: 0; font-weight: 800; color: var(--ink, #0f172a);">
-                        Exportar Informes de Ergonomía ROSA
-                    </h2>
-                    <span style="font-size: 12px; color: #64748b; font-weight: 500;">
-                        Selecciona el formato de exportación para las evaluaciones ergonómicas de oficina
-                    </span>
+                    <h2 id="exportModalTitle" style="font-size: 17px; margin: 0;">Exportar Monitoreo de Ergonomía ROSA</h2>
+                    <span style="font-size: 12px; color: #64748b; font-weight: 500;">Selecciona el formato de exportación para este estudio</span>
                 </div>
             </div>
             <button type="button" class="btn-close-modal" onclick="closeExportModal()" aria-label="Cerrar">✕</button>
@@ -45,8 +41,8 @@
                             </div>
                             <div class="export-card-body">
                                 <span class="export-card-badge badge-excel">Planilla Oficial .xlsx</span>
-                                <h3>Planilla Técnica ROSA</h3>
-                                <p>Encabezado corporativo, matriz completa de puestos evaluados, desglose de silla (A), pantalla/teléfono (B), ratón/teclado (C), periféricos (D), Score E y niveles de acción ROSA.</p>
+                                <h3>Planilla Técnica Excel</h3>
+                                <p>Encabezado corporativo, matriz de puestos evaluados, desglose de silla (A), pantalla/teléfono (B), periféricos (C), Score ROSA y nivel de acción.</p>
                             </div>
                         </div>
                     </div>
@@ -65,7 +61,7 @@
                 <div class="export-option-card" onclick="openPhotoReportModal()">
                     <div>
                         <div class="export-card-top">
-                            <div class="export-card-icon photo-icon" style="background: #e0f2fe; color: #0284c7;">
+                            <div class="export-card-icon photo-icon">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                     <path
@@ -74,20 +70,20 @@
                                 </svg>
                             </div>
                             <div class="export-card-body">
-                                <span class="export-card-badge" style="background: #e0f2fe; color: #0284c7;">Catálogo Visual</span>
-                                <h3>Catálogo Fotográfico</h3>
-                                <p>Mosaico fotográfico de puestos de trabajo de oficina, configuraciones de pantalla y silla, evidencias posturales y ficha técnica en formato estándar Carta.</p>
+                                <span class="export-card-badge badge-photo">Catálogo Visual</span>
+                                <h3>Reporte Fotográfico</h3>
+                                <p>Diseña y exporta la cuadrícula de fotografías técnicas con evidencias posturales, puntuaciones de silla, pantalla, teclado y mouse.</p>
                             </div>
                         </div>
                     </div>
-                    <button type="button" class="export-card-btn photo-btn" style="background: #e0f2fe; color: #0284c7; border-color: #bae6fd;">
+                    <button type="button" class="export-card-btn photo-btn">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
                             <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
                             <circle cx="9" cy="9" r="2" />
                             <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
                         </svg>
-                        <span>Configurar Mosaico</span>
+                        <span>Ver Reporte Fotográfico</span>
                     </button>
                 </div>
             </div>

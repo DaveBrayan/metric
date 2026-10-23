@@ -571,9 +571,10 @@ class ErgonomiaRosaController extends Controller
             }
         }
 
-        $photoReportSettings = [
-            'distribution' => '2x3',
-            'selectedPoints' => array_column($measurementsList, 'id'),
+        $photoReportSettings = $module->photo_report_settings ?? [
+            'grid' => '2x3',
+            'selected_points' => array_column($measurementsList, 'id'),
+            'photo_indices' => [],
         ];
 
         return view('measurements.ergonomia_rosa.index', [
@@ -961,7 +962,13 @@ class ErgonomiaRosaController extends Controller
     public function savePhotoReportSettings(Request $request, $moduleId)
     {
         $module = MeasurementModule::findOrFail($moduleId);
-        $settings = $request->input('settings', []);
+        $payload = $request->input('settings') ?? $request->all();
+
+        $settings = [
+            'grid' => $payload['grid'] ?? '2x3',
+            'selected_points' => $payload['selected_points'] ?? [],
+            'photo_indices' => $payload['photo_indices'] ?? [],
+        ];
 
         $module->photo_report_settings = $settings;
         $module->save();
@@ -969,6 +976,7 @@ class ErgonomiaRosaController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Configuración de mosaico fotográfico guardada con éxito.',
+            'settings' => $settings,
         ]);
     }
 
@@ -1610,3 +1618,4 @@ Debes responder en español estructurando la respuesta EXACTAMENTE con los sigui
         ));
     }
 }
+

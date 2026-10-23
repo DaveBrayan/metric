@@ -221,7 +221,11 @@ class HeatStressController extends Controller
         $compliantCount = $measurements->where('is_compliant', true)->count();
         $nonCompliantCount = $totalMeasurements - $compliantCount;
 
-        $photoReportSettings = $module->photo_report_settings ?: [];
+        $photoReportSettings = $module->photo_report_settings ?: [
+            'grid' => '2x3',
+            'selected_points' => [],
+            'photo_indices' => [],
+        ];
         $project = $module->project;
 
         return view('measurements.estres_calores.index', compact(
@@ -515,7 +519,15 @@ class HeatStressController extends Controller
     public function savePhotoReportSettings(Request $request, $moduleId)
     {
         $module = MeasurementModule::findOrFail($moduleId);
-        $module->photo_report_settings = $request->input('settings', []);
+        $settings = $request->input('settings');
+        if (!$settings) {
+            $settings = [
+                'grid' => $request->input('grid', '2x3'),
+                'selected_points' => $request->input('selected_points', []),
+                'photo_indices' => $request->input('photo_indices', []),
+            ];
+        }
+        $module->photo_report_settings = $settings;
         $module->save();
 
         return response()->json([

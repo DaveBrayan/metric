@@ -57,8 +57,8 @@
                         </button>
                     </div>
 
-                    <!-- Opción 2: Reporte Fotográfico (Desactivado temporalmente) -->
-                    <div class="export-option-card" style="opacity: 0.6; cursor: default;" onclick="return false;">
+                    <!-- Opción 2: Reporte Fotográfico -->
+                    <div class="export-option-card" onclick="openPhotoReportModal()">
                         <div>
                             <div class="export-card-top">
                                 <div class="export-card-icon photo-icon">
@@ -70,20 +70,20 @@
                                     </svg>
                                 </div>
                                 <div class="export-card-body">
-                                    <span class="export-card-badge" style="background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;">Próximamente</span>
+                                    <span class="export-card-badge badge-photo">Catálogo Visual</span>
                                     <h3>Reporte Fotográfico</h3>
-                                    <p>Catálogo visual con todas las evidencias fotográficas, coordenadas GPS, personal registrador y lecturas de estrés térmico.</p>
+                                    <p>Diseña y exporta la cuadrícula de fotografías técnicas con metadatos WBGT, temperaturas (Tbs, Tbh, Tg), fecha y hora.</p>
                                 </div>
                             </div>
                         </div>
-                        <button type="button" class="export-card-btn photo-btn" style="background: #94a3b8; cursor: default;" disabled>
+                        <button type="button" class="export-card-btn photo-btn">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
                                 <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
                                 <circle cx="9" cy="9" r="2" />
                                 <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
                             </svg>
-                            <span>Reporte Fotográfico</span>
+                            <span>Ver Reporte Fotográfico</span>
                         </button>
                     </div>
                 </div>
