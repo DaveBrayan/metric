@@ -1,7 +1,7 @@
     <!-- ==========================================================================
          MODAL 5: OPCIONES DE EXPORTACIÓN (PLANILLA EXCEL & REPORTE FOTOGRÁFICO)
          ========================================================================== -->
-    <div class="modal-backdrop-custom" id="exportOptionsModal" role="dialog" aria-modal="true" style="display: none;"
+    <div class="modal-backdrop-custom" id="exportOptionsModal" role="dialog" aria-modal="true"
         aria-labelledby="exportModalTitle">
         <div class="modal-dialog-illumination" style="max-width: 680px;">
             <div class="modal-header-custom">
@@ -58,7 +58,7 @@
                     </div>
 
                     <!-- Opción 2: Reporte Fotográfico -->
-                    <div class="export-option-card" onclick="openPhotoReportConfigModal()">
+                    <div class="export-option-card" onclick="openPhotoReportModal()">
                         <div>
                             <div class="export-card-top">
                                 <div class="export-card-icon photo-icon">
