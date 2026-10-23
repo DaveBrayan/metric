@@ -1198,8 +1198,15 @@ table#modulesMasterTable td {
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                                         </div>
                                     </a>
-                                @elseif($item['module_key'] === 'ruido')
-                                    <a href="{{ route('modules.ruido_ocupacional', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Monitoreo de Ruido Ocupacional / Dosimetría">
+                                @elseif($item['module_key'] === 'dosimetria' || $item['module_key'] === 'dosimetry')
+                                    <a href="{{ route('modules.dosimetry', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Monitoreo de Dosimetría">
+                                        <div style="font-weight: 800; color: #0284c7; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
+                                            <span>{{ $item['module_name'] }}</span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                        </div>
+                                    </a>
+                                @elseif($item['module_key'] === 'ruido' || $item['module_key'] === 'ruido_ocupacional')
+                                    <a href="{{ route('modules.ruido_ocupacional', $item['id']) }}" style="text-decoration: none; display: block;" title="Ingresar a Monitoreo de Ruido Ocupacional">
                                         <div style="font-weight: 800; color: #0284c7; font-size: 13.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 6px;">
                                             <span>{{ $item['module_name'] }}</span>
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
@@ -1419,8 +1426,17 @@ table#modulesMasterTable td {
                                                 <path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>
                                             </svg>
                                         </button>
-                                @elseif($item['module_key'] === 'ruido')
-                                        <!-- Ver Mediciones de Ruido Ocupacional / Dosimetría -->
+                                    @elseif($item['module_key'] === 'dosimetria' || $item['module_key'] === 'dosimetry')
+                                        <!-- Ver Mediciones de Dosimetría de Ruido -->
+                                        <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.dosimetry', $item['id']) }}'" title="Monitoreo de Dosimetría (Ver Mediciones)" aria-label="Ver Mediciones de Dosimetría">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                                                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                                                <line x1="12" y1="19" x2="12" y2="22" />
+                                            </svg>
+                                        </button>
+                                    @elseif($item['module_key'] === 'ruido' || $item['module_key'] === 'ruido_ocupacional')
+                                        <!-- Ver Mediciones de Ruido Ocupacional -->
                                         <button type="button" class="btn-admin-icon-action theme-cyan" onclick="window.location.href='{{ route('modules.ruido_ocupacional', $item['id']) }}'" title="Monitoreo de Ruido Ocupacional (Ver Mediciones)" aria-label="Ver Mediciones de Ruido Ocupacional">
                                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                                 <path d="M2 10v3"/>
@@ -2300,8 +2316,8 @@ table#modulesMasterTable td {
                 rowType === currentModuleFilter || 
                 ((currentModuleFilter === 'ergonomia' || currentModuleFilter === 'ergonomia_reba') && (rowType === 'ergonomia' || rowType === 'ergonomia_reba')) ||
                 ((currentModuleFilter === 'ergonomia_rosa' || currentModuleFilter === 'rosa') && (rowType === 'ergonomia_rosa' || rowType === 'rosa')) ||
-                (currentModuleFilter === 'ruido' && (rowType === 'ruido' || rowType === 'dosimetria' || rowType === 'dosimetry')) ||
-                (currentModuleFilter === 'dosimetria' && (rowType === 'ruido' || rowType === 'dosimetria' || rowType === 'dosimetry'))
+                (currentModuleFilter === 'ruido' && (rowType === 'ruido' || rowType === 'ruido_ocupacional')) ||
+                (currentModuleFilter === 'dosimetria' && (rowType === 'dosimetria' || rowType === 'dosimetry'))
             );
             const matchesSearch = (!searchTerm || rowSearch.includes(searchTerm));
 
