@@ -2020,30 +2020,195 @@ async function savePhotoReportSettingsToServer(showToast = false) {
 window.savePhotoReportSettingsToServer = savePhotoReportSettingsToServer;
 
 /**
- * Imprimir o Guardar PDF en Tamaño Carta
+ * Descargar Reporte Fotográfico en PDF en Formato Hoja Carta (8.5 x 11 pulg.)
+ * Idéntico a la Vista Previa de Hojas Carta
  */
-function printPhotoReport() {
-    if (photoReportConfig.selectedPoints.size === 0) {
+async function downloadPhotoReportPDF() {
+    if (!photoReportConfig.selectedPoints || photoReportConfig.selectedPoints.size === 0) {
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 title: 'Sin selección',
-                text: 'Debes seleccionar al menos una fotografía para generar e imprimir el reporte en PDF.',
+                text: 'Debes seleccionar al menos una fotografía para generar y descargar el reporte en PDF.',
                 icon: 'warning',
                 confirmButtonText: 'Entendido',
                 buttonsStyling: false,
                 customClass: { popup: 'metric-swal-popup', confirmButton: 'metric-swal-btn-confirm' }
             });
         } else {
-            alert('Debes seleccionar al menos una fotografía para imprimir.');
+            alert('Debes seleccionar al menos una fotografía para descargar el PDF.');
         }
         return;
     }
 
-    renderPhotoSheets();
+    const btnDownload = document.getElementById('btnDownloadPhotoReportPdf');
+    const origBtnHtml = btnDownload ? btnDownload.innerHTML : '';
 
-    setTimeout(() => {
-        window.print();
-    }, 120);
+    try {
+        if (btnDownload) {
+            btnDownload.disabled = true;
+            btnDownload.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="animation: spin 0.8s linear infinite;">
+                    <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                </svg>
+                <span>Generando PDF...</span>
+            `;
+        }
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Generando Reporte PDF',
+                html: `
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px 0;">
+                        <span style="font-size:13px;color:#475569;">Compilando hojas tamaño carta en alta resolución...</span>
+                        <span id="pdfGenProgressText" style="font-size:11.5px;font-weight:700;color:#0284c7;">Preparando páginas...</span>
+                    </div>
+                `,
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
+                customClass: { popup: 'metric-swal-popup' }
+            });
+        }
+
+        // Asegurar que la pestaña de Hojas Carta esté activa y actualizada
+        switchPhotoReportTab('sheets');
+        renderPhotoSheets();
+
+        // Breve espera para que el DOM aplique estilos y cargue fuentes
+        await new Promise(r => setTimeout(r, 150));
+
+        const sheetsContainer = document.getElementById('photoSheetsContainer');
+        if (!sheetsContainer) {
+            throw new Error('No se encontró el contenedor de hojas del reporte fotográfico.');
+        }
+
+        const sheets = Array.from(sheetsContainer.querySelectorAll('.photo-report-sheet'));
+        if (sheets.length === 0) {
+            throw new Error('No hay hojas generadas para exportar en el reporte.');
+        }
+
+        const JsPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : window.jsPDF;
+        if (!JsPDF) {
+            throw new Error('La librería jsPDF no está disponible en la página.');
+        }
+        if (typeof html2canvas === 'undefined') {
+            throw new Error('La librería html2canvas no está disponible en la página.');
+        }
+
+        // Configuración de Hoja Carta (Letter): 215.9mm x 279.4mm (8.5 x 11 pulg.)
+        const pdf = new JsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'letter',
+            compress: true
+        });
+
+        const letterWidthMm = 215.9;
+        const letterHeightMm = 279.4;
+
+        for (let i = 0; i < sheets.length; i++) {
+            const sheet = sheets[i];
+
+            const progressEl = document.getElementById('pdfGenProgressText');
+            if (progressEl) {
+                progressEl.textContent = `Procesando hoja ${i + 1} de ${sheets.length}...`;
+            }
+
+            // Asegurar que todas las fotos de la hoja estén cargadas
+            const sheetImages = Array.from(sheet.querySelectorAll('img'));
+            await Promise.all(sheetImages.map(img => {
+                if (img.complete) return Promise.resolve();
+                return new Promise(resolve => {
+                    img.onload = resolve;
+                    img.onerror = resolve;
+                });
+            }));
+
+            // Desactivar temporalmente sombras, bordes y márgenes de previsualización para un PDF limpio
+            const prevBoxShadow = sheet.style.boxShadow;
+            const prevBorderRadius = sheet.style.borderRadius;
+            const prevBorder = sheet.style.border;
+            const prevMargin = sheet.style.margin;
+
+            sheet.style.boxShadow = 'none';
+            sheet.style.borderRadius = '0';
+            sheet.style.border = 'none';
+            sheet.style.margin = '0';
+
+            const canvas = await html2canvas(sheet, {
+                scale: 2, // 2x para nitidez y calidad de imprenta
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff'
+            });
+
+            // Restaurar estilos de previsualización en el navegador
+            sheet.style.boxShadow = prevBoxShadow;
+            sheet.style.borderRadius = prevBorderRadius;
+            sheet.style.border = prevBorder;
+            sheet.style.margin = prevMargin;
+
+            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+            if (i > 0) {
+                pdf.addPage('letter', 'portrait');
+            }
+
+            pdf.addImage(imgData, 'JPEG', 0, 0, letterWidthMm, letterHeightMm, undefined, 'FAST');
+        }
+
+        // Nombre descriptivo oficial para el PDF
+        const tech = window.TECHNICAL_HEADER_DATA || {};
+        const installationClean = (tech.installationName || 'Instalacion').trim().replace(/[^a-zA-Z0-9_\-]/g, '_').substring(0, 30);
+        const dateStr = new Date().toISOString().slice(0, 10);
+        const fileName = `Reporte_Fotografico_Gases_${installationClean}_${dateStr}.pdf`;
+
+        pdf.save(fileName);
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '¡Descarga Exitosa!',
+                text: `El reporte fotográfico (${sheets.length} ${sheets.length === 1 ? 'hoja carta' : 'hojas carta'}) se ha descargado en formato PDF.`,
+                icon: 'success',
+                confirmButtonText: 'Aceptar',
+                timer: 3000,
+                timerProgressBar: true,
+                buttonsStyling: false,
+                customClass: { popup: 'metric-swal-popup', confirmButton: 'metric-swal-btn-confirm' }
+            });
+        }
+    } catch (err) {
+        console.error('Error generando o descargando PDF:', err);
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Error al exportar PDF',
+                text: 'Ocurrió un error al generar el archivo PDF: ' + (err.message || 'Error desconocido'),
+                icon: 'error',
+                confirmButtonText: 'Aceptar',
+                buttonsStyling: false,
+                customClass: { popup: 'metric-swal-popup', confirmButton: 'metric-swal-btn-danger' }
+            });
+        } else {
+            alert('Error generando PDF: ' + err.message);
+        }
+    } finally {
+        if (btnDownload && origBtnHtml) {
+            btnDownload.disabled = false;
+            btnDownload.innerHTML = origBtnHtml;
+        }
+    }
+}
+window.downloadPhotoReportPDF = downloadPhotoReportPDF;
+
+/**
+ * Imprimir o Descargar PDF en Tamaño Carta (compatibilidad)
+ */
+function printPhotoReport() {
+    downloadPhotoReportPDF();
 }
 window.printPhotoReport = printPhotoReport;
 
@@ -2176,6 +2341,7 @@ window.switchPhotoReportTab = switchPhotoReportTab;
 window.renderPhotoInteractiveGrid = renderInteractiveGrid;
 window.renderPhotoSheets = renderPhotoSheets;
 window.savePhotoReportSettingsToServer = savePhotoReportSettingsToServer;
+window.downloadPhotoReportPDF = downloadPhotoReportPDF;
 window.printPhotoReport = printPhotoReport;
 window.editHeaderField = editHeaderField;
 window.saveHeaderField = saveHeaderField;
