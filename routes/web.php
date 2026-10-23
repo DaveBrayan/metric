@@ -169,6 +169,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/modulos/{id}/ruido-ocupacional/mediciones/{measurementId}/download-word', [RuidoOcupacionalController::class, 'downloadWordReport'])->name('modules.ruido_ocupacional.measurements.download-word');
     Route::post('/modulos/{id}/ruido-ocupacional/header', [RuidoOcupacionalController::class, 'updateHeader'])->name('modules.ruido_ocupacional.header.update');
     Route::get('/modulos/{id}/ruido-ocupacional/informe', [RuidoOcupacionalController::class, 'showReport'])->name('modules.ruido_ocupacional.report');
+    Route::post('/modulos/{id}/ruido-ocupacional/photo-report-settings', [RuidoOcupacionalController::class, 'savePhotoReportSettings'])->name('modules.ruido_ocupacional.photo-report-settings.save');
 
 
     // Monitoreo de Opacidad (Vehicular / Humos)

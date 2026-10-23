@@ -36,7 +36,7 @@
         </button>
 
         <!-- Botón Exportar (Planilla Excel y Reporte Fotográfico) -->
-        <button type="button" class="btn-secondary-subtle" onclick="openExportModal()"
+        <button type="button" class="btn-secondary-subtle" onclick="console.log('Botón Exportar pulsado'); openExportModal()"
             title="Exportar planilla técnica oficial o catálogo fotográfico">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.3"
                 stroke-linecap="round" stroke-linejoin="round">

@@ -138,6 +138,9 @@ class RuidoOcupacionalController extends Controller
     return [
         'id' => $item->id,
         'num' => $item->point_number ?: str_pad($index + 1, 2, '0', STR_PAD_LEFT),
+        'date' => $dateFormatted,
+        'date_formatted' => $dateFormatted,
+        'time' => $item->measurement_time ? substr($item->measurement_time, 0, 5) : '—',
         'area' => $item->area ?: 'Área General',
         'punto_medicion' => $item->punto_medicion ?: 'Punto ' . ($index + 1),
         'tipo_ruido' => $item->tipo_ruido ?: 'Continuo',
@@ -164,7 +167,14 @@ class RuidoOcupacionalController extends Controller
         // Estadísticas básicas
         $totalMeasurements = $measurements->count();
 
-        $photoReportSettings = $module->photo_report_settings ?: [];
+        $savedSettings = $module->photo_report_settings ?: [];
+        $photoReportSettings = [
+            'grid' => $savedSettings['grid'] ?? ($savedSettings['distribution'] ?? '2x3'),
+            'selected_points' => $savedSettings['selected_points'] ?? array_column($measurements->toArray(), 'id'),
+            'photo_indices' => $savedSettings['photo_indices'] ?? [],
+            'image_fit' => $savedSettings['image_fit'] ?? 'contain',
+            'photo_fits' => $savedSettings['photo_fits'] ?? [],
+        ];
 
         return view('measurements.ruido_ocupacionales.index', compact(
             'userName',
@@ -611,18 +621,29 @@ class RuidoOcupacionalController extends Controller
     }
 
     /**
+     * Guarda la configuración del reporte fotográfico de Ruido Ocupacional.
      */
     public function savePhotoReportSettings(Request $request, $moduleId)
     {
         $module = MeasurementModule::findOrFail($moduleId);
-        $settings = $request->input('photo_report_settings', []);
+        $payload = $request->input('settings') ?? ($request->input('photo_report_settings') ?? $request->all());
+
+        $settings = [
+            'grid' => $payload['grid'] ?? '2x3',
+            'selected_points' => $payload['selected_points'] ?? [],
+            'photo_indices' => $payload['photo_indices'] ?? [],
+            'image_fit' => $payload['image_fit'] ?? 'contain',
+            'photo_fits' => $payload['photo_fits'] ?? [],
+        ];
 
         $module->photo_report_settings = $settings;
         $module->save();
 
         return response()->json([
+            'success' => true,
             'status' => 'success',
-            'message' => 'Configuración de catálogo fotográfico guardada con éxito.',
+            'message' => 'Configuración de mosaico fotográfico guardada con éxito.',
+            'settings' => $settings,
         ]);
     }
 
