@@ -1539,18 +1539,37 @@ function filterNormativeCatalogTable(input) {
 window.filterNormativeCatalogTable = filterNormativeCatalogTable;
 
 // =============================================================================
-// 10. REPORTE FOTOGRÁFICO MOSAICO CARTA
+// 10. MODAL DE EXPORTACIÓN Y REPORTE FOTOGRÁFICO MOSAICO CARTA
 // =============================================================================
-let currentPhotoGrid = '2x3';
-let selectedPointsForReport = [];
+
+function openExportModal() {
+    const modal = document.getElementById('exportOptionsModal');
+    if (modal) modal.classList.add('open');
+}
+window.openExportModal = openExportModal;
+
+function closeExportModal() {
+    const modal = document.getElementById('exportOptionsModal');
+    if (modal) modal.classList.remove('open');
+}
+window.closeExportModal = closeExportModal;
+
+const photoReportConfig = {
+    grid: '2x3',
+    selectedPoints: new Set(),
+    photoIndices: {},
+    currentTab: 'interactive',
+    isInitialized: false
+};
+let photoReportAutoSaveTimeout = null;
 
 function openPhotoReportModal() {
+    closeExportModal();
     const modal = document.getElementById('photoReportModal');
-    if (!modal) return;
-
-    selectedPointsForReport = (window.ALL_MEASUREMENTS_DATA || []).map(m => m.id);
-    renderPhotoInteractiveGrid();
-    modal.classList.add('open');
+    if (modal) {
+        modal.classList.add('open');
+        initPhotoReportEngine();
+    }
 }
 window.openPhotoReportModal = openPhotoReportModal;
 
@@ -1560,67 +1579,732 @@ function closePhotoReportModal() {
 }
 window.closePhotoReportModal = closePhotoReportModal;
 
-function renderPhotoInteractiveGrid() {
-    const container = document.getElementById('photoInteractiveGridContainer');
-    if (!container) return;
+/**
+ * Inicializar motor de reporte fotográfico con datos guardados
+ */
+function initPhotoReportEngine() {
+    if (!photoReportConfig.isInitialized) {
+        let saved = null;
+        // 1. Cargar desde backend (PHOTO_REPORT_INITIAL_SETTINGS)
+        if (typeof window.PHOTO_REPORT_INITIAL_SETTINGS === 'object' && window.PHOTO_REPORT_INITIAL_SETTINGS && Object.keys(window.PHOTO_REPORT_INITIAL_SETTINGS).length > 0) {
+            saved = window.PHOTO_REPORT_INITIAL_SETTINGS;
+        }
+        // 2. Si no hay en backend, revisar localStorage
+        if (!saved) {
+            try {
+                const local = localStorage.getItem('metric_fire_act_photo_' + (window.MODULE_ID || '1'));
+                if (local) saved = JSON.parse(local);
+            } catch (e) {
+                console.warn('Error reading localStorage', e);
+            }
+        }
 
-    const measurements = window.ALL_MEASUREMENTS_DATA || [];
-    container.innerHTML = '';
+        const validGrids = ['2x3', '2x4', '3x3', '3x4'];
+        if (saved && saved.grid && validGrids.includes(saved.grid)) {
+            photoReportConfig.grid = saved.grid;
+        } else {
+            photoReportConfig.grid = '2x3';
+        }
 
-    measurements.forEach(m => {
-        const card = document.createElement('div');
-        card.className = 'photo-card-item';
-        card.innerHTML = `
-            <div class="photo-card-img-wrap">
-                ${m.image_path ? `<img src="${m.image_path}">` : '<span style="color:#64748b;font-size:12px;">Sin fotografía</span>'}
-            </div>
-            <div class="photo-card-info">
-                <strong style="font-size:12.5px;color:#0f172a;">#${m.num} — ${m.sector_name}</strong>
-                <div style="font-size:11px;color:#64748b;margin-top:2px;">${m.macroarea}</div>
-                <div style="font-size:11px;font-weight:700;color:#e11d48;margin-top:2px;">Qs: ${m.qs_mj_m2} MJ/m² (${m.risk_level})</div>
-            </div>
-        `;
-        container.appendChild(card);
-    });
+        // Puntos seleccionados para el PDF
+        photoReportConfig.selectedPoints.clear();
+        const allItems = window.ALL_MEASUREMENTS_DATA || [];
+        if (saved && Array.isArray(saved.selected_points) && saved.selected_points.length > 0) {
+            saved.selected_points.forEach(id => photoReportConfig.selectedPoints.add(Number(id)));
+        } else {
+            // Por defecto, seleccionar todos los puntos disponibles
+            allItems.forEach(m => photoReportConfig.selectedPoints.add(Number(m.id)));
+        }
 
-    const pill = document.getElementById('photoSelectionCountText');
-    if (pill) pill.textContent = `${measurements.length} de ${measurements.length} seleccionadas`;
+        // Índices de fotos por punto
+        photoReportConfig.photoIndices = {};
+        if (saved && saved.photo_indices && typeof saved.photo_indices === 'object') {
+            for (const [k, v] of Object.entries(saved.photo_indices)) {
+                photoReportConfig.photoIndices[Number(k)] = Number(v) || 0;
+            }
+        }
+
+        photoReportConfig.isInitialized = true;
+    }
+
+    updateGridSelectorButtonsUI();
+    renderInteractiveGrid();
+    renderPhotoSheets();
+    updateSelectionCounterUI();
+}
+window.initPhotoReportEngine = initPhotoReportEngine;
+
+/**
+ * Obtener arreglo de imágenes válidas de un sector
+ */
+function getPointImages(m) {
+    if (Array.isArray(m.images) && m.images.length > 0) {
+        return m.images.filter(Boolean);
+    }
+    if (Array.isArray(m.image_paths) && m.image_paths.length > 0) {
+        return m.image_paths.filter(Boolean);
+    }
+    if (m.image_path) {
+        return [m.image_path];
+    }
+    return [];
 }
 
-function changeGridDistribution(grid) {
-    currentPhotoGrid = grid;
-    document.querySelectorAll('.btn-grid-dist').forEach(btn => {
-        btn.classList.toggle('active', btn.getAttribute('data-grid') === grid);
-    });
+/**
+ * Formatear código de sector: CF-XX (ej. CF-01)
+ */
+function formatPointCode(num) {
+    if (!num) return 'CF-01';
+    const str = String(num).trim();
+    if (str.toUpperCase().startsWith('CF-') || str.toUpperCase().startsWith('SEC-')) {
+        return str.toUpperCase();
+    }
+    const numericPart = str.replace(/[^0-9]/g, '');
+    if (numericPart) {
+        return 'CF-' + numericPart.padStart(2, '0');
+    }
+    return '#' + str;
+}
+
+/**
+ * Escapar texto para HTML seguro
+ */
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function addslashes(str) {
+    return (str || '').replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
+}
+
+/**
+ * Obtener cantidad de fotos por hoja según la distribución
+ */
+function getPhotosPerPage(grid) {
+    switch (grid) {
+        case '2x4': return 8;
+        case '3x3': return 9;
+        case '3x4': return 12;
+        case '2x3':
+        default: return 6;
+    }
+}
+
+/**
+ * Cambiar distribución en mosaico (2x3, 2x4, 3x3, 3x4)
+ */
+function changeGridDistribution(newGrid) {
+    const validGrids = ['2x3', '2x4', '3x3', '3x4'];
+    if (!validGrids.includes(newGrid)) return;
+
+    photoReportConfig.grid = newGrid;
+    updateGridSelectorButtonsUI();
+    renderPhotoSheets();
+    updateSelectionCounterUI();
+    triggerAutoSavePhotoReportConfig();
 }
 window.changeGridDistribution = changeGridDistribution;
 
+function updateGridSelectorButtonsUI() {
+    const buttons = document.querySelectorAll('#gridDistSelector .btn-grid-dist');
+    buttons.forEach(btn => {
+        if (btn.dataset.grid === photoReportConfig.grid) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
+
+/**
+ * Alternar selección de punto para el PDF
+ */
+function togglePointSelection(pointId, isChecked) {
+    pointId = Number(pointId);
+    if (isChecked) {
+        photoReportConfig.selectedPoints.add(pointId);
+    } else {
+        photoReportConfig.selectedPoints.delete(pointId);
+    }
+
+    const card = document.getElementById('photoPointCard_' + pointId);
+    if (card) {
+        if (isChecked) {
+            card.classList.remove('excluded');
+        } else {
+            card.classList.add('excluded');
+        }
+    }
+
+    updateSelectionCounterUI();
+    renderPhotoSheets();
+    triggerAutoSavePhotoReportConfig();
+}
+window.togglePointSelection = togglePointSelection;
+
+/**
+ * Seleccionar todas o ninguna foto
+ */
+function selectAllPoints(select) {
+    const allItems = window.ALL_MEASUREMENTS_DATA || [];
+    allItems.forEach(m => {
+        const id = Number(m.id);
+        const chk = document.getElementById('chkPoint_' + id);
+        const card = document.getElementById('photoPointCard_' + id);
+        if (select) {
+            photoReportConfig.selectedPoints.add(id);
+            if (chk) chk.checked = true;
+            if (card) card.classList.remove('excluded');
+        } else {
+            photoReportConfig.selectedPoints.delete(id);
+            if (chk) chk.checked = false;
+            if (card) card.classList.add('excluded');
+        }
+    });
+
+    updateSelectionCounterUI();
+    renderPhotoSheets();
+    triggerAutoSavePhotoReportConfig();
+}
+window.selectAllPoints = selectAllPoints;
+
+/**
+ * Actualizar contador de selección y número de hojas calculadas
+ */
+function updateSelectionCounterUI() {
+    const count = photoReportConfig.selectedPoints.size;
+    const total = (window.ALL_MEASUREMENTS_DATA || []).length;
+    const textEl = document.getElementById('photoSelectionCountText');
+    if (textEl) {
+        textEl.textContent = `${count} de ${total} seleccionadas`;
+    }
+
+    const perPage = getPhotosPerPage(photoReportConfig.grid);
+    const totalPages = Math.ceil(count / perPage) || 0;
+    const pagesInd = document.getElementById('photoReportPagesIndicator');
+    if (pagesInd) {
+        pagesInd.textContent = `Hojas Carta: ${totalPages} (${photoReportConfig.grid})`;
+    }
+}
+
+/**
+ * Navegar entre fotografías de un punto usando las flechas (< y >)
+ */
+function navigatePointPhoto(pointId, delta, event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    pointId = Number(pointId);
+    const allItems = window.ALL_MEASUREMENTS_DATA || [];
+    const item = allItems.find(m => Number(m.id) === pointId);
+    if (!item) return;
+
+    const images = getPointImages(item);
+    if (images.length <= 1) return;
+
+    const curr = photoReportConfig.photoIndices[pointId] || 0;
+    const next = (curr + delta + images.length) % images.length;
+    photoReportConfig.photoIndices[pointId] = next;
+
+    // Actualizar imagen y badge en tarjeta interactiva
+    const imgEl = document.getElementById('photoImg_' + pointId);
+    if (imgEl) {
+        imgEl.src = images[next];
+    }
+    const countEl = document.getElementById('photoCountPill_' + pointId);
+    if (countEl) {
+        countEl.textContent = `Foto ${next + 1} de ${images.length}`;
+    }
+
+    renderPhotoSheets();
+    triggerAutoSavePhotoReportConfig();
+}
+window.navigatePointPhoto = navigatePointPhoto;
+
+/**
+ * Alternar pestañas: Configurar Mosaico vs Vista Previa Hojas Carta
+ */
 function switchPhotoReportTab(tab) {
-    const isInteractive = tab === 'interactive';
-    document.getElementById('tabBtnInteractive')?.classList.toggle('active', isInteractive);
-    document.getElementById('tabBtnSheets')?.classList.toggle('active', !isInteractive);
-    document.getElementById('photoInteractiveView').style.display = isInteractive ? '' : 'none';
-    document.getElementById('photoSheetsView').style.display = isInteractive ? 'none' : '';
+    photoReportConfig.currentTab = tab;
+    const tabBtnInteractive = document.getElementById('tabBtnInteractive');
+    const tabBtnSheets = document.getElementById('tabBtnSheets');
+    const interactiveView = document.getElementById('photoInteractiveView');
+    const sheetsView = document.getElementById('photoSheetsView');
+
+    if (tab === 'sheets') {
+        if (tabBtnInteractive) tabBtnInteractive.classList.remove('active');
+        if (tabBtnSheets) tabBtnSheets.classList.add('active');
+        if (interactiveView) interactiveView.style.display = 'none';
+        if (sheetsView) {
+            sheetsView.style.display = 'block';
+            renderPhotoSheets();
+        }
+    } else {
+        if (tabBtnInteractive) tabBtnInteractive.classList.add('active');
+        if (tabBtnSheets) tabBtnSheets.classList.remove('active');
+        if (interactiveView) interactiveView.style.display = 'block';
+        if (sheetsView) sheetsView.style.display = 'none';
+    }
 }
 window.switchPhotoReportTab = switchPhotoReportTab;
 
-function printPhotoReport() {
-    window.print();
-}
-window.printPhotoReport = printPhotoReport;
+/**
+ * Renderizar Cuadrícula Interactiva de Configuración
+ */
+function renderInteractiveGrid() {
+    const container = document.getElementById('photoInteractiveGridContainer');
+    if (!container) return;
 
-function savePhotoReportSettingsToServer(showToast = false) {
-    if (showToast && typeof Swal !== 'undefined') {
-        Swal.fire({
-            title: '¡Configuración Guardada!',
-            text: 'Se guardó la distribución fotográfica para el reporte PDF.',
-            icon: 'success',
-            timer: 2000,
-            showConfirmButton: false
+    const allItems = window.ALL_MEASUREMENTS_DATA || [];
+    if (allItems.length === 0) {
+        container.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 45px 20px; color: #94a3b8; background: #ffffff; border-radius: 12px; border: 1.5px dashed #cbd5e1;">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="margin-bottom: 8px;"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                <p style="margin: 0; font-size: 13.5px; font-weight: 600;">No hay sectores registrados para generar el reporte fotográfico.</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+    allItems.forEach(m => {
+        const pointId = Number(m.id);
+        const images = getPointImages(m);
+        const selectedIdx = photoReportConfig.photoIndices[pointId] || 0;
+        const currentImg = images[selectedIdx] || images[0] || '';
+        const isSelected = photoReportConfig.selectedPoints.has(pointId);
+        const codeFormatted = formatPointCode(m.num);
+        const hasMultiplePhotos = images.length > 1;
+
+        // Colores según nivel de riesgo
+        const riskLevel = m.risk_level || 'Bajo';
+        let riskBg = '#ecfdf5', riskFg = '#047857', riskBorder = '#a7f3d0';
+        if (riskLevel === 'Medio') {
+            riskBg = '#fffbeb'; riskFg = '#b45309'; riskBorder = '#fde68a';
+        } else if (riskLevel === 'Alto') {
+            riskBg = '#ffe4e6'; riskFg = '#be123c'; riskBorder = '#fecdd3';
+        }
+
+        const dimText = m.dimensions ? `${m.dimensions.yi_largo || 0}m × ${m.dimensions.xi_ancho || 0}m (${m.dimensions.area_m2 || 0} m²)` : '—';
+        const qsText = `${parseFloat(m.qs_mj_m2 || 0).toFixed(1)} MJ/m²`;
+
+        // Resumen de extintores
+        const eqCount = Array.isArray(m.fire_equipments) ? m.fire_equipments.reduce((acc, eq) => acc + (parseInt(eq.cantidad, 10) || 0), 0) : 0;
+        const eqBadgeText = eqCount > 0 ? `${eqCount} Extintor${eqCount > 1 ? 'es' : ''}` : 'Sin extintores';
+
+        html += `
+            <div class="photo-point-card ${isSelected ? '' : 'excluded'}" id="photoPointCard_${pointId}">
+                <!-- Barra de Selección para el PDF -->
+                <div class="photo-card-select-bar">
+                    <label class="photo-select-checkbox-lbl" title="Marcar para incluir en el reporte PDF">
+                        <input type="checkbox" id="chkPoint_${pointId}" ${isSelected ? 'checked' : ''} onchange="togglePointSelection(${pointId}, this.checked)">
+                        <span>Incluir en PDF</span>
+                    </label>
+                    <span style="font-size: 11px; font-weight: 800; color: #0284c7; background: #e0f2fe; padding: 2px 7px; border-radius: 4px;">
+                        ${codeFormatted}
+                    </span>
+                </div>
+
+                <!-- ARRIBA DE LA FOTO: Código, Sector, Macroárea, Dimensiones y Qs -->
+                <div class="photo-card-info-top">
+                    <div class="photo-info-row">
+                        <span class="photo-info-label">Sector:</span>
+                        <span class="photo-info-value" title="${escapeHtml(m.sector_name || '—')}" style="font-weight: 800; color: #0f172a;">${escapeHtml(m.sector_name || '—')}</span>
+                    </div>
+                    <div class="photo-info-row">
+                        <span class="photo-info-label">Macroárea:</span>
+                        <span class="photo-info-value" title="${escapeHtml(m.macroarea || '—')}">${escapeHtml(m.macroarea || '—')}</span>
+                    </div>
+                    <div class="photo-info-row" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span class="photo-info-label">Sup:</span>
+                            <span class="photo-info-value">${dimText}</span>
+                        </div>
+                        <span style="font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: ${riskBg}; color: ${riskFg}; border: 1px solid ${riskBorder};">
+                            Riesgo ${riskLevel}
+                        </span>
+                    </div>
+                    <div class="photo-info-row" style="margin-top: 1px;">
+                        <span class="photo-info-label">Qs Ponderada:</span>
+                        <span class="photo-info-value" style="font-weight: 800; color: #0284c7;">${qsText}</span>
+                    </div>
+                </div>
+
+                <!-- MARCO DE FOTOGRAFÍA CON CARRUSEL DE FLECHAS -->
+                <div class="photo-card-img-box">
+                    ${currentImg ? `
+                        <img id="photoImg_${pointId}" src="${currentImg}" alt="${codeFormatted}" onclick="openPhotoViewer('${currentImg}', '${codeFormatted}: ${addslashes(m.sector_name || '')}')" title="Clic para ampliar fotografía">
+                        <button type="button" class="photo-zoom-btn" onclick="openPhotoViewer('${currentImg}', '${codeFormatted}: ${addslashes(m.sector_name || '')}')" title="Ampliar">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                        </button>
+                    ` : `
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; color: #64748b;">
+                            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                            <span style="font-size: 11px; margin-top: 4px; font-weight: 600;">Sin fotografía</span>
+                        </div>
+                    `}
+
+                    <!-- Flechas para alternar qué foto va al PDF -->
+                    ${hasMultiplePhotos ? `
+                        <button type="button" class="photo-nav-arrow left" onclick="navigatePointPhoto(${pointId}, -1, event)" title="Foto anterior">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                        </button>
+                        <button type="button" class="photo-nav-arrow right" onclick="navigatePointPhoto(${pointId}, 1, event)" title="Siguiente foto">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                        </button>
+                        <div class="photo-count-pill" id="photoCountPill_${pointId}">
+                            Foto ${selectedIdx + 1} de ${images.length}
+                        </div>
+                    ` : (images.length === 1 ? `
+                        <div class="photo-count-pill">Foto 1 de 1</div>
+                    ` : '')}
+                </div>
+
+                <!-- DEBAJO DE LA FOTO: Fecha, Hora y Extintores -->
+                <div class="photo-card-info-bottom">
+                    <span class="photo-dt-label">
+                        <svg class="photo-dt-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        ${escapeHtml(m.date || '—')} ${escapeHtml(m.time && m.time !== '—' ? m.time : '')}
+                    </span>
+                    <span class="photo-dt-pill" title="Equipos de extinción">${eqBadgeText}</span>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+window.renderPhotoInteractiveGrid = renderInteractiveGrid;
+
+/**
+ * Renderizar Hojas Tamaño Carta para Vista Previa y Media Print
+ */
+function renderPhotoSheets() {
+    const sheetsContainer = document.getElementById('photoSheetsContainer');
+    const printContainer = document.getElementById('photoReportPrintArea');
+
+    const allItems = window.ALL_MEASUREMENTS_DATA || [];
+    const tech = window.TECHNICAL_HEADER_DATA || {};
+    const selectedItems = allItems.filter(m => photoReportConfig.selectedPoints.has(Number(m.id)));
+    const perPage = getPhotosPerPage(photoReportConfig.grid);
+
+    if (selectedItems.length === 0) {
+        const emptyHtml = `
+            <div style="text-align: center; padding: 50px 20px; color: #94a3b8; background: #ffffff; border-radius: 10px; border: 1.5px dashed #cbd5e1; max-width: 600px; margin: 30px auto;">
+                <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="margin-bottom: 8px;"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                <h3 style="font-size: 15px; margin: 0 0 6px 0; color: #334155;">No hay fotografías seleccionadas para el PDF</h3>
+                <p style="margin: 0; font-size: 12.5px;">Activa las casillas "Incluir en PDF" o haz clic en "Todas" para armar las hojas del reporte.</p>
+            </div>
+        `;
+        if (sheetsContainer) sheetsContainer.innerHTML = emptyHtml;
+        if (printContainer) printContainer.innerHTML = '';
+        return;
+    }
+
+    // Dividir en páginas según perPage
+    const pages = [];
+    for (let i = 0; i < selectedItems.length; i += perPage) {
+        pages.push(selectedItems.slice(i, i + perPage));
+    }
+
+    const totalPages = pages.length;
+    const now = new Date();
+    const dateEmissionFormatted = now.toLocaleDateString('es-BO', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + now.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' });
+
+    let sheetsHtml = '';
+
+    pages.forEach((pageItems, pageIdx) => {
+        const pageNum = pageIdx + 1;
+
+        sheetsHtml += `
+            <div class="photo-report-sheet">
+                <!-- ENCABEZADO EJECUTIVO OFICIAL CON COLORES DEL TEMA -->
+                <div class="sheet-header-box">
+                    <div class="sheet-header-left">
+                        <div class="sheet-header-logo-badge">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3.5z"/>
+                            </svg>
+                        </div>
+                        <div class="sheet-header-titles">
+                            <div class="sheet-header-brand-row">
+                                <span class="sheet-company-title">PACHABOL S.R.L.</span>
+                                <span class="sheet-brand-dot">•</span>
+                                <span class="sheet-system-tag">Seguridad Contra Incendios &amp; Protección</span>
+                            </div>
+                            <h1>REPORTE FOTOGRÁFICO — CARGA DE FUEGO POR ACTIVIDAD</h1>
+                            <div class="sheet-header-subtitle-row">
+                                <span class="sheet-tech-tag">METRIC v2 • SISTEMA DE GESTIÓN TÉCNICA &amp; ARCHIVO DIGITAL (NB 58005)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ficha Técnica de Metadatos del Encabezado -->
+                    <div class="sheet-header-meta-card">
+                        <div class="sheet-meta-card-header">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            <span>Datos Técnicos de Evaluación</span>
+                        </div>
+                        <div class="sheet-meta-grid">
+                            <div class="sheet-meta-row">
+                                <span class="sheet-meta-lbl">INSTALACIÓN:</span>
+                                <span class="sheet-meta-val" title="${escapeHtml(tech.installationName || 'No registrada')}">${escapeHtml(tech.installationName || 'No registrada')}</span>
+                            </div>
+                            <div class="sheet-meta-row">
+                                <span class="sheet-meta-lbl">EQUIPO:</span>
+                                <span class="sheet-meta-val">${escapeHtml(tech.equipmentName || 'Distanciómetro Láser')} (${escapeHtml(tech.equipmentModel || 'GLM 50 C')})</span>
+                            </div>
+                            <div class="sheet-meta-row">
+                                <span class="sheet-meta-lbl">FECHA:</span>
+                                <span class="sheet-meta-val">${escapeHtml(tech.startDateFormatted || '—')}${tech.endDateFormatted && tech.endDateFormatted !== tech.startDateFormatted ? ' al ' + escapeHtml(tech.endDateFormatted) : ''}</span>
+                            </div>
+                            <div class="sheet-meta-row">
+                                <span class="sheet-meta-lbl">SERIE / MARCA:</span>
+                                <span class="sheet-meta-val">${escapeHtml(tech.equipmentSerial || 'BSH-7749201')} • ${escapeHtml(tech.equipmentBrand || 'Bosch')}</span>
+                            </div>
+                            <div class="sheet-meta-row">
+                                <span class="sheet-meta-lbl">TIPO:</span>
+                                <span class="sheet-meta-val">${escapeHtml(tech.monitoringType || 'Carga Ponderada por Actividad')}</span>
+                            </div>
+                            <div class="sheet-meta-row">
+                                <span class="sheet-meta-lbl">PARÁMETRO:</span>
+                                <span class="sheet-meta-val">Densidad de Carga Qs (MJ/m²) • NB 58005</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CUADRÍCULA DE FOTOGRAFÍAS EN MOSAICO (DISTRIBUCIÓN ELEGIDA) -->
+                <div class="sheet-photos-grid dist-${photoReportConfig.grid}">
+                    ${pageItems.map(m => {
+                        const pointId = Number(m.id);
+                        const images = getPointImages(m);
+                        const selectedIdx = photoReportConfig.photoIndices[pointId] || 0;
+                        const chosenImg = images[selectedIdx] || images[0] || '';
+                        const codeFormatted = formatPointCode(m.num);
+
+                        const riskLevel = m.risk_level || 'Bajo';
+                        let riskBg = '#ecfdf5', riskFg = '#047857';
+                        if (riskLevel === 'Medio') {
+                            riskBg = '#fffbeb'; riskFg = '#b45309';
+                        } else if (riskLevel === 'Alto') {
+                            riskBg = '#ffe4e6'; riskFg = '#be123c';
+                        }
+
+                        const dimText = m.dimensions ? `${m.dimensions.area_m2 || 0} m² (${m.dimensions.yi_largo || 0}m × ${m.dimensions.xi_ancho || 0}m)` : '—';
+                        const qsVal = `${parseFloat(m.qs_mj_m2 || 0).toFixed(1)} MJ/m²`;
+
+                        const eqCount = Array.isArray(m.fire_equipments) ? m.fire_equipments.reduce((acc, eq) => acc + (parseInt(eq.cantidad, 10) || 0), 0) : 0;
+                        const eqBadgeText = eqCount > 0 ? `${eqCount} Extintor${eqCount > 1 ? 'es' : ''}` : 'Sin extintor';
+
+                        return `
+                            <div class="sheet-card-item">
+                                <!-- ARRIBA DE LA FOTO: Código, Sector, Macroárea y Carga de Fuego -->
+                                <div class="photo-card-info-top">
+                                    <div class="photo-info-row" style="justify-content: space-between;">
+                                        <div style="display: flex; align-items: baseline; gap: 4px; overflow: hidden;">
+                                            <span class="photo-info-value photo-code">${codeFormatted}</span>
+                                            <span class="photo-info-value" title="${escapeHtml(m.sector_name || '—')}" style="font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(m.sector_name || '—')}</span>
+                                        </div>
+                                        <span style="font-size: 7.5px; font-weight: 800; padding: 1px 4px; border-radius: 3px; background: ${riskBg}; color: ${riskFg}; white-space: nowrap;">
+                                            ${riskLevel}
+                                        </span>
+                                    </div>
+                                    <div class="photo-info-row">
+                                        <span class="photo-info-label">Macroárea:</span>
+                                        <span class="photo-info-value" title="${escapeHtml(m.macroarea || '—')}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(m.macroarea || '—')}</span>
+                                    </div>
+                                    <div class="photo-info-row" style="justify-content: space-between;">
+                                        <div>
+                                            <span class="photo-info-label">Sup:</span>
+                                            <span class="photo-info-value">${dimText}</span>
+                                        </div>
+                                        <div style="font-weight: 800; color: #0284c7; font-size: 8px;">
+                                            Qs: ${qsVal}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- FOTOGRAFÍA -->
+                                <div class="photo-card-img-box">
+                                    ${chosenImg ? `
+                                        <img src="${chosenImg}" alt="${codeFormatted}">
+                                    ` : `
+                                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8;">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/></svg>
+                                            <span style="font-size: 9.5px; font-weight: 600; margin-top: 2px;">Sin fotografía</span>
+                                        </div>
+                                    `}
+                                </div>
+
+                                <!-- DEBAJO DE LA FOTO: Fecha, Hora y Extintores -->
+                                <div class="photo-card-info-bottom">
+                                    <span class="photo-dt-label">
+                                        <svg class="photo-dt-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                                        </svg>
+                                        ${escapeHtml(m.date || '—')} ${escapeHtml(m.time && m.time !== '—' ? m.time : '')}
+                                    </span>
+                                    <span class="photo-dt-pill">${eqBadgeText}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+
+                <!-- PIE DE PÁGINA ELEGANTE OFICIAL DEL PDF -->
+                <div class="sheet-footer-box">
+                    <div class="sheet-footer-brand">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.5"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3.5z"/></svg>
+                        <span>METRIC v2 — Pachabol S.R.L. • Carga de Fuego por Actividad (NB 58005)</span>
+                    </div>
+                    <div style="font-style: italic; color: #64748b; font-size: 8px;">
+                        Reporte Fotográfico Técnico • Formato Hoja Carta (${photoReportConfig.grid})
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 8px;">
+                        <span class="sheet-footer-page-num">Página ${pageNum} de ${totalPages}</span>
+                        <span>${dateEmissionFormatted}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    if (sheetsContainer) sheetsContainer.innerHTML = sheetsHtml;
+    if (printContainer) printContainer.innerHTML = sheetsHtml;
+}
+window.renderPhotoSheets = renderPhotoSheets;
+
+/**
+ * Auto-guardar configuración con debounce
+ */
+function triggerAutoSavePhotoReportConfig() {
+    if (photoReportAutoSaveTimeout) clearTimeout(photoReportAutoSaveTimeout);
+    photoReportAutoSaveTimeout = setTimeout(() => {
+        savePhotoReportSettingsToServer(false);
+    }, 650);
+}
+
+/**
+ * Guardar configuración en base de datos (AJAX) y en localStorage
+ */
+async function savePhotoReportSettingsToServer(showToast = false) {
+    const btnSave = document.getElementById('btnSaveReportSettings');
+    if (btnSave && showToast) {
+        btnSave.disabled = true;
+        btnSave.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 0.8s linear infinite;"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
+            <span>Guardando...</span>
+        `;
+    }
+
+    const payload = {
+        grid: photoReportConfig.grid,
+        selected_points: Array.from(photoReportConfig.selectedPoints),
+        photo_indices: photoReportConfig.photoIndices
+    };
+
+    // Guardar en localStorage
+    try {
+        localStorage.setItem('metric_fire_act_photo_' + (window.MODULE_ID || '1'), JSON.stringify(payload));
+    } catch (e) {
+        console.warn('Error saving to localStorage', e);
+    }
+
+    // Guardar en backend MySQL
+    try {
+        const res = await fetch(`/modulos/${window.MODULE_ID}/carga-fuego-actividad/photo-report-settings`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': window.CSRF_TOKEN
+            },
+            body: JSON.stringify(payload)
         });
+        const data = await res.json();
+
+        if (showToast) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '¡Configuración Guardada!',
+                    text: `Distribución (${photoReportConfig.grid}), sectores seleccionados y fotos preferidas almacenados exitosamente.`,
+                    icon: 'success',
+                    confirmButtonText: 'Aceptar',
+                    timer: 2500,
+                    timerProgressBar: true,
+                    buttonsStyling: false,
+                    customClass: { popup: 'metric-swal-popup', confirmButton: 'metric-swal-btn-confirm' }
+                });
+            }
+        }
+    } catch (err) {
+        console.error('Error guardando configuración de reporte fotográfico:', err);
+        if (showToast) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Guardado local',
+                    text: 'La configuración se guardó en tu navegador. Puedes continuar con la exportación.',
+                    icon: 'info',
+                    confirmButtonText: 'Aceptar',
+                    timer: 2500,
+                    buttonsStyling: false,
+                    customClass: { popup: 'metric-swal-popup', confirmButton: 'metric-swal-btn-confirm' }
+                });
+            }
+        }
+    } finally {
+        if (btnSave && showToast) {
+            btnSave.disabled = false;
+            btnSave.innerHTML = `
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                <span>Guardar Selección</span>
+            `;
+        }
     }
 }
 window.savePhotoReportSettingsToServer = savePhotoReportSettingsToServer;
+
+/**
+ * Imprimir o Guardar PDF en Tamaño Carta
+ */
+function printPhotoReport() {
+    if (photoReportConfig.selectedPoints.size === 0) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Sin selección',
+                text: 'Debes seleccionar al menos una fotografía para generar e imprimir el reporte en PDF.',
+                icon: 'warning',
+                confirmButtonText: 'Entendido',
+                buttonsStyling: false,
+                customClass: { popup: 'metric-swal-popup', confirmButton: 'metric-swal-btn-confirm' }
+            });
+        } else {
+            alert('Debes seleccionar al menos una fotografía para imprimir.');
+        }
+        return;
+    }
+
+    renderPhotoSheets();
+
+    setTimeout(() => {
+        window.print();
+    }, 120);
+}
+window.printPhotoReport = printPhotoReport;
 
 // =============================================================================
 // 11. AUTO-SAVE INLINE HEADER FIELDS

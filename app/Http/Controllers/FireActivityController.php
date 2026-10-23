@@ -1322,4 +1322,38 @@ class FireActivityController extends Controller
             'distance_ab' => $distAB,
         ];
     }
+
+    /**
+     * Save photo report settings (grid distribution, orientation, selected points, chosen photo per point).
+     */
+    public function savePhotoReportSettings(Request $request, $moduleId)
+    {
+        $module = MeasurementModule::findOrFail($moduleId);
+
+        $validated = $request->validate([
+            'grid' => 'nullable|string|in:2x3,2x4,3x3,3x4',
+            'orientation' => 'nullable|string|in:landscape,portrait',
+            'selected_points' => 'nullable|array',
+            'photo_indices' => 'nullable|array',
+        ]);
+
+        $currentSettings = $module->photo_report_settings ?: [];
+
+        $newSettings = [
+            'grid' => $validated['grid'] ?? ($currentSettings['grid'] ?? '2x3'),
+            'orientation' => $validated['orientation'] ?? ($currentSettings['orientation'] ?? 'landscape'),
+            'selected_points' => array_key_exists('selected_points', $validated) ? $validated['selected_points'] : ($currentSettings['selected_points'] ?? []),
+            'photo_indices' => array_key_exists('photo_indices', $validated) ? $validated['photo_indices'] : ($currentSettings['photo_indices'] ?? []),
+            'updated_at' => now()->toIso8601String(),
+        ];
+
+        $module->photo_report_settings = $newSettings;
+        $module->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Configuración del reporte fotográfico guardada exitosamente.',
+            'settings' => $newSettings,
+        ]);
+    }
 }
