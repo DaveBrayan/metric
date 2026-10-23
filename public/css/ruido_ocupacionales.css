@@ -441,6 +441,57 @@ table#ruidoMasterTable tbody td {
     letter-spacing: 0.3px;
 }
 
+/* Badge para miniatura de fotos en tabla */
+.table-thumb-preview {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    max-width: 44px !important;
+    max-height: 44px !important;
+    border-radius: 8px;
+    border: 1.5px solid #cbd5e1;
+    overflow: hidden !important;
+    background: #f8fafc;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative !important;
+    margin: 0 auto;
+}
+
+.table-thumb-preview:hover {
+    transform: scale(1.08);
+    border-color: #0284c7;
+    box-shadow: 0 4px 10px rgba(2, 132, 199, 0.25);
+}
+
+.table-thumb-preview img {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: cover !important;
+    display: block !important;
+    border-radius: 6px;
+}
+
+.thumb-count-badge {
+    position: absolute !important;
+    bottom: 2px !important;
+    right: 2px !important;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(2px);
+    color: #ffffff;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 1px 4px;
+    border-radius: 4px;
+    line-height: 1.1;
+}
+
 /* ==========================================================================
    4. MODALS (HIGH-FIDELITY DESIGN SYSTEM)
    ========================================================================== */

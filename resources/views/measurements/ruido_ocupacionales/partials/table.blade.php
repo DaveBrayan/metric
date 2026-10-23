@@ -32,22 +32,23 @@
                         <td style="font-size:12px;text-align:center;color:#64748b;font-family:monospace;">{{ $m['ponderacion']??'A' }}</td>
                         <td style="font-size:12px;text-align:center;color:#64748b;font-family:monospace;">{{ $m['respuesta']??'-' }}</td>
                         <td style="font-size:13px;font-weight:800;text-align:center;color:{{ $m['leq_t_db']<=85?'#059669':'#dc2626' }};">{{ number_format($m['leq_t_db'],1) }}</td>
-                        <td style="text-align: center;">
+                        <td style="text-align: center; vertical-align: middle;">
                             @php
                                 $imgSrc = !empty($m['image_path']) ? $m['image_path'] : (!empty($m['images']) && count($m['images']) > 0 ? $m['images'][0] : null);
                                 $imgCount = !empty($m['images_count']) ? $m['images_count'] : (!empty($m['images']) ? count($m['images']) : 0);
                             @endphp
                             @if(!empty($imgSrc))
                                 <div class="table-thumb-preview"
+                                    style="width: 44px; height: 44px; min-width: 44px; min-height: 44px; max-width: 44px; max-height: 44px; border-radius: 8px; border: 1.5px solid #cbd5e1; overflow: hidden; background: #f8fafc; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; position: relative; margin: 0 auto;"
                                     onclick="openPhotoViewer('{{ $imgSrc }}', 'Punto {{ $m['num'] }}: {{ addslashes($m['punto_medicion'] ?: $m['area']) }}')"
                                     title="Ver fotografía ampliada">
-                                    <img src="{{ $imgSrc }}" alt="Foto">
+                                    <img src="{{ $imgSrc }}" alt="Foto" style="width: 100% !important; height: 100% !important; max-width: 100% !important; max-height: 100% !important; object-fit: cover !important; display: block !important;">
                                     @if($imgCount > 1)
-                                        <span style="position: absolute; bottom: 2px; right: 2px; background: rgba(15, 23, 42, 0.85); color: #fff; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 4px;">{{ $imgCount }}</span>
+                                        <span class="thumb-count-badge" style="position: absolute !important; bottom: 2px !important; right: 2px !important; background: rgba(15, 23, 42, 0.85); color: #fff; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 4px; line-height: 1.1;">{{ $imgCount }}</span>
                                     @endif
                                 </div>
                             @else
-                                <div class="table-thumb-preview" style="cursor: default; opacity: 0.5;"
+                                <div class="table-thumb-preview" style="width: 44px; height: 44px; min-width: 44px; min-height: 44px; max-width: 44px; max-height: 44px; border-radius: 8px; border: 1.5px solid #cbd5e1; overflow: hidden; background: #f8fafc; display: inline-flex; align-items: center; justify-content: center; cursor: default; opacity: 0.5; margin: 0 auto;"
                                     title="Sin fotografía registrada">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8"
                                         stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">

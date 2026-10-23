@@ -895,12 +895,42 @@ const photoReportConfig = {
 };
 let photoReportAutoSaveTimeout = null;
 
+function getSafeMeasurementsArray() {
+    let data = window.ALL_MEASUREMENTS_DATA;
+    if ((!data || (Array.isArray(data) && data.length === 0)) && window.METRIC_RUIDO_OCUPACIONAL_CONFIG) {
+        data = window.METRIC_RUIDO_OCUPACIONAL_CONFIG.measurements;
+    }
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    if (typeof data === 'object') return Object.values(data);
+    return [];
+}
+window.getSafeMeasurementsArray = getSafeMeasurementsArray;
+
+function openPhotoViewerByPointId(pointId) {
+    const all = getSafeMeasurementsArray();
+    const item = all.find(m => Number(m.id) === Number(pointId));
+    if (!item) return;
+    const images = getPointImages(item);
+    const idx = photoReportConfig.photoIndices[pointId] || 0;
+    const img = images[idx] || images[0];
+    if (img) {
+        const code = formatPointCode(item.num || item.id);
+        const title = `${code}: ${item.punto_medicion || item.area || 'Punto'}`;
+        if (typeof openPhotoViewer === 'function') {
+            openPhotoViewer(img, title);
+        }
+    }
+}
+window.openPhotoViewerByPointId = openPhotoViewerByPointId;
+
 function openPhotoReportModal() {
     closeExportModal();
     const modal = document.getElementById('photoReportModal');
     if (modal) {
         modal.classList.add('open', 'active');
         modal.style.setProperty('display', 'flex', 'important');
+        photoReportConfig.isInitialized = false;
         initPhotoReportEngine();
     }
 }
@@ -918,6 +948,9 @@ window.closePhotoReportModal = closePhotoReportModal;
 window.closePhotoReportConfigModal = closePhotoReportModal;
 
 function initPhotoReportEngine() {
+    const allItems = getSafeMeasurementsArray();
+    const validPointIds = new Set(allItems.map(m => Number(m.id)));
+
     if (!photoReportConfig.isInitialized) {
         let saved = null;
         if (typeof window.PHOTO_REPORT_INITIAL_SETTINGS === 'object' && window.PHOTO_REPORT_INITIAL_SETTINGS && Object.keys(window.PHOTO_REPORT_INITIAL_SETTINGS).length > 0) {
@@ -940,10 +973,19 @@ function initPhotoReportEngine() {
         }
 
         photoReportConfig.selectedPoints.clear();
-        const allItems = window.ALL_MEASUREMENTS_DATA || [];
+        let hasValidSavedPoint = false;
         if (saved && Array.isArray(saved.selected_points) && saved.selected_points.length > 0) {
-            saved.selected_points.forEach(id => photoReportConfig.selectedPoints.add(Number(id)));
-        } else {
+            saved.selected_points.forEach(id => {
+                const numId = Number(id);
+                if (validPointIds.has(numId)) {
+                    photoReportConfig.selectedPoints.add(numId);
+                    hasValidSavedPoint = true;
+                }
+            });
+        }
+
+        // Si no había selección guardada o ninguno de los guardados coincide con los puntos actuales, seleccionar TODOS
+        if (!hasValidSavedPoint || photoReportConfig.selectedPoints.size === 0) {
             allItems.forEach(m => photoReportConfig.selectedPoints.add(Number(m.id)));
         }
 
@@ -973,6 +1015,11 @@ function initPhotoReportEngine() {
         }
 
         photoReportConfig.isInitialized = true;
+    } else {
+        // Si ya estaba inicializado, asegurarse de que haya selección activa
+        if (photoReportConfig.selectedPoints.size === 0 && allItems.length > 0) {
+            allItems.forEach(m => photoReportConfig.selectedPoints.add(Number(m.id)));
+        }
     }
 
     updateGridSelectorButtonsUI();
@@ -984,16 +1031,32 @@ function initPhotoReportEngine() {
 window.initPhotoReportEngine = initPhotoReportEngine;
 
 function getPointImages(m) {
+    if (!m) return [];
+    let list = [];
     if (Array.isArray(m.images) && m.images.length > 0) {
-        return m.images.filter(Boolean);
+        list = m.images;
+    } else if (typeof m.images === 'string' && m.images.trim()) {
+        try {
+            const parsed = JSON.parse(m.images);
+            if (Array.isArray(parsed)) list = parsed;
+            else list = [m.images];
+        } catch (e) {
+            list = [m.images];
+        }
+    } else if (Array.isArray(m.image_paths) && m.image_paths.length > 0) {
+        list = m.image_paths;
+    } else if (typeof m.image_paths === 'string' && m.image_paths.trim()) {
+        try {
+            const parsed = JSON.parse(m.image_paths);
+            if (Array.isArray(parsed)) list = parsed;
+            else list = [m.image_paths];
+        } catch (e) {
+            list = [m.image_paths];
+        }
+    } else if (m.image_path) {
+        list = [m.image_path];
     }
-    if (Array.isArray(m.image_paths) && m.image_paths.length > 0) {
-        return m.image_paths.filter(Boolean);
-    }
-    if (m.image_path) {
-        return [m.image_path];
-    }
-    return [];
+    return list.filter(Boolean);
 }
 
 function formatPointCode(num) {
@@ -1145,7 +1208,7 @@ function togglePointSelection(pointId, isChecked) {
 window.togglePointSelection = togglePointSelection;
 
 function selectAllPoints(select) {
-    const allItems = window.ALL_MEASUREMENTS_DATA || [];
+    const allItems = getSafeMeasurementsArray();
     allItems.forEach(m => {
         const id = Number(m.id);
         const chk = document.getElementById('chkPoint_' + id);
@@ -1169,7 +1232,7 @@ window.selectAllPoints = selectAllPoints;
 
 function updateSelectionCounterUI() {
     const count = photoReportConfig.selectedPoints.size;
-    const total = (window.ALL_MEASUREMENTS_DATA || []).length;
+    const total = getSafeMeasurementsArray().length;
     const textEl = document.getElementById('photoSelectionCountText');
     if (textEl) {
         textEl.textContent = `${count} de ${total} seleccionadas`;
@@ -1189,7 +1252,7 @@ function navigatePointPhoto(pointId, delta, event) {
         event.preventDefault();
     }
     pointId = Number(pointId);
-    const allItems = window.ALL_MEASUREMENTS_DATA || [];
+    const allItems = getSafeMeasurementsArray();
     const item = allItems.find(m => Number(m.id) === pointId);
     if (!item) return;
 
@@ -1242,7 +1305,7 @@ function renderInteractiveGrid() {
     const container = document.getElementById('photoInteractiveGridContainer');
     if (!container) return;
 
-    const allItems = window.ALL_MEASUREMENTS_DATA || [];
+    const allItems = getSafeMeasurementsArray();
     if (allItems.length === 0) {
         container.innerHTML = `
             <div style="grid-column: 1 / -1; text-align: center; padding: 45px 20px; color: #94a3b8; background: #ffffff; border-radius: 12px; border: 1.5px dashed #cbd5e1;">
@@ -1327,8 +1390,8 @@ function renderInteractiveGrid() {
 
                 <div class="photo-card-img-box fit-${pointFit}" id="photoCardImgBox_${pointId}">
                     ${currentImg ? `
-                        <img id="photoImg_${pointId}" src="${currentImg}" alt="${codeFormatted}" onclick="openPhotoViewer('${currentImg}', '${codeFormatted}: ${addslashes(puesto)}')" title="Clic para ampliar fotografía">
-                        <button type="button" class="photo-zoom-btn" onclick="openPhotoViewer('${currentImg}', '${codeFormatted}: ${addslashes(puesto)}')" title="Ampliar">
+                        <img id="photoImg_${pointId}" src="${currentImg}" alt="${codeFormatted}" onclick="openPhotoViewerByPointId(${pointId})" title="Clic para ampliar fotografía">
+                        <button type="button" class="photo-zoom-btn" onclick="openPhotoViewerByPointId(${pointId})" title="Ampliar">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
                         </button>
                     ` : `
@@ -1374,7 +1437,7 @@ function renderPhotoSheets() {
     const sheetsContainer = document.getElementById('photoSheetsContainer');
     const printContainer = document.getElementById('photoReportPrintArea');
 
-    const allItems = window.ALL_MEASUREMENTS_DATA || [];
+    const allItems = getSafeMeasurementsArray();
     const tech = window.TECHNICAL_HEADER_DATA || {};
     const selectedItems = allItems.filter(m => photoReportConfig.selectedPoints.has(Number(m.id)));
     const perPage = getPhotosPerPage(photoReportConfig.grid);

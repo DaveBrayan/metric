@@ -163,14 +163,26 @@ class RuidoOcupacionalController extends Controller
         'requiere_dosimetria' => (($dosis !== null && $dosis > 1.0) || ($leqFinal !== null && $leqFinal > 85.0)),
     ];
 });
+        $measurements = $measurements->values();
 
         // Estadísticas básicas
         $totalMeasurements = $measurements->count();
 
         $savedSettings = $module->photo_report_settings ?: [];
+        $currentIds = array_values(array_filter(array_column($measurements->toArray(), 'id')));
+        $savedSelected = $savedSettings['selected_points'] ?? [];
+
+        // Validar que los puntos guardados existan actualmente
+        $validSelected = (!empty($savedSelected) && is_array($savedSelected))
+            ? array_values(array_intersect($savedSelected, $currentIds))
+            : [];
+
+        // Si no hay selección o ninguno de los guardados existe, seleccionar todos
+        $finalSelectedPoints = (!empty($validSelected)) ? $validSelected : $currentIds;
+
         $photoReportSettings = [
             'grid' => $savedSettings['grid'] ?? ($savedSettings['distribution'] ?? '2x3'),
-            'selected_points' => $savedSettings['selected_points'] ?? array_column($measurements->toArray(), 'id'),
+            'selected_points' => $finalSelectedPoints,
             'photo_indices' => $savedSettings['photo_indices'] ?? [],
             'image_fit' => $savedSettings['image_fit'] ?? 'contain',
             'photo_fits' => $savedSettings['photo_fits'] ?? [],
