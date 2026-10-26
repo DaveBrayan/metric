@@ -917,13 +917,23 @@ table#modulesMasterTable td {
             <h1>Módulos de Medición & Monitoreo</h1>
             <p>Administración de tipos de monitoreo ambiental, equipos asignados, personal de campo y puntos de muestreo.</p>
         </div>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
             <a href="{{ route('projects.index') }}" class="date-capsule" style="text-decoration: none;">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="19" y1="12" x2="5" y2="12"/>
                     <polyline points="12 19 5 12 12 5"/>
                 </svg>
                 <span>Volver a Proyectos</span>
+            </a>
+            <a href="{{ route('photo_reports.index', !empty($activeProject) ? ['proyecto' => $activeProject->id] : ($selectedProjectId !== 'todos' && !empty($selectedProjectId) ? ['proyecto' => $selectedProjectId] : [])) }}"
+               class="btn-secondary-subtle"
+               style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; padding: 10px 18px; border-radius: 12px; font-weight: 700; color: #0284c7; background: #e0f2fe; border: 1.5px solid #bae6fd; transition: all 0.2s ease; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.08);"
+               title="Ver y generar reporte fotográfico mosaico de los monitoreos">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                </svg>
+                <span>Reporte Fotográfico</span>
             </a>
             <button type="button" class="btn-primary-hero-action" onclick="openCreateModuleModal()">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">

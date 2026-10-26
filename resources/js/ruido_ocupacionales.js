@@ -629,13 +629,10 @@ window.closePhotoViewerModal = function () {
 window.openExportModal = function () {
     console.log('[Ruido Ocupacional] 🚀 openExportModal() disparado desde JS principal');
     const m = document.getElementById('exportOptionsModal') || document.getElementById('exportModal');
-    console.log('[Ruido Ocupacional] 🔍 Modal encontrado:', m);
     if (m) {
         m.classList.add('open', 'active');
         m.style.setProperty('display', 'flex', 'important');
         console.log('[Ruido Ocupacional] ✅ Modal de exportación abierto exitosamente.');
-    } else {
-        console.error('[Ruido Ocupacional] ❌ No se encontró #exportOptionsModal ni #exportModal en el DOM.');
     }
 };
 
@@ -655,16 +652,6 @@ window.openruidoOcupacionalTablesModal = function () {
 
 window.closeruidoOcupacionalTablesModal = function () {
     const m = document.getElementById('ruidoOcupacionalTablesModal');
-    if (m) m.classList.remove('open');
-};
-
-window.openPhotoReportModal = function () {
-    const m = document.getElementById('photoReportModal');
-    if (m) m.classList.add('open');
-};
-
-window.closePhotoReportModal = function () {
-    const m = document.getElementById('photoReportModal');
     if (m) m.classList.remove('open');
 };
 
@@ -845,7 +832,11 @@ window.openTechHeaderEditModal = function () {
 
     // Inicialización cuando carga el DOM
     document.addEventListener('DOMContentLoaded', () => {
-        recalcruidoOcupacional('create');
+        if (typeof window.recalcruidoOcupacional === 'function') {
+            window.recalcruidoOcupacional('create');
+        } else if (typeof recalcruidoOcupacional === 'function') {
+            recalcruidoOcupacional('create');
+        }
 
         document.querySelectorAll('.modal-backdrop-custom').forEach(modal => {
             modal.addEventListener('click', (e) => {
@@ -863,7 +854,6 @@ window.openTechHeaderEditModal = function () {
 function openExportModal() {
     console.log('[Ruido Ocupacional] 🚀 openExportModal() ejecutado');
     const modal = document.getElementById('exportOptionsModal') || document.getElementById('exportModal');
-    console.log('[Ruido Ocupacional] 🔍 Modal encontrado:', modal);
     if (modal) {
         modal.classList.add('open', 'active');
         modal.style.setProperty('display', 'flex', 'important');
@@ -893,6 +883,7 @@ const photoReportConfig = {
     currentTab: 'interactive',
     isInitialized: false
 };
+window.photoReportConfig = photoReportConfig;
 let photoReportAutoSaveTimeout = null;
 
 function getSafeMeasurementsArray() {
@@ -906,6 +897,15 @@ function getSafeMeasurementsArray() {
     return [];
 }
 window.getSafeMeasurementsArray = getSafeMeasurementsArray;
+
+function openEditMeasurementById(id) {
+    const list = getSafeMeasurementsArray();
+    const item = list.find(m => Number(m.id) === Number(id));
+    if (item && typeof openEditMeasurementModal === 'function') {
+        openEditMeasurementModal(item);
+    }
+}
+window.openEditMeasurementById = openEditMeasurementById;
 
 function openPhotoViewerByPointId(pointId) {
     const all = getSafeMeasurementsArray();
@@ -925,6 +925,7 @@ function openPhotoViewerByPointId(pointId) {
 window.openPhotoViewerByPointId = openPhotoViewerByPointId;
 
 function openPhotoReportModal() {
+    console.log('[Ruido Ocupacional] 📸 openPhotoReportModal() ejecutado');
     closeExportModal();
     const modal = document.getElementById('photoReportModal');
     if (modal) {
@@ -932,6 +933,8 @@ function openPhotoReportModal() {
         modal.style.setProperty('display', 'flex', 'important');
         photoReportConfig.isInitialized = false;
         initPhotoReportEngine();
+    } else {
+        console.error('[Ruido Ocupacional] ❌ No se encontró #photoReportModal en el DOM');
     }
 }
 window.openPhotoReportModal = openPhotoReportModal;
@@ -1020,6 +1023,11 @@ function initPhotoReportEngine() {
         if (photoReportConfig.selectedPoints.size === 0 && allItems.length > 0) {
             allItems.forEach(m => photoReportConfig.selectedPoints.add(Number(m.id)));
         }
+    }
+
+    // Salvaguarda final: si por alguna razón la selección quedó vacía teniendo mediciones, seleccionar todas
+    if (photoReportConfig.selectedPoints.size === 0 && allItems.length > 0) {
+        allItems.forEach(m => photoReportConfig.selectedPoints.add(Number(m.id)));
     }
 
     updateGridSelectorButtonsUI();

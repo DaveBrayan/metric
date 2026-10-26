@@ -57,19 +57,19 @@
                             <th colspan="30" style="padding:7px 6px; text-align:center; font-weight:800; color:#000000; border-right:2px solid #94a3b8; border-bottom:1px solid #94a3b8; font-size:12px; background:#d9d9d9; letter-spacing:0.5px;">
                                 10^(NPSI/10)
                             </th>
-                            <th rowspan="2" style="padding:8px 12px; text-align:center; font-weight:800; color:#000000; border-right:1px solid #94a3b8; border-bottom:2px solid #94a3b8; font-size:12px; background:#d9d9d9; min-width:110px;" title="=SUMA(B2:AE2)">
+                            <th rowspan="2" style="padding:8px 12px; text-align:center; font-weight:800; color:#000000; border-right:1px solid #94a3b8; border-bottom:2px solid #94a3b8; font-size:12px; background:#d9d9d9; min-width:110px;" title="Fórmula: SUMA(B2:AE2)">
                                 <span style="font-size:14px; font-weight:bold; vertical-align:middle;">&sum;</span> 10<sup>(NPSi/10)</sup>
                             </th>
-                            <th rowspan="2" style="padding:8px 12px; text-align:center; font-weight:800; color:#000000; border-right:1px solid #94a3b8; border-bottom:2px solid #94a3b8; font-size:12px; background:#d9d9d9; min-width:75px;" title="=MAX(DATOS!H2:AK2)">
+                            <th rowspan="2" style="padding:8px 12px; text-align:center; font-weight:800; color:#000000; border-right:1px solid #94a3b8; border-bottom:2px solid #94a3b8; font-size:12px; background:#d9d9d9; min-width:75px;" title="Fórmula: MAX(DATOS!H2:AK2)">
                                 MAX
                             </th>
-                            <th rowspan="2" style="padding:8px 12px; text-align:center; font-weight:800; color:#000000; border-right:1px solid #94a3b8; border-bottom:2px solid #94a3b8; font-size:12px; background:#d9d9d9; min-width:90px;" title="=10*LOG10((1/30)*AF2)">
+                            <th rowspan="2" style="padding:8px 12px; text-align:center; font-weight:800; color:#000000; border-right:1px solid #94a3b8; border-bottom:2px solid #94a3b8; font-size:12px; background:#d9d9d9; min-width:90px;" title="Fórmula LAeq: 10 * LOG10((1/30) * AF2)">
                                 LAeq,T<br><span style="font-weight:normal; font-size:10px; color:#334155;">(dB)</span>
                             </th>
-                            <th rowspan="2" style="padding:8px 12px; text-align:center; font-weight:800; color:#000000; border-right:1px solid #94a3b8; border-bottom:2px solid #94a3b8; font-size:12px; background:#d9d9d9; min-width:95px;" title="=SI.ERROR(8/(2^((AH2-85)/3)); &quot;&quot;)">
+                            <th rowspan="2" style="padding:8px 12px; text-align:center; font-weight:800; color:#000000; border-right:1px solid #94a3b8; border-bottom:2px solid #94a3b8; font-size:12px; background:#d9d9d9; min-width:95px;" title="Fórmula TMPE: 8 / (2 ^ ((LAeq - 85) / 3))">
                                 TMPE<br><span style="font-weight:normal; font-size:10px; color:#334155;">(horas)</span>
                             </th>
-                            <th rowspan="2" style="padding:8px 12px; text-align:center; font-weight:800; color:#000000; border-bottom:2px solid #94a3b8; font-size:12px; background:#d9d9d9; min-width:85px;" title="=DATOS!E2/AI2">
+                            <th rowspan="2" style="padding:8px 12px; text-align:center; font-weight:800; color:#000000; border-bottom:2px solid #94a3b8; font-size:12px; background:#d9d9d9; min-width:85px;" title="Fórmula Dosis: TPE / TMPE">
                                 DOSIS
                             </th>
                         </tr>
@@ -216,7 +216,7 @@ function renderCalculosMatrix(targetIdx) {
         var baseBg = isHighlighted ? '#fef9c3' : (idx % 2 === 0 ? '#ffffff' : '#f8fafc');
         var rowId = 'calc-row-' + idx;
 
-        var r = '<tr id="' + rowId + '" style="background:' + baseBg + ';border-bottom:1px solid #cbd5e1;transition:background 0.15s;" onmouseenter="this.style.background=\'#f1f5f9\'" onmouseleave="this.style.background=\'' + baseBg + '\'">';
+        var r = '<tr id="' + rowId + '" class="calc-matrix-row" style="background:' + baseBg + ';border-bottom:1px solid #cbd5e1;transition:background 0.15s;">';
 
         // NRO.
         r += '<td style="position:sticky;left:0;z-index:2;background:' + (isHighlighted ? '#fef08a' : (idx % 2 === 0 ? '#ffffff' : '#f8fafc')) + ';padding:6px 10px;text-align:center;font-weight:800;color:#000000;border-right:2px solid #94a3b8;border-bottom:1px solid #cbd5e1;font-size:12px;" title="Registro ' + (idx + 1) + ' | Punto: ' + (m.punto_medicion || 'P-' + (idx+1)) + ' | Área: ' + (m.area || '—') + ' | TPE: ' + tpe + 'h">' + (idx + 1) + '</td>';
@@ -226,7 +226,7 @@ function renderCalculosMatrix(targetIdx) {
             var item = slotEnergies[p];
             if (item.nps !== null && item.energy > 0) {
                 var displayVal = formatEnergyExcel(item.energy);
-                r += '<td style="padding:6px 6px;text-align:right;font-family:\'Consolas\',monospace;font-size:11px;color:#000000;border-right:' + (p === 29 ? '2px solid #94a3b8' : '1px solid #e2e8f0') + ';border-bottom:1px solid #cbd5e1;" title="Punto NPS ' + (p + 1) + ': ' + item.nps + ' dB&#10;10^(' + item.nps + '/10) = ' + item.energy.toFixed(4) + '">' + displayVal + '</td>';
+                r += '<td style="padding:6px 6px;text-align:right;font-family:\'Consolas\',monospace;font-size:11px;color:#000000;border-right:' + (p === 29 ? '2px solid #94a3b8' : '1px solid #e2e8f0') + ';border-bottom:1px solid #cbd5e1;" title="Punto NPS ' + (p + 1) + ': ' + item.nps + ' dB | 10^(' + item.nps + '/10) = ' + item.energy.toFixed(4) + '">' + displayVal + '</td>';
             } else {
                 r += '<td style="padding:6px 6px;text-align:center;font-family:\'Consolas\',monospace;font-size:11px;color:#cbd5e1;border-right:' + (p === 29 ? '2px solid #94a3b8' : '1px solid #e2e8f0') + ';border-bottom:1px solid #cbd5e1;">—</td>';
             }
@@ -234,20 +234,20 @@ function renderCalculosMatrix(targetIdx) {
 
         // =SUMA(B2:AE2)
         var sumText = hasAnyNps ? Math.round(sumaE).toString() : '—';
-        r += '<td style="padding:6px 10px;text-align:right;font-family:\'Consolas\',monospace;font-size:11px;font-weight:800;color:#0369a1;background:#f0f9ff;border-right:1px solid #94a3b8;border-bottom:1px solid #cbd5e1;" title="=SUMA(B' + (idx+2) + ':AE' + (idx+2) + ') = ' + sumaE.toFixed(2) + '">' + sumText + '</td>';
+        r += '<td style="padding:6px 10px;text-align:right;font-family:\'Consolas\',monospace;font-size:11px;font-weight:800;color:#0369a1;background:#f0f9ff;border-right:1px solid #94a3b8;border-bottom:1px solid #cbd5e1;" title="SUMA = ' + sumaE.toFixed(2) + '">' + sumText + '</td>';
 
         // MAX
         var maxText = hasAnyNps ? npsMax.toFixed(2).replace('.', ',') : '—';
-        r += '<td style="padding:6px 10px;text-align:right;font-family:\'Consolas\',monospace;font-size:11px;font-weight:700;color:#000000;background:#ffffff;border-right:1px solid #94a3b8;border-bottom:1px solid #cbd5e1;" title="=MAX(DATOS!H' + (idx+2) + ':AK' + (idx+2) + ') = ' + (hasAnyNps ? npsMax.toFixed(2) : 0) + ' dB">' + maxText + '</td>';
+        r += '<td style="padding:6px 10px;text-align:right;font-family:\'Consolas\',monospace;font-size:11px;font-weight:700;color:#000000;background:#ffffff;border-right:1px solid #94a3b8;border-bottom:1px solid #cbd5e1;" title="MAX = ' + (hasAnyNps ? npsMax.toFixed(2) : 0) + ' dB">' + maxText + '</td>';
 
         // LAeq,T (dB)
         var leqText = hasAnyNps ? laeq.toFixed(2).replace('.', ',') : '—';
         var leqColor = (hasAnyNps && laeq > 85.0) ? '#dc2626' : '#059669';
-        r += '<td style="padding:6px 10px;text-align:right;font-family:\'Consolas\',monospace;font-size:11px;font-weight:800;color:' + leqColor + ';background:#ffffff;border-right:1px solid #94a3b8;border-bottom:1px solid #cbd5e1;" title="=10*LOG10((1/30)*AF' + (idx+2) + ') = ' + laeq.toFixed(2) + ' dB">' + leqText + '</td>';
+        r += '<td style="padding:6px 10px;text-align:right;font-family:\'Consolas\',monospace;font-size:11px;font-weight:800;color:' + leqColor + ';background:#ffffff;border-right:1px solid #94a3b8;border-bottom:1px solid #cbd5e1;" title="LAeq = ' + laeq.toFixed(2) + ' dB">' + leqText + '</td>';
 
         // TMPE (horas)
         var tmpeText = tmpe !== null ? tmpe.toFixed(2).replace('.', ',') : '—';
-        r += '<td style="padding:6px 10px;text-align:right;font-family:\'Consolas\',monospace;font-size:11px;font-weight:700;color:#000000;background:#ffffff;border-right:1px solid #94a3b8;border-bottom:1px solid #cbd5e1;" title="=SI.ERROR(8/(2^((AH' + (idx+2) + '-85)/3)); &quot;&quot;) = ' + tmpeText + ' horas">' + tmpeText + '</td>';
+        r += '<td style="padding:6px 10px;text-align:right;font-family:\'Consolas\',monospace;font-size:11px;font-weight:700;color:#000000;background:#ffffff;border-right:1px solid #94a3b8;border-bottom:1px solid #cbd5e1;" title="TMPE = ' + tmpeText + ' horas">' + tmpeText + '</td>';
 
         // DOSIS
         var dosisText = dosis !== null ? dosis.toFixed(3).replace('.', ',') : '—';

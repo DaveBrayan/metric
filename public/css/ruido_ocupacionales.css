@@ -1936,4 +1936,9 @@ textarea.custom-form-input {
     }
 }
 
+.calc-matrix-row:hover td {
+    background-color: #f1f5f9 !important;
+}
+
+
 

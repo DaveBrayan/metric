@@ -249,27 +249,24 @@
     }
     window.downloadRuidoOcupacionalExcel = downloadRuidoOcupacionalExcel;
 
-    // Métodos globales de apertura y cierre con logs detallados
-    window.openExportModal = function () {
-        console.log('[Ruido Ocupacional] 🚀 openExportModal() disparado');
-        const modal = document.getElementById('exportOptionsModal') || document.getElementById('exportModal');
-        console.log('[Ruido Ocupacional] 🔍 Modal encontrado:', modal);
-        if (modal) {
-            modal.classList.add('open', 'active');
-            modal.style.setProperty('display', 'flex', 'important');
-            console.log('[Ruido Ocupacional] ✅ Modal de exportación abierto con display flex y clase open.');
-        } else {
-            console.error('[Ruido Ocupacional] ❌ No se encontró el modal #exportOptionsModal ni #exportModal en el DOM.');
-        }
-    };
+    // Garantizar disponibilidad global de modales de exportación y reporte fotográfico
+    if (typeof window.openExportModal !== 'function') {
+        window.openExportModal = function () {
+            const modal = document.getElementById('exportOptionsModal') || document.getElementById('exportModal');
+            if (modal) {
+                modal.classList.add('open', 'active');
+                modal.style.setProperty('display', 'flex', 'important');
+            }
+        };
+    }
 
-    window.closeExportModal = function () {
-        console.log('[Ruido Ocupacional] 🚪 closeExportModal() disparado');
-        const modal = document.getElementById('exportOptionsModal') || document.getElementById('exportModal');
-        if (modal) {
-            modal.classList.remove('open', 'active');
-            modal.style.setProperty('display', 'none', 'important');
-            console.log('[Ruido Ocupacional] Modal cerrado.');
-        }
-    };
+    if (typeof window.closeExportModal !== 'function') {
+        window.closeExportModal = function () {
+            const modal = document.getElementById('exportOptionsModal') || document.getElementById('exportModal');
+            if (modal) {
+                modal.classList.remove('open', 'active');
+                modal.style.setProperty('display', 'none', 'important');
+            }
+        };
+    }
 </script>

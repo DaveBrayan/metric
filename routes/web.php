@@ -28,6 +28,7 @@ use App\Http\Controllers\ParticulasController;
 use App\Http\Controllers\ParticulasAmbientalesController;
 use App\Http\Controllers\VibracionController;
 use App\Http\Controllers\ContaminantesQuimicosController;
+use App\Http\Controllers\PhotoReportController;
 
 // 0. Live Zero-Build Asset Fallback (Automatic Dynamic Serving & Sync)
 Route::get('/css/{file}', function ($file) {
@@ -117,6 +118,11 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/modulos/{id}', [ProjectController::class, 'updateModule'])->name('modules.update');
     Route::match(['delete', 'post'], '/modulos/{id}/delete', [ProjectController::class, 'destroyModule'])->name('modules.destroy.post');
     Route::match(['delete', 'post'], '/modulos/{id}', [ProjectController::class, 'destroyModule'])->name('modules.destroy');
+
+    // Reporte Fotográfico Unificado de Monitoreos y Módulos
+    Route::get('/reporte-fotografico', [PhotoReportController::class, 'index'])->name('photo_reports.index');
+    Route::get('/reporte-fotografico/modulo/{id}', [PhotoReportController::class, 'getModuleData'])->name('photo_reports.module_data');
+    Route::post('/reporte-fotografico/modulo/{id}/settings', [PhotoReportController::class, 'saveSettings'])->name('photo_reports.save_settings');
 
     // Monitoreo de Iluminación Ocupacional
     Route::get('/modulos/{id}/iluminacion', [IlluminationController::class, 'index'])->name('modules.illumination');

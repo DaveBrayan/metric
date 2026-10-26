@@ -199,3 +199,26 @@
 <div id="photoReportPrintArea" style="display: none;">
     <!-- Se inyectan dinámicamente aquí las hojas .photo-report-sheet para imprimir -->
 </div>
+
+<script>
+    // Salvaguarda para asegurar que el motor fotográfico de Ruido Ocupacional siempre inicialice al abrir el modal
+    document.addEventListener('DOMContentLoaded', function () {
+        const modal = document.getElementById('photoReportModal');
+        if (modal) {
+            const observer = new MutationObserver(function (mutations) {
+                mutations.forEach(function (mutation) {
+                    if (mutation.attributeName === 'class' || mutation.attributeName === 'style') {
+                        const isOpen = modal.classList.contains('open') || modal.style.display === 'flex';
+                        const gridContainer = document.getElementById('photoInteractiveGridContainer');
+                        if (isOpen && gridContainer && (!gridContainer.children || gridContainer.children.length === 0)) {
+                            if (typeof window.initPhotoReportEngine === 'function') {
+                                window.initPhotoReportEngine();
+                            }
+                        }
+                    }
+                });
+            });
+            observer.observe(modal, { attributes: true });
+        }
+    });
+</script>

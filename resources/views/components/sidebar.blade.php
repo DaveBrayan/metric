@@ -140,6 +140,15 @@
                     <span class="nav-badge-pill" style="margin-left: auto; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 20px; background: rgba(16, 185, 223, 0.18); color: #0896b5; border: 1px solid rgba(16, 185, 223, 0.35);">{{ $sidebarEquipmentCount }}</span>
                 @endif
             </a>
+
+            <!-- Submenu Reporte Fotográfico -->
+            <a href="{{ route('photo_reports.index') }}" class="nav-item-btn nav-subitem-indent {{ request()->routeIs('photo_reports.*') ? 'active' : '' }}" data-tooltip="Catálogo & Reportes Fotográficos en Mosaico Carta">
+                <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 17px; height: 17px;">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                </svg>
+                <span class="nav-item-text">Reporte Fotográfico</span>
+            </a>
         </div>
 
         <!-- Section 4: Sistema -->
