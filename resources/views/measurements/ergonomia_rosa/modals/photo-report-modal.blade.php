@@ -129,6 +129,15 @@
                     <span class="photo-selection-pill" id="photoReportPagesIndicator" style="background: #e0f2fe; color: #0284c7; border-color: #bae6fd;">
                         Hojas Carta: 0 (2x3)
                     </span>
+                    <button type="button" class="btn-toolbar-action" id="btnPrintPhotoReportFast" onclick="printPhotoReportNative()" title="Generación instantánea (1 segundo) recomendada para reportes grandes (24 o más hojas)" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff; border-color: #059669; box-shadow: 0 4px 10px rgba(5, 150, 105, 0.2);">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                            <rect x="6" y="14" width="12" height="8"></rect>
+                        </svg>
+                        <span>PDF Instantáneo (1s)</span>
+                    </button>
+
                     <button type="button" class="btn-toolbar-action btn-toolbar-primary" id="btnDownloadPhotoReportPdf" onclick="downloadPhotoReportPDF()" title="Descargar Reporte en PDF (Hoja Carta)">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>

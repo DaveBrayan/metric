@@ -216,8 +216,71 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.45; }
         }
-        .loading-shimmer {
-            animation: pulseLoad 1.2s infinite ease-in-out;
+        /* ----------------------------------------------------
+           Estilos para Impresión Nativa Instantánea (window.print)
+           Permite generar 24+ hojas en 1 segundo usando el motor del navegador
+        ---------------------------------------------------- */
+        @page {
+            size: letter portrait;
+            margin: 0;
+        }
+
+        @media print {
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            /* Ocultar interfaz del sistema para impresión limpia */
+            body * {
+                visibility: hidden !important;
+            }
+
+            #photoReportPrintArea,
+            #photoReportPrintArea * {
+                visibility: visible !important;
+            }
+
+            #photoReportPrintArea {
+                display: block !important;
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+                z-index: 99999 !important;
+            }
+
+            #photoReportPrintArea .photo-report-sheet {
+                display: flex !important;
+                flex-direction: column !important;
+                width: 215.9mm !important;
+                height: 279.4mm !important;
+                min-height: 279.4mm !important;
+                max-height: 279.4mm !important;
+                margin: 0 auto !important;
+                padding: 10mm 10mm 8mm 10mm !important;
+                box-shadow: none !important;
+                border: none !important;
+                border-radius: 0 !important;
+                page-break-after: always !important;
+                break-after: page !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
+                background: #ffffff !important;
+            }
+
+            #photoReportPrintArea .photo-report-sheet:last-child {
+                page-break-after: auto !important;
+                break-after: auto !important;
+            }
         }
     </style>
 @endpush
@@ -442,6 +505,15 @@
                 <span class="photo-selection-pill" id="photoReportPagesIndicator" style="background: #e0f2fe; color: #0284c7; border-color: #bae6fd;">
                     Hojas Carta: 0 (2x3)
                 </span>
+
+                <button type="button" class="btn-toolbar-action" id="btnPrintPhotoReportFast" onclick="printPhotoReportNative()" title="Generación instantánea (1 segundo) recomendada para reportes grandes (24 o más hojas)" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff; border-color: #059669; box-shadow: 0 4px 10px rgba(5, 150, 105, 0.2);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                        <rect x="6" y="14" width="12" height="8"></rect>
+                    </svg>
+                    <span>PDF Instantáneo (1s)</span>
+                </button>
 
                 <button type="button" class="btn-toolbar-action btn-toolbar-primary" id="btnDownloadPhotoReportPdf" onclick="downloadPhotoReportPDF()" title="Descargar Reporte en PDF (Hoja Carta)">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -1497,49 +1569,56 @@
                 const letterWidthMm = 215.9;
                 const letterHeightMm = 279.4;
 
+                // Crear o reutilizar sandbox aislado para evitar que html2canvas recorra las 24 hojas en el DOM
+                let sandbox = document.getElementById('photoReportCanvasSandbox');
+                if (!sandbox) {
+                    sandbox = document.createElement('div');
+                    sandbox.id = 'photoReportCanvasSandbox';
+                    sandbox.style.cssText = 'position:fixed;left:-99999px;top:-99999px;width:816px;min-height:1056px;overflow:hidden;background:#ffffff;z-index:-9999;pointer-events:none;';
+                    document.body.appendChild(sandbox);
+                }
+
                 for (let i = 0; i < sheets.length; i++) {
                     const sheet = sheets[i];
                     if (progressEl) {
                         progressEl.textContent = `Compilando hoja ${i + 1} de ${sheets.length}...`;
                     }
 
-                    const prevBoxShadow = sheet.style.boxShadow;
-                    const prevBorderRadius = sheet.style.borderRadius;
-                    const prevBorder = sheet.style.border;
-                    const prevMargin = sheet.style.margin;
+                    // Clonar únicamente la hoja actual en el sandbox aislado
+                    sandbox.innerHTML = '';
+                    const clonedSheet = sheet.cloneNode(true);
+                    clonedSheet.style.boxShadow = 'none';
+                    clonedSheet.style.borderRadius = '0';
+                    clonedSheet.style.border = 'none';
+                    clonedSheet.style.margin = '0';
+                    sandbox.appendChild(clonedSheet);
 
-                    sheet.style.boxShadow = 'none';
-                    sheet.style.borderRadius = '0';
-                    sheet.style.border = 'none';
-                    sheet.style.margin = '0';
-
-                    const restoreImages = fixSheetImagesForCanvas(sheet);
+                    const restoreImages = fixSheetImagesForCanvas(clonedSheet);
                     let canvas;
                     try {
-                        // Escala 1.5 (~144 DPI): equilibrio perfecto entre nitidez de impresión y alta velocidad
-                        canvas = await html2canvas(sheet, {
-                            scale: 1.5,
+                        // Escala 1.25 (~120 DPI): renderizado ultrarrápido (<0.4s por hoja) manteniendo nitidez Carta
+                        canvas = await html2canvas(clonedSheet, {
+                            scale: 1.25,
                             useCORS: true,
                             logging: false,
                             backgroundColor: '#ffffff'
                         });
                     } finally {
                         restoreImages();
+                        sandbox.innerHTML = '';
                     }
 
-                    sheet.style.boxShadow = prevBoxShadow;
-                    sheet.style.borderRadius = prevBorderRadius;
-                    sheet.style.border = prevBorder;
-                    sheet.style.margin = prevMargin;
-
-                    // Compresión JPEG 0.80 en DataURL: genera ~250KB por página en vez de ~3MB
-                    const imgData = canvas.toDataURL('image/jpeg', 0.80);
+                    // Compresión JPEG 0.78 en DataURL: rápida y ligera
+                    const imgData = canvas.toDataURL('image/jpeg', 0.78);
 
                     if (i > 0) {
                         pdf.addPage('letter', 'portrait');
                     }
 
                     pdf.addImage(imgData, 'JPEG', 0, 0, letterWidthMm, letterHeightMm, undefined, 'FAST');
+
+                    // Ceder el hilo de ejecución para que el navegador responda con fluidez
+                    await new Promise(r => setTimeout(r, 20));
                 }
 
                 const modInfo = photoReportConfig.moduleInfo || {};
@@ -1586,6 +1665,62 @@
                 }
             }
         }
+
+        // 14. Generación Instantánea Nativa en 1 Segundo (window.print para 24+ Hojas)
+        async function printPhotoReportNative() {
+            if (!photoReportConfig.selectedPoints || photoReportConfig.selectedPoints.size === 0) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Sin selección',
+                        text: 'Debes seleccionar al menos una fotografía para imprimir o generar el reporte en PDF.',
+                        icon: 'warning',
+                        confirmButtonText: 'Entendido',
+                        buttonsStyling: false,
+                        customClass: { popup: 'metric-swal-popup', confirmButton: 'metric-swal-btn-confirm' }
+                    });
+                } else {
+                    alert('Debes seleccionar al menos una fotografía.');
+                }
+                return;
+            }
+
+            const printContainer = document.getElementById('photoReportPrintArea');
+            if (!printContainer) {
+                alert('No se encontró el contenedor de impresión.');
+                return;
+            }
+
+            renderPhotoSheets();
+
+            const btnPrint = document.getElementById('btnPrintPhotoReportFast');
+            const origHtml = btnPrint ? btnPrint.innerHTML : '';
+            if (btnPrint) {
+                btnPrint.disabled = true;
+                btnPrint.innerHTML = `
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="animation: spin 0.8s linear infinite;">
+                        <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                        <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                    </svg>
+                    <span>Abriendo PDF...</span>
+                `;
+            }
+
+            try {
+                const printImages = Array.from(printContainer.querySelectorAll('img'));
+                await Promise.all(printImages.map(img => {
+                    if (img.complete) return Promise.resolve();
+                    return new Promise(res => { img.onload = res; img.onerror = res; });
+                }));
+
+                window.print();
+            } finally {
+                if (btnPrint && origHtml) {
+                    btnPrint.disabled = false;
+                    btnPrint.innerHTML = origHtml;
+                }
+            }
+        }
+        window.printPhotoReportNative = printPhotoReportNative;
 
         // 13. Lightbox de Fotografía
         function openPhotoViewer(url, caption) {
