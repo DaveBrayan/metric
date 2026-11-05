@@ -345,6 +345,18 @@
     letter-spacing: -0.2px;
 }
 
+.lux-req-code {
+    font-family: 'JetBrains Mono', 'SFMono-Regular', monospace;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #475569;
+    background: #f1f5f9;
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    display: inline-block;
+}
+
 .table-time-pill {
     display: inline-flex;
     align-items: center;
@@ -355,23 +367,35 @@
 }
 
 .badge-registered-staff {
-    display: inline-block;
-    max-width: 120px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #0369a1;
+    background: #f0f9ff;
+    border: 1.5px solid #bae6fd;
+    white-space: nowrap;
+    max-width: 170px;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 11.5px;
-    font-weight: 600;
-    color: #475569;
-    background: #f1f5f9;
-    padding: 2px 8px;
-    border-radius: 9999px;
-    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(2, 132, 199, 0.05);
+    transition: all 0.2s ease;
+}
+
+.badge-registered-staff:hover {
+    background: #e0f2fe;
+    border-color: #7dd3fc;
+    color: #0284c7;
 }
 
 .lux-measured-badge {
-    display: inline-block;
-    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 700;
     padding: 3px 8px;
     border-radius: 6px;
     text-align: center;
@@ -398,8 +422,8 @@
 .table-thumb-preview {
     position: relative;
     width: 44px;
-    height: 34px;
-    border-radius: 6px;
+    height: 44px;
+    border-radius: 8px;
     border: 1px solid #cbd5e1;
     overflow: hidden;
     cursor: pointer;
@@ -407,7 +431,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.15s ease;
+    transition: all 0.2s ease;
 }
 
 .table-thumb-preview img {
@@ -427,95 +451,147 @@
 }
 
 .btn-admin-icon-action {
-    width: 30px;
-    height: 30px;
-    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
     border: 1px solid transparent;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.2s ease;
 }
 
 .btn-admin-icon-action.theme-cyan {
-    background: #f0f9ff;
-    border-color: #bae6fd;
-    color: #0284c7;
+    background: #f0f9ff !important;
+    border: 1px solid #bae6fd !important;
+    color: #0284c7 !important;
 }
 
 .btn-admin-icon-action.theme-cyan:hover {
-    background: #e0f2fe;
-    border-color: #0284c7;
+    background: #e0f2fe !important;
+    border-color: #0284c7 !important;
+    color: #0369a1 !important;
     transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(2, 132, 199, 0.15);
 }
 
 .btn-admin-icon-action.theme-danger {
-    background: #fef2f2;
-    border-color: #fecaca;
-    color: #dc2626;
+    background: #fef2f2 !important;
+    border: 1px solid #fecaca !important;
+    color: #dc2626 !important;
 }
 
 .btn-admin-icon-action.theme-danger:hover {
-    background: #fee2e2;
-    border-color: #ef4444;
+    background: #fee2e2 !important;
+    border-color: #ef4444 !important;
+    color: #b91c1c !important;
     transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(239, 68, 68, 0.15);
+}
+
+/* Empty State */
+.table-empty-state {
+    padding: 48px 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.empty-icon-wrap {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+}
+
+.table-empty-state h3 {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--ink, #0f1c2e);
+    margin: 0;
+}
+
+.table-empty-state p {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+    max-width: 440px;
 }
 
 /* 4. Paginación Reactiva */
-.illumination-pagination-container {
+.illumination-pagination-container,
+.vibracion-pagination-container {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 18px;
+    padding: 14px 20px;
     background: #ffffff;
     border-top: 1px solid #e2e8f0;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
 }
 
-.illumination-pagination-info {
-    font-size: 12px;
+.illumination-pagination-info,
+.vibracion-pagination-info {
+    font-size: 13px;
     color: #64748b;
+    font-weight: 500;
 }
 
-.illumination-pagination-controls {
+.illumination-pagination-controls,
+.vibracion-pagination-controls {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
 }
 
+.ill-pag-btn,
+.vib-pag-btn,
 .pagination-btn {
-    min-width: 30px;
-    height: 30px;
-    padding: 0 8px;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(203, 213, 225, 0.85);
     background: #ffffff;
     color: #475569;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.15s ease;
+    transition: all 0.2s ease;
 }
 
+.ill-pag-btn:hover:not(:disabled),
+.vib-pag-btn:hover:not(:disabled),
 .pagination-btn:hover:not(:disabled) {
-    border-color: var(--cyan);
-    color: var(--cyan);
+    border-color: #10b9df;
+    color: #0284c7;
     background: #f0f9ff;
 }
 
+.ill-pag-btn.active,
+.vib-pag-btn.active,
 .pagination-btn.active {
-    background: var(--cyan);
-    border-color: var(--cyan);
-    color: #ffffff;
+    background: #0f1c2e !important;
+    border-color: #0f1c2e !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(15, 28, 46, 0.25) !important;
+}
+    box-shadow: 0 4px 12px rgba(16, 185, 223, 0.35);
 }
 
+.ill-pag-btn:disabled,
+.vib-pag-btn:disabled,
 .pagination-btn:disabled {
-    opacity: 0.4;
+    opacity: 0.35;
     cursor: not-allowed;
 }
 

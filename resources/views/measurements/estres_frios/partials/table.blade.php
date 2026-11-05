@@ -49,7 +49,7 @@
 
                             <!-- 1. N° -->
                             <td style="font-family: 'Outfit', sans-serif; font-weight: 800; color: #94a3b8; font-size: 13.5px; text-align: center;">
-                                {{ $cleanNum }}
+                                {{ sprintf('%02d', $cleanNum) }}
                             </td>
 
                             <!-- 2. Fecha / Hora -->
@@ -99,7 +99,7 @@
                                         <span style="font-size: 12.5px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: #0284c7;">
                                             {{ $m['temp_c'] !== null ? number_format($m['temp_c'], 1) . '°C' : '—' }}
                                         </span>
-                                        <span style="font-size: 11px; font-weight: 700; color: #475569; background: #f1f5f9; padding: 1px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                                        <span class="lux-req-code" style="font-size: 11px; padding: 2px 6px;">
                                             {{ $m['vel_viento_ms'] !== null ? number_format($m['vel_viento_ms'], 2) . ' m/s' : '0.20 m/s' }}
                                         </span>
                                     </div>
@@ -120,8 +120,7 @@
                                         title="Sensación Térmica: {{ $m['sensacion_termica_c'] }} °C">
                                         {{ $m['sensacion_termica_c'] !== null ? number_format($m['sensacion_termica_c'], 1) . ' °C' : '—' }}
                                     </span>
-                                    <span class="wbgt-val-pill {{ $isCompliant ? 'compliant' : 'non-compliant' }}"
-                                        style="font-size: 11px; padding: 1px 7px;"
+                                    <span class="lux-req-code" style="font-size: 11px; padding: 2px 7px;"
                                         title="Índice WCI: {{ $m['indice_viento_wci'] }} W/m²">
                                         WCI: {{ $m['indice_viento_wci'] !== null ? number_format($m['indice_viento_wci'], 0) . ' W/m²' : '—' }}
                                     </span>
@@ -132,22 +131,24 @@
                             <td style="text-align: center;">
                                 <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
                                     @if(str_contains(strtolower($riesgo), 'bajo'))
-                                        <span class="table-compliance-badge badge-cumple">
-                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                        <span class="lux-measured-badge compliant" style="font-size: 11.5px; padding: 3px 9px;">
+                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
                                                 <polyline points="20 6 9 17 4 12" />
                                             </svg>
                                             <span>Riesgo Bajo</span>
                                         </span>
                                     @elseif(str_contains(strtolower($riesgo), 'moderado'))
-                                        <span class="table-compliance-badge" style="background:#fefce8;color:#ca8a04;border:1px solid #fef08a;">
-                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                        <span class="lux-measured-badge warning" style="font-size: 11px; padding: 3px 9px;">
+                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                                 <circle cx="12" cy="12" r="10" />
+                                                <line x1="12" y1="8" x2="12" y2="12" />
+                                                <line x1="12" y1="16" x2="12.01" y2="16" />
                                             </svg>
                                             <span>Moderado</span>
                                         </span>
                                     @else
-                                        <span class="table-compliance-badge badge-nocumple">
-                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                        <span class="lux-measured-badge non-compliant" style="font-size: 11px; padding: 3px 9px;">
+                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
                                                 <line x1="18" y1="6" x2="6" y2="18" />
                                                 <line x1="6" y1="6" x2="18" y2="18" />
                                             </svg>

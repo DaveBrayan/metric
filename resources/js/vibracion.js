@@ -82,6 +82,7 @@ function renderVibracionPagination() {
     if (vibracionCurrentPage > totalPages) {
         vibracionCurrentPage = totalPages;
     }
+    if (vibracionCurrentPage < 1) vibracionCurrentPage = 1;
 
     const startIdx = (vibracionCurrentPage - 1) * vibracionRowsPerPage;
     const endIdx = startIdx + vibracionRowsPerPage;
@@ -97,6 +98,21 @@ function renderVibracionPagination() {
     vibracionFilteredRows.slice(startIdx, endIdx).forEach(row => {
         row.style.display = '';
     });
+
+    const emptyTableRow = document.getElementById('emptyTableRow');
+    const noResultsRow = document.getElementById('noResultsSearchRow');
+    const allRowsCount = tableBody ? tableBody.querySelectorAll('.illumination-data-row').length : 0;
+
+    if (allRowsCount === 0) {
+        if (emptyTableRow) emptyTableRow.style.display = '';
+        if (noResultsRow) noResultsRow.style.display = 'none';
+    } else if (total === 0) {
+        if (emptyTableRow) emptyTableRow.style.display = 'none';
+        if (noResultsRow) noResultsRow.style.display = '';
+    } else {
+        if (emptyTableRow) emptyTableRow.style.display = 'none';
+        if (noResultsRow) noResultsRow.style.display = 'none';
+    }
 
     // Actualizar leyenda informativa
     const dispStart = total === 0 ? 0 : startIdx + 1;
@@ -114,63 +130,39 @@ function renderVibracionPagination() {
     const controls = document.getElementById('vibracionPaginationControls');
     if (!controls) return;
 
-    controls.innerHTML = '';
-    if (totalPages <= 1) return;
-
-    // Botón Anterior
-    const prevBtn = document.createElement('button');
-    prevBtn.type = 'button';
-    prevBtn.className = 'pagination-btn';
-    prevBtn.innerHTML = '&laquo;';
-    prevBtn.disabled = vibracionCurrentPage === 1;
-    prevBtn.onclick = () => {
-        if (vibracionCurrentPage > 1) {
-            vibracionCurrentPage--;
-            renderVibracionPagination();
-        }
-    };
-    controls.appendChild(prevBtn);
-
-    // Botones de Páginas
-    for (let p = 1; p <= totalPages; p++) {
-        if (totalPages > 7) {
-            if (p !== 1 && p !== totalPages && Math.abs(p - vibracionCurrentPage) > 2) {
-                if (p === 2 || p === totalPages - 1) {
-                    const dots = document.createElement('span');
-                    dots.textContent = '...';
-                    dots.style.padding = '0 4px';
-                    dots.style.color = '#94a3b8';
-                    controls.appendChild(dots);
-                }
-                continue;
-            }
-        }
-
-        const pageBtn = document.createElement('button');
-        pageBtn.type = 'button';
-        pageBtn.className = 'pagination-btn' + (p === vibracionCurrentPage ? ' active' : '');
-        pageBtn.textContent = p;
-        pageBtn.onclick = () => {
-            vibracionCurrentPage = p;
-            renderVibracionPagination();
-        };
-        controls.appendChild(pageBtn);
+    if (totalPages <= 1) {
+        controls.innerHTML = '';
+        return;
     }
 
-    // Botón Siguiente
-    const nextBtn = document.createElement('button');
-    nextBtn.type = 'button';
-    nextBtn.className = 'pagination-btn';
-    nextBtn.innerHTML = '&raquo;';
-    nextBtn.disabled = vibracionCurrentPage === totalPages;
-    nextBtn.onclick = () => {
-        if (vibracionCurrentPage < totalPages) {
-            vibracionCurrentPage++;
-            renderVibracionPagination();
+    let html = '';
+    html += `<button type="button" class="vib-pag-btn ill-pag-btn" onclick="goToVibracionPage(${vibracionCurrentPage - 1})" ${vibracionCurrentPage <= 1 ? 'disabled' : ''} aria-label="Página anterior">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </button>`;
+
+    for (let p = 1; p <= totalPages; p++) {
+        if (p === 1 || p === totalPages || (p >= vibracionCurrentPage - 1 && p <= vibracionCurrentPage + 1)) {
+            html += `<button type="button" class="vib-pag-btn ill-pag-btn ${p === vibracionCurrentPage ? 'active' : ''}" onclick="goToVibracionPage(${p})">${p}</button>`;
+        } else if (p === vibracionCurrentPage - 2 || p === vibracionCurrentPage + 2) {
+            html += `<span style="padding: 0 4px; color: #94a3b8; font-weight: 700;">...</span>`;
         }
-    };
-    controls.appendChild(nextBtn);
+    }
+
+    html += `<button type="button" class="vib-pag-btn ill-pag-btn" onclick="goToVibracionPage(${vibracionCurrentPage + 1})" ${vibracionCurrentPage >= totalPages ? 'disabled' : ''} aria-label="Página siguiente">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </button>`;
+
+    controls.innerHTML = html;
 }
+
+window.goToVibracionPage = function(page) {
+    const totalPages = Math.max(1, Math.ceil(vibracionFilteredRows.length / vibracionRowsPerPage));
+    if (page < 1 || page > totalPages) return;
+    vibracionCurrentPage = page;
+    renderVibracionPagination();
+};
+
+window.renderVibracionPagination = renderVibracionPagination;
 
 /* ==========================================================================
    2. MODALES (3 COLUMNAS): CREAR Y VER / EDITAR CON TOGGLE

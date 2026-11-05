@@ -692,51 +692,123 @@ window.openTechHeaderEditModal = function () {
     };
 
     /* ==========================================================================
-       8. FILTROS EN VIVO Y BÚSQUEDA EN TABLA MAESTRA
+       8. FILTROS EN VIVO, BÚSQUEDA Y PAGINACIÓN REACTIVA EN TABLA MAESTRA
        ========================================================================== */
-    window.filterruidoOcupacional = function (type, btn) {
-        currentFilterType = type;
-        document.querySelectorAll('#ruidoFilterGroup .filter-pill-btn').forEach(b => b.classList.remove('active'));
-        if (btn) btn.classList.add('active');
-        applyTableFilters();
-    };
+    const RUIDO_PAGE_SIZE = 10;
+    let currentRuidoPage = 1;
 
-    window.searchRuidoOcupacionalLive = function () {
+    function getMatchingRuidoRows() {
         const inp = document.getElementById('ruidoSearchInput');
-        currentSearchQuery = (inp?.value || '').toLowerCase().trim();
-        applyTableFilters();
-    };
+        const q = (inp?.value || '').toLowerCase().trim();
+        const allRows = Array.from(document.querySelectorAll('#ruidoTableBody tr.ruido-data-row'));
 
-    function applyTableFilters() {
-        const rows = document.querySelectorAll('#ruidoTableBody .ruido-data-row');
-        let visibleCount = 0;
-
-        rows.forEach(row => {
-            const rowNormativa = (row.getAttribute('data-normativa') || '').toLowerCase();
+        return allRows.filter(row => {
             const rowCompliant = row.getAttribute('data-compliant');
-            const rowSearch = (row.getAttribute('data-search') || '').toLowerCase();
+            const rowSearch = (row.getAttribute('data-search') || row.innerText || '').toLowerCase();
 
             let matchesFilter = true;
             if (currentFilterType === 'compliant') matchesFilter = (rowCompliant === 'compliant');
             else if (currentFilterType === 'non-compliant') matchesFilter = (rowCompliant === 'non-compliant');
-            else if (currentFilterType === 'rasim') matchesFilter = rowNormativa.includes('rasim');
-            else if (currentFilterType === 'rmca') matchesFilter = rowNormativa.includes('rmca');
 
-            const matchesSearch = !currentSearchQuery || rowSearch.includes(currentSearchQuery);
+            const matchesSearch = !q || rowSearch.includes(q);
+            return matchesFilter && matchesSearch;
+        });
+    }
 
-            if (matchesFilter && matchesSearch) {
-                row.style.display = '';
-                visibleCount++;
-            } else {
-                row.style.display = 'none';
-            }
+    function updateRuidoPagination() {
+        const matchingRows = getMatchingRuidoRows();
+        const allRows = Array.from(document.querySelectorAll('#ruidoTableBody tr.ruido-data-row'));
+        const totalItems = matchingRows.length;
+        const totalPages = Math.max(1, Math.ceil(totalItems / RUIDO_PAGE_SIZE));
+
+        if (currentRuidoPage > totalPages) currentRuidoPage = totalPages;
+        if (currentRuidoPage < 1) currentRuidoPage = 1;
+
+        const startIdx = (currentRuidoPage - 1) * RUIDO_PAGE_SIZE;
+        const endIdx = startIdx + RUIDO_PAGE_SIZE;
+
+        allRows.forEach(row => row.style.display = 'none');
+        matchingRows.slice(startIdx, endIdx).forEach(row => {
+            row.style.display = '';
         });
 
-        const noRes = document.getElementById('noResultsRow');
-        if (noRes) {
-            noRes.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
+        const emptyTableRow = document.getElementById('emptyTableRow');
+        const noResultsRow = document.getElementById('noResultsRow');
+        if (allRows.length === 0) {
+            if (emptyTableRow) emptyTableRow.style.display = '';
+            if (noResultsRow) noResultsRow.style.display = 'none';
+        } else if (totalItems === 0) {
+            if (emptyTableRow) emptyTableRow.style.display = 'none';
+            if (noResultsRow) noResultsRow.style.display = '';
+        } else {
+            if (emptyTableRow) emptyTableRow.style.display = 'none';
+            if (noResultsRow) noResultsRow.style.display = 'none';
         }
+
+        const startEl = document.getElementById('ruidoPageStart');
+        const endEl = document.getElementById('ruidoPageEnd');
+        const totalEl = document.getElementById('ruidoPageTotal');
+
+        if (startEl) startEl.textContent = totalItems === 0 ? 0 : (startIdx + 1);
+        if (endEl) endEl.textContent = Math.min(endIdx, totalItems);
+        if (totalEl) totalEl.textContent = totalItems;
+
+        renderRuidoPaginationControls(totalPages);
     }
+
+    function renderRuidoPaginationControls(totalPages) {
+        const container = document.getElementById('ruidoPaginationControls');
+        if (!container) return;
+
+        if (totalPages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        let html = '';
+
+        html += `<button type="button" class="ruido-pag-btn" onclick="goToRuidoPage(${currentRuidoPage - 1})" ${currentRuidoPage <= 1 ? 'disabled' : ''} aria-label="Página anterior">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </button>`;
+
+        for (let p = 1; p <= totalPages; p++) {
+            if (p === 1 || p === totalPages || (p >= currentRuidoPage - 1 && p <= currentRuidoPage + 1)) {
+                html += `<button type="button" class="ruido-pag-btn ${p === currentRuidoPage ? 'active' : ''}" onclick="goToRuidoPage(${p})">${p}</button>`;
+            } else if (p === currentRuidoPage - 2 || p === currentRuidoPage + 2) {
+                html += `<span style="padding: 0 4px; color: #94a3b8; font-weight: 700;">...</span>`;
+            }
+        }
+
+        html += `<button type="button" class="ruido-pag-btn" onclick="goToRuidoPage(${currentRuidoPage + 1})" ${currentRuidoPage >= totalPages ? 'disabled' : ''} aria-label="Página siguiente">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>`;
+
+        container.innerHTML = html;
+    }
+
+    function goToRuidoPage(page) {
+        currentRuidoPage = page;
+        updateRuidoPagination();
+        const table = document.getElementById('ruidoMasterTable');
+        if (table) table.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    window.goToRuidoPage = goToRuidoPage;
+    window.updateRuidoPagination = updateRuidoPagination;
+    window.renderRuidoPaginationControls = renderRuidoPaginationControls;
+
+    window.filterruidoOcupacional = function (type, btn) {
+        currentFilterType = type;
+        document.querySelectorAll('#ruidoFilterGroup .filter-pill-btn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        currentRuidoPage = 1;
+        updateRuidoPagination();
+    };
+
+    window.searchRuidoOcupacionalLive = function () {
+        currentRuidoPage = 1;
+        updateRuidoPagination();
+    };
 
     /* ==========================================================================
        9. AUTO-GUARDADO DE ENCABEZADO TÉCNICO INLINE
@@ -811,27 +883,12 @@ window.openTechHeaderEditModal = function () {
     };
     window.closePhotoViewer = window.closePhotoViewerModal;
 
-    /* Búsqueda en vivo de la tabla maestra */
-    window.searchRuidoOcupacionalLive = function() {
-        const input = document.getElementById('ruidoSearchInput');
-        const q = input ? input.value.trim().toLowerCase() : '';
-        const rows = document.querySelectorAll('#ruidoTableBody tr.ruido-data-row');
-        let visible = 0;
-        rows.forEach(row => {
-            const text = row.getAttribute('data-search') || row.innerText.toLowerCase();
-            if (!q || text.includes(q)) {
-                row.style.display = '';
-                visible++;
-            } else {
-                row.style.display = 'none';
-            }
-        });
-        const noRes = document.getElementById('noResultsRow');
-        if (noRes) noRes.style.display = (visible === 0) ? '' : 'none';
-    };
-
     // Inicialización cuando carga el DOM
     document.addEventListener('DOMContentLoaded', () => {
+        if (typeof updateRuidoPagination === 'function') {
+            updateRuidoPagination();
+        }
+
         if (typeof window.recalcruidoOcupacional === 'function') {
             window.recalcruidoOcupacional('create');
         } else if (typeof recalcruidoOcupacional === 'function') {
@@ -847,6 +904,14 @@ window.openTechHeaderEditModal = function () {
             });
         });
     });
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(() => {
+            if (typeof updateRuidoPagination === 'function') {
+                updateRuidoPagination();
+            }
+        }, 60);
+    }
 
 /* ==========================================================================
    MODAL DE EXPORTACIÓN & REPORTE FOTOGRÁFICO MOSAICO CARTA (RUIDO OCUPACIONAL)

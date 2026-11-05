@@ -30,11 +30,13 @@
                     </tr>
                 </thead>
                 <tbody id="heatStressTableBody">
-                    @forelse($measurements as $m)
+                    @forelse($measurements as $idx => $m)
                         @php
                             $isCompliant = $m['is_compliant'] ?? true;
                             $env = $m['interior_exterior'] ?? 'Interior';
-                            $searchBlob = strtolower(($m['num'] ?? '') . ' ' . ($m['puesto_trabajo'] ?? '') . ' ' . ($m['desc_actividades'] ?? '') . ' ' . ($m['tipo_ropa_cav'] ?? '') . ' ' . ($m['interior_exterior'] ?? '') . ' ' . ($m['tasa_metabolica'] ?? '') . ' ' . ($m['staff_name'] ?? '') . ' ' . ($m['location_description'] ?? ''));
+                            $rawNum = (string)($m['num'] ?? ($idx + 1));
+                            $cleanNum = intval(preg_replace('/[^0-9]/', '', $rawNum)) ?: ($idx + 1);
+                            $searchBlob = strtolower(($cleanNum) . ' ' . ($m['puesto_trabajo'] ?? '') . ' ' . ($m['desc_actividades'] ?? '') . ' ' . ($m['tipo_ropa_cav'] ?? '') . ' ' . ($m['interior_exterior'] ?? '') . ' ' . ($m['tasa_metabolica'] ?? '') . ' ' . ($m['staff_name'] ?? '') . ' ' . ($m['location_description'] ?? ''));
                             $firstPhoto = !empty($m['photos']) && is_array($m['photos']) ? $m['photos'][0] : null;
                             $photoCount = !empty($m['photos']) && is_array($m['photos']) ? count($m['photos']) : 0;
                             $isAclimatado = ($m['aclimatado'] === 'Sí' || $m['aclimatado'] === '1' || $m['aclimatado'] === 1);
@@ -46,7 +48,7 @@
 
                             <!-- 1. N° -->
                             <td style="font-family: 'Outfit', sans-serif; font-weight: 800; color: #94a3b8; font-size: 13.5px; text-align: center;">
-                                {{ $m['num'] }}
+                                {{ sprintf('%02d', $cleanNum) }}
                             </td>
 
                             <!-- 2. Fecha / Hora -->
@@ -71,9 +73,17 @@
                                         {{ $m['puesto_trabajo'] ?: 'Puesto no especificado' }}
                                     </span>
                                     <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                                        <span class="table-badge-env {{ strtolower($env) === 'exterior' ? 'badge-env-ext' : 'badge-env-int' }}" style="width: fit-content;">
-                                            {{ $env }}
-                                        </span>
+                                        @if(strtolower($env) === 'exterior')
+                                            <span style="background: #fef9c3; color: #a16207; border: 1px solid #fde047; border-radius: 9999px; padding: 2px 8px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/></svg>
+                                                Exterior
+                                            </span>
+                                        @else
+                                            <span style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; border-radius: 9999px; padding: 2px 8px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><rect width="16" height="16" x="4" y="4" rx="2"/></svg>
+                                                Interior
+                                            </span>
+                                        @endif
                                         <span style="font-size: 11px; font-weight: 600; color: {{ $isAclimatado ? '#059669' : '#d97706' }};"
                                             title="Estado de aclimatación del trabajador">
                                             ● {{ $isAclimatado ? 'Aclimatado' : 'No Aclimatado' }}
@@ -100,13 +110,23 @@
                                 <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;"
                                      title="Lecturas: Temp Aire: {{ $m['temp_c'] }}°C | %HR: {{ $m['hr_percent'] }}% | Viento: {{ $m['vel_viento_ms'] }} m/s | Presión: {{ $m['presion_mmhg'] }} mmHg | Tbh: {{ $m['wb_c'] }}°C | Tg: {{ $m['gt_c'] }}°C">
                                     <div style="display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap;">
-                                        <span style="font-size: 11.5px; font-weight: 700; color: #1e293b;">
+                                        <span class="lux-req-code" style="font-size: 11px; padding: 2px 7px;">
                                             {{ $m['tasa_metabolica'] }}
                                         </span>
-                                        <span class="wbgt-val-pill {{ $isCompliant ? 'compliant' : 'non-compliant' }}"
-                                            style="font-size: 12px; padding: 1px 7px;"
+                                        <span class="lux-measured-badge {{ $isCompliant ? 'compliant' : 'non-compliant' }}"
+                                            style="font-size: 12px; padding: 3px 9px;"
                                             title="TGBH / WBGT: {{ $m['wbgt_c'] }}°C">
-                                            WBGT: {{ $m['wbgt_c'] !== null ? number_format($m['wbgt_c'], 1) . ' °C' : '—' }}
+                                            @if($isCompliant)
+                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="20 6 9 17 4 12" />
+                                                </svg>
+                                            @else
+                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+                                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                                </svg>
+                                            @endif
+                                            <span>{{ $m['wbgt_c'] !== null ? number_format($m['wbgt_c'], 1) . ' °C' : '—' }}</span>
                                         </span>
                                     </div>
                                     <div style="font-size: 11px; font-family: 'JetBrains Mono', monospace; color: #475569;">

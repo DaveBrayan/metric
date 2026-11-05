@@ -2210,6 +2210,8 @@ class MobileApiController extends Controller
                 'observaciones' => $item->observaciones,
                 'image_path' => $item->image_path ? (str_starts_with($item->image_path, 'http') ? $item->image_path : asset($item->image_path)) : ($imagesUrls[0] ?? null),
                 'images' => $imagesUrls,
+                'images' => $imagesUrls,
+                'image_urls' => $imagesUrls,
                 'location' => $item->location,
                 'latitude' => $item->latitude !== null ? (float) $item->latitude : null,
                 'longitude' => $item->longitude !== null ? (float) $item->longitude : null,
@@ -2379,6 +2381,9 @@ class MobileApiController extends Controller
         if (!empty($measurementId)) {
             $measurement = $module->rebaMeasurements()->find($measurementId);
         }
+        if (!$measurement && $request->filled('point_number')) {
+            $measurement = $module->rebaMeasurements()->where('point_number', $request->input('point_number'))->first();
+        }
 
         $existingCount = $module->rebaMeasurements()->count();
         $pointNumber = $request->input('point_number') ?? str_pad($existingCount + 1, 2, '0', STR_PAD_LEFT);
@@ -2412,8 +2417,8 @@ class MobileApiController extends Controller
             'ubicacion_sintoma' => $request->input('ubicacion_sintoma'),
             'tareas' => $tareas,
             'observaciones' => $request->input('observaciones'),
-            'image_path' => $uploadedImages[0] ?? null,
-            'images' => !empty($uploadedImages) ? $uploadedImages : null,
+            'image_path' => $uploadedImages[0] ?? ($measurement ? $measurement->image_path : null),
+            'images' => !empty($uploadedImages) ? $uploadedImages : ($measurement ? $measurement->images : null),
             'location' => $locationRaw,
             'latitude' => $latitude !== null ? (float) $latitude : null,
             'longitude' => $longitude !== null ? (float) $longitude : null,
@@ -2464,6 +2469,19 @@ class MobileApiController extends Controller
         $module->points_completed = $module->rebaMeasurements()->count();
         $module->save();
 
+        $finalImages = $measurement->images ?? $uploadedImages;
+        if (is_string($finalImages)) {
+            $finalImages = json_decode($finalImages, true) ?: [];
+        }
+        $formattedUrls = [];
+        if (is_array($finalImages)) {
+            foreach ($finalImages as $img) {
+                if (!empty($img)) {
+                    $formattedUrls[] = str_starts_with($img, 'http') ? $img : asset($img);
+                }
+            }
+        }
+
         return response()->json([
             'success' => true,
             'message' => "Evaluación REBA #{$measurement->point_number} guardada exitosamente.",
@@ -2473,6 +2491,8 @@ class MobileApiController extends Controller
             'score_final' => $measurement->score_final,
             'risk_level' => $measurement->risk_level,
             'points_completed' => $module->points_completed,
+            'images' => $formattedUrls,
+            'image_urls' => $formattedUrls,
         ], $statusCode);
     }
 
@@ -2543,6 +2563,8 @@ class MobileApiController extends Controller
                 'observaciones' => $item->observaciones,
                 'image_path' => $item->image_path ? (str_starts_with($item->image_path, 'http') ? $item->image_path : asset($item->image_path)) : ($imagesUrls[0] ?? null),
                 'images' => $imagesUrls,
+                'images' => $imagesUrls,
+                'image_urls' => $imagesUrls,
                 'location' => $item->location,
                 'latitude' => $item->latitude !== null ? (float) $item->latitude : null,
                 'longitude' => $item->longitude !== null ? (float) $item->longitude : null,
@@ -2717,6 +2739,9 @@ class MobileApiController extends Controller
         if (!empty($measurementId)) {
             $measurement = $module->rosaMeasurements()->find($measurementId);
         }
+        if (!$measurement && $request->filled('point_number')) {
+            $measurement = $module->rosaMeasurements()->where('point_number', $request->input('point_number'))->first();
+        }
 
         $existingCount = $module->rosaMeasurements()->count();
         $pointNumber = $request->input('point_number') ?? str_pad($existingCount + 1, 2, '0', STR_PAD_LEFT);
@@ -2743,8 +2768,8 @@ class MobileApiController extends Controller
             'ubicacion_sintoma' => $request->input('ubicacion_sintoma'),
             'tareas' => $tareas,
             'observaciones' => $request->input('observaciones'),
-            'image_path' => $uploadedImages[0] ?? null,
-            'images' => !empty($uploadedImages) ? $uploadedImages : null,
+            'image_path' => $uploadedImages[0] ?? ($measurement ? $measurement->image_path : null),
+            'images' => !empty($uploadedImages) ? $uploadedImages : ($measurement ? $measurement->images : null),
             'location' => $locationRaw,
             'latitude' => $latitude !== null ? (float) $latitude : null,
             'longitude' => $longitude !== null ? (float) $longitude : null,
@@ -2800,6 +2825,19 @@ class MobileApiController extends Controller
         $module->points_completed = $module->rosaMeasurements()->count();
         $module->save();
 
+        $finalImages = $measurement->images ?? $uploadedImages;
+        if (is_string($finalImages)) {
+            $finalImages = json_decode($finalImages, true) ?: [];
+        }
+        $formattedUrls = [];
+        if (is_array($finalImages)) {
+            foreach ($finalImages as $img) {
+                if (!empty($img)) {
+                    $formattedUrls[] = str_starts_with($img, 'http') ? $img : asset($img);
+                }
+            }
+        }
+
         return response()->json([
             'success' => true,
             'message' => "Evaluación ROSA #{$measurement->point_number} guardada exitosamente.",
@@ -2809,6 +2847,8 @@ class MobileApiController extends Controller
             'score_final' => $measurement->score_final,
             'risk_level' => $measurement->risk_level,
             'points_completed' => $module->points_completed,
+            'images' => $formattedUrls,
+            'image_urls' => $formattedUrls,
         ], $statusCode);
     }
 
@@ -2884,6 +2924,8 @@ class MobileApiController extends Controller
                 'ra_value' => $item->ra_value !== null ? (float) $item->ra_value : 1.0,
                 'image_path' => $item->image_path ? (str_starts_with($item->image_path, 'http') ? $item->image_path : asset($item->image_path)) : ($imagesUrls[0] ?? null),
                 'images' => $imagesUrls,
+                'images' => $imagesUrls,
+                'image_urls' => $imagesUrls,
                 'images_count' => count($imagesUrls),
                 'location' => $item->location,
                 'latitude' => $item->latitude !== null ? (float) $item->latitude : null,
@@ -3073,6 +3115,12 @@ class MobileApiController extends Controller
         if (!empty($measurementId)) {
             $measurement = $module->fireActivityMeasurements()->find($measurementId);
         }
+        if (!$measurement && $request->filled('point_number')) {
+            $measurement = $module->fireActivityMeasurements()->where('point_number', $request->input('point_number'))->first();
+        }
+        if (!$measurement && $request->filled('sector_name')) {
+            $measurement = $module->fireActivityMeasurements()->where('sector_name', $request->input('sector_name'))->first();
+        }
 
         $existingCount = $module->fireActivityMeasurements()->count();
         $pointNumber = $request->input('point_number') ?? str_pad($existingCount + 1, 2, '0', STR_PAD_LEFT);
@@ -3094,8 +3142,8 @@ class MobileApiController extends Controller
             'risk_level' => $riskLevel,
             'risk_color' => $riskColor,
             'ra_value' => $raValue,
-            'image_path' => $uploadedImages[0] ?? null,
-            'images' => !empty($uploadedImages) ? $uploadedImages : null,
+            'image_path' => $uploadedImages[0] ?? ($measurement ? $measurement->image_path : null),
+            'images' => !empty($uploadedImages) ? $uploadedImages : ($measurement ? $measurement->images : null),
             'location' => $locationRaw,
             'latitude' => $latitude !== null ? (float) $latitude : null,
             'longitude' => $longitude !== null ? (float) $longitude : null,
@@ -3117,6 +3165,19 @@ class MobileApiController extends Controller
         $module->points_completed = $module->fireActivityMeasurements()->count();
         $module->save();
 
+        $finalImages = $measurement->images ?? $uploadedImages;
+        if (is_string($finalImages)) {
+            $finalImages = json_decode($finalImages, true) ?: [];
+        }
+        $formattedUrls = [];
+        if (is_array($finalImages)) {
+            foreach ($finalImages as $img) {
+                if (!empty($img)) {
+                    $formattedUrls[] = str_starts_with($img, 'http') ? $img : asset($img);
+                }
+            }
+        }
+
         return response()->json([
             'success' => true,
             'message' => "Sector de Carga de Fuego por Actividad #{$measurement->point_number} guardado exitosamente.",
@@ -3126,6 +3187,8 @@ class MobileApiController extends Controller
             'qs_mj_m2' => $measurement->qs_mj_m2,
             'risk_level' => $measurement->risk_level,
             'points_completed' => $module->points_completed,
+            'images' => $formattedUrls,
+            'image_urls' => $formattedUrls,
         ], $statusCode);
     }
 
@@ -3201,6 +3264,8 @@ class MobileApiController extends Controller
                 'ra_value' => $item->ra_value !== null ? (float) $item->ra_value : 1.0,
                 'image_path' => $item->image_path ? (str_starts_with($item->image_path, 'http') ? $item->image_path : asset($item->image_path)) : ($imagesUrls[0] ?? null),
                 'images' => $imagesUrls,
+                'images' => $imagesUrls,
+                'image_urls' => $imagesUrls,
                 'images_count' => count($imagesUrls),
                 'location' => $item->location,
                 'latitude' => $item->latitude !== null ? (float) $item->latitude : null,
@@ -3388,6 +3453,12 @@ class MobileApiController extends Controller
         if (!empty($measurementId)) {
             $measurement = $module->fireWeightMeasurements()->find($measurementId);
         }
+        if (!$measurement && $request->filled('point_number')) {
+            $measurement = $module->fireWeightMeasurements()->where('point_number', $request->input('point_number'))->first();
+        }
+        if (!$measurement && $request->filled('sector_name')) {
+            $measurement = $module->fireWeightMeasurements()->where('sector_name', $request->input('sector_name'))->first();
+        }
 
         $existingCount = $module->fireWeightMeasurements()->count();
         $pointNumber = $request->input('point_number') ?? str_pad($existingCount + 1, 2, '0', STR_PAD_LEFT);
@@ -3409,8 +3480,8 @@ class MobileApiController extends Controller
             'risk_level' => $riskLevel,
             'risk_color' => $riskColor,
             'ra_value' => $raValue,
-            'image_path' => $uploadedImages[0] ?? null,
-            'images' => !empty($uploadedImages) ? $uploadedImages : null,
+            'image_path' => $uploadedImages[0] ?? ($measurement ? $measurement->image_path : null),
+            'images' => !empty($uploadedImages) ? $uploadedImages : ($measurement ? $measurement->images : null),
             'location' => $locationRaw,
             'latitude' => $latitude !== null ? (float) $latitude : null,
             'longitude' => $longitude !== null ? (float) $longitude : null,
@@ -3432,6 +3503,19 @@ class MobileApiController extends Controller
         $module->points_completed = $module->fireWeightMeasurements()->count();
         $module->save();
 
+        $finalImages = $measurement->images ?? $uploadedImages;
+        if (is_string($finalImages)) {
+            $finalImages = json_decode($finalImages, true) ?: [];
+        }
+        $formattedUrls = [];
+        if (is_array($finalImages)) {
+            foreach ($finalImages as $img) {
+                if (!empty($img)) {
+                    $formattedUrls[] = str_starts_with($img, 'http') ? $img : asset($img);
+                }
+            }
+        }
+
         return response()->json([
             'success' => true,
             'message' => "Sector de Carga de Fuego por Peso #{$measurement->point_number} guardado exitosamente.",
@@ -3441,6 +3525,8 @@ class MobileApiController extends Controller
             'qs_mj_m2' => $measurement->qs_mj_m2,
             'risk_level' => $measurement->risk_level,
             'points_completed' => $module->points_completed,
+            'images' => $formattedUrls,
+            'image_urls' => $formattedUrls,
         ], $statusCode);
     }
 
@@ -4715,6 +4801,7 @@ class MobileApiController extends Controller
                 'utm_zone' => $item->utm_zone,
                 'utm_easting' => $item->utm_easting !== null ? (float) $item->utm_easting : null,
                 'utm_northing' => $item->utm_northing !== null ? (float) $item->utm_northing : null,
+                'images' => $imagesUrls,
                 'image_urls' => $imagesUrls,
                 'observations' => $item->observations,
                 'registered_by' => $item->registered_by,
@@ -4933,6 +5020,7 @@ class MobileApiController extends Controller
             'area' => $measurement->area,
             'workstation' => $measurement->workstation,
             'local_uuid' => $measurement->local_uuid,
+            'images' => $finalUrls,
             'image_urls' => $finalUrls,
             'points_completed' => $module->points_completed,
         ], $statusCode);
@@ -5249,6 +5337,7 @@ class MobileApiController extends Controller
                 'utm_zone' => $item->utm_zone,
                 'utm_easting' => $item->utm_easting !== null ? (float) $item->utm_easting : null,
                 'utm_northing' => $item->utm_northing !== null ? (float) $item->utm_northing : null,
+                'images' => $imagesUrls,
                 'image_urls' => $imagesUrls,
                 'observations' => $item->observations,
                 'observaciones' => $item->observations,
@@ -5273,7 +5362,7 @@ class MobileApiController extends Controller
         $module = MeasurementModule::findOrFail($moduleId);
 
         $localUuid = $request->input('local_uuid');
-        $id = $request->input('id');
+        $id = $request->input('id') ?? $request->input('remote_id');
 
         $measurement = null;
         if (!empty($localUuid)) {
@@ -5281,6 +5370,9 @@ class MobileApiController extends Controller
         }
         if (!$measurement && !empty($id)) {
             $measurement = $module->particulasMeasurements()->find($id);
+        }
+        if (!$measurement && $request->filled('point_number')) {
+            $measurement = $module->particulasMeasurements()->where('point_number', $request->input('point_number'))->first();
         }
 
         $date = $request->input('measurement_date') ?? $request->input('date') ?? $request->input('measured_at') ?? Carbon::now()->format('Y-m-d');
@@ -5464,6 +5556,7 @@ class MobileApiController extends Controller
             'area' => $measurement->area,
             'punto_medicion' => $measurement->punto_medicion,
             'local_uuid' => $measurement->local_uuid,
+            'images' => $finalUrls,
             'image_urls' => $finalUrls,
             'points_completed' => $module->points_completed,
         ], $statusCode);
@@ -5556,7 +5649,8 @@ class MobileApiController extends Controller
                     'utm_zone' => $item->utm_zone,
                     'utm_easting' => $item->utm_easting !== null ? (float) $item->utm_easting : null,
                     'utm_northing' => $item->utm_northing !== null ? (float) $item->utm_northing : null,
-                    'image_urls' => $imagesUrls,
+                    'images' => $imagesUrls,
+                'image_urls' => $imagesUrls,
                     'observations' => $item->observations,
                     'observaciones' => $item->observations,
                     'registered_by' => $item->registered_by ?: $item->created_by,
@@ -5580,7 +5674,7 @@ class MobileApiController extends Controller
         $module = MeasurementModule::findOrFail($moduleId);
 
         $localUuid = $request->input('local_uuid');
-        $id = $request->input('id');
+        $id = $request->input('id') ?? $request->input('remote_id');
 
         $measurement = null;
         if (!empty($localUuid)) {
@@ -5588,6 +5682,9 @@ class MobileApiController extends Controller
         }
         if (!$measurement && !empty($id)) {
             $measurement = $module->particulasAmbientalesMeasurements()->find($id);
+        }
+        if (!$measurement && $request->filled('point_number')) {
+            $measurement = $module->particulasAmbientalesMeasurements()->where('point_number', $request->input('point_number'))->first();
         }
 
         $date = $request->input('measurement_date') ?? $request->input('date') ?? $request->input('fecha_inicio') ?? $request->input('measured_at') ?? Carbon::now()->format('Y-m-d');
@@ -5834,6 +5931,7 @@ class MobileApiController extends Controller
             'area' => $measurement->area,
             'punto_medicion' => $measurement->punto_medicion,
             'local_uuid' => $measurement->local_uuid,
+            'images' => $finalUrls,
             'image_urls' => $finalUrls,
             'points_completed' => $module->points_completed,
         ], $statusCode);
@@ -5984,8 +6082,8 @@ class MobileApiController extends Controller
             'created_by' => 'nullable|string|max:255',
             'staff_id' => 'nullable',
             'image_urls' => 'nullable',
-            'images.*' => 'nullable|image|max:15360',
-            'photos.*' => 'nullable|image|max:15360',
+            'images.*' => 'nullable|image|max:30720',
+            'photos.*' => 'nullable|image|max:30720',
         ]);
 
         $localUuid = $validated['local_uuid'] ?? null;
@@ -6069,6 +6167,24 @@ class MobileApiController extends Controller
         $area = $validated['area_trabajo'] ?? ($validated['area'] ?? 'General');
         $puesto = $validated['puesto_trabajo'] ?? ($validated['workstation'] ?? 'Operador');
 
+        $latitude = $validated['latitude'] ?? null;
+        $longitude = $validated['longitude'] ?? null;
+        $utmZone = $validated['utm_zone'] ?? '19K';
+        $utmEasting = $validated['utm_easting'] ?? null;
+        $utmNorthing = $validated['utm_northing'] ?? null;
+
+        if (($latitude === null || $longitude === null) && !empty($utmEasting) && !empty($utmNorthing)) {
+            $conv = $this->utmToLatLng($utmEasting, $utmNorthing, $utmZone ?: '19K');
+            $latitude = $conv['lat'];
+            $longitude = $conv['lng'];
+        }
+
+        $formattedUrls = array_values(array_filter(array_map(function ($p) {
+            if (!$p) return null;
+            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+            return asset($p);
+        }, $finalUrls)));
+
         $data = [
             'module_id' => $module->id,
             'point_number' => $pointNum,
@@ -6094,11 +6210,11 @@ class MobileApiController extends Controller
             'aeqy_mb' => $validated['aeqy_mb'] ?? 0.0,
             'aeqz_mb' => $validated['aeqz_mb'] ?? 0.0,
             'location' => is_array($validated['location'] ?? null) ? json_encode($validated['location']) : ($validated['location'] ?? null),
-            'latitude' => $validated['latitude'] ?? null,
-            'longitude' => $validated['longitude'] ?? null,
-            'utm_zone' => $validated['utm_zone'] ?? '19K',
-            'utm_easting' => $validated['utm_easting'] ?? null,
-            'utm_northing' => $validated['utm_northing'] ?? null,
+            'latitude' => $latitude !== null ? (float) $latitude : null,
+            'longitude' => $longitude !== null ? (float) $longitude : null,
+            'utm_zone' => $utmZone,
+            'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
+            'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
             'image_path' => $finalUrls[0] ?? null,
             'images' => $finalUrls,
             'image_urls' => $finalUrls,
@@ -6128,7 +6244,7 @@ class MobileApiController extends Controller
             'point_number' => $measurement->point_number,
             'codigo' => $measurement->codigo,
             'local_uuid' => $measurement->local_uuid,
-            'image_urls' => $finalUrls,
+            'image_urls' => $formattedUrls,
             'points_completed' => $module->points_completed,
         ], $statusCode);
     }
@@ -6265,8 +6381,8 @@ class MobileApiController extends Controller
             'created_by' => 'nullable|string|max:255',
             'staff_id' => 'nullable',
             'image_urls' => 'nullable',
-            'images.*' => 'nullable|image|max:15360',
-            'photos.*' => 'nullable|image|max:15360',
+            'images.*' => 'nullable|image|max:30720',
+            'photos.*' => 'nullable|image|max:30720',
         ]);
 
         $localUuid = $validated['local_uuid'] ?? null;
@@ -6410,6 +6526,7 @@ class MobileApiController extends Controller
             'point_number' => $measurement->point_number,
             'codigo' => $measurement->codigo,
             'local_uuid' => $measurement->local_uuid,
+            'images' => $finalUrls,
             'image_urls' => $finalUrls,
             'points_completed' => $module->points_completed,
         ], $statusCode);

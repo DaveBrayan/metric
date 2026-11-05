@@ -19,24 +19,25 @@
         <table class="modern-table" id="vibracionMasterTable">
             <thead>
                 <tr>
+                    <th style="width: 50px; text-align: center;">N°</th>
                     <th style="width: 75px; text-align: center;">Código</th>
                     <th style="width: 110px;">Fecha / Hora</th>
                     <th style="width: 155px;">Área / Puesto</th>
                     <th style="width: 150px;">Trabajador / Equipo</th>
                     <th style="width: 115px; text-align: center;">Tipo</th>
                     <th style="width: 80px; text-align: center;">T. Exp (h)</th>
-                    <th style="width: 90px; text-align: right;">Aeq X</th>
-                    <th style="width: 90px; text-align: right;">Aeq Y</th>
-                    <th style="width: 90px; text-align: right;">Aeq Z</th>
+                    <th style="width: 85px; text-align: right;">Aeq X</th>
+                    <th style="width: 85px; text-align: right;">Aeq Y</th>
+                    <th style="width: 85px; text-align: right;">Aeq Z</th>
                     <th style="width: 115px; text-align: right;">A(8) (m/s²)</th>
-                    <th style="width: 110px; text-align: center;">Evaluación</th>
+                    <th style="width: 115px; text-align: center;">Evaluación</th>
                     <th style="width: 75px; text-align: center;">Imágenes</th>
-                    <th style="width: 125px;">Registrado por</th>
+                    <th style="width: 130px;">Registrado por</th>
                     <th style="width: 95px; text-align: right;">Acciones</th>
                 </tr>
             </thead>
             <tbody id="vibracionTableBody">
-                @forelse($measurements as $item)
+                @forelse($measurements as $idx => $item)
                     @php
                         $isCE = $item['tipo'] === 'cuerpo_entero';
                         $statusClass = match($item['estado']) {
@@ -47,19 +48,26 @@
                         };
                         $numPhotos = !empty($item['images_urls']) ? count($item['images_urls']) : 0;
                         $firstPhoto = (!empty($item['images_urls']) && count($item['images_urls']) > 0) ? $item['images_urls'][0] : null;
+                        $rawNum = (string)($item['num'] ?? $item['point_number'] ?? ($idx + 1));
+                        $cleanNum = intval(preg_replace('/[^0-9]/', '', $rawNum)) ?: ($idx + 1);
                     @endphp
                     <tr class="illumination-data-row"
                         data-id="{{ $item['id'] }}"
-                        data-search="{{ strtolower($item['codigo'] . ' ' . $item['area'] . ' ' . $item['puesto_trabajo'] . ' ' . $item['trabajador_evaluado'] . ' ' . $item['maquina_equipo'] . ' ' . ($item['registered_by'] ?? '')) }}">
+                        data-search="{{ strtolower($cleanNum . ' ' . $item['codigo'] . ' ' . $item['area'] . ' ' . $item['puesto_trabajo'] . ' ' . $item['trabajador_evaluado'] . ' ' . $item['maquina_equipo'] . ' ' . ($item['registered_by'] ?? '')) }}">
 
-                        <!-- 1. Código -->
+                        <!-- 1. N° -->
+                        <td style="font-family: 'Outfit', sans-serif; font-weight: 800; color: #94a3b8; font-size: 13.5px; text-align: center;">
+                            {{ sprintf('%02d', $cleanNum) }}
+                        </td>
+
+                        <!-- 2. Código -->
                         <td style="text-align: center;">
-                            <span class="badge-code" style="color: #0284c7; background: #e0f2fe; border-color: #bae6fd;">
+                            <span class="badge-code" style="color: #0284c7; background: #e0f2fe; border: 1px solid #bae6fd;">
                                 {{ $item['codigo'] }}
                             </span>
                         </td>
 
-                        <!-- 2. Fecha / Hora -->
+                        <!-- 3. Fecha / Hora -->
                         <td>
                             <div style="display: flex; flex-direction: column; gap: 3px;">
                                 <span style="font-size: 12.5px; font-weight: 700; color: var(--ink);">{{ $item['date'] }}</span>
@@ -74,7 +82,7 @@
                             </div>
                         </td>
 
-                        <!-- 3. Área / Puesto -->
+                        <!-- 4. Área / Puesto -->
                         <td>
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <span style="font-weight: 700; color: var(--ink); font-size: 13px;">{{ $item['area'] }}</span>
@@ -83,7 +91,7 @@
                             </div>
                         </td>
 
-                        <!-- 4. Trabajador / Equipo -->
+                        <!-- 5. Trabajador / Equipo -->
                         <td>
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <span style="font-weight: 600; color: #334155; font-size: 12.5px;">{{ $item['trabajador_evaluado'] }}</span>
@@ -91,58 +99,82 @@
                             </div>
                         </td>
 
-                        <!-- 5. Tipo -->
+                        <!-- 6. Tipo -->
                         <td style="text-align: center;">
                             <span style="display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; background: {{ $isCE ? '#f0fdf4; color: #15803d; border: 1px solid #bbf7d0;' : '#eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;' }}">
                                 {{ $isCE ? 'Cuerpo Entero' : 'Mano-Brazo' }}
                             </span>
                         </td>
 
-                        <!-- 6. Tiempo de Exposición (h) -->
-                        <td style="text-align: center; font-weight: 700; color: #334155; font-size: 12px;">
-                            {{ number_format((float)$item['tiempo_expos_h'], 2, ',', '.') }} h
+                        <!-- 7. Tiempo de Exposición (h) -->
+                        <td style="text-align: center;">
+                            <span class="lux-req-code" style="font-size: 11px; padding: 2px 7px;">
+                                {{ number_format((float)$item['tiempo_expos_h'], 2, ',', '.') }} h
+                            </span>
                         </td>
 
-                        <!-- 7. Aeq X -->
+                        <!-- 8. Aeq X -->
                         <td style="text-align: right;">
                             <span style="font-family: monospace; font-size: 12px; color: #475569; font-weight: 600;">
                                 {{ number_format((float)$item['aeqx'], 4, ',', '.') }}
                             </span>
                         </td>
 
-                        <!-- 8. Aeq Y -->
+                        <!-- 9. Aeq Y -->
                         <td style="text-align: right;">
                             <span style="font-family: monospace; font-size: 12px; color: #475569; font-weight: 600;">
                                 {{ number_format((float)$item['aeqy'], 4, ',', '.') }}
                             </span>
                         </td>
 
-                        <!-- 9. Aeq Z -->
+                        <!-- 10. Aeq Z -->
                         <td style="text-align: right;">
                             <span style="font-family: monospace; font-size: 12px; color: #475569; font-weight: 600;">
                                 {{ number_format((float)$item['aeqz'], 4, ',', '.') }}
                             </span>
                         </td>
 
-                        <!-- 10. A(8) Normalizado -->
+                        <!-- 11. A(8) Normalizado -->
                         <td style="text-align: right;">
-                            <span class="lux-measured-badge {{ $statusClass }}" style="font-size: 11.5px; font-family: monospace;">
+                            <span class="lux-req-code" style="font-size: 12px; font-weight: 800; color: #1e293b; padding: 3px 8px;">
                                 {{ number_format((float)$item['a8'], 4, ',', '.') }} m/s²
                             </span>
                         </td>
 
-                        <!-- 11. Evaluación -->
+                        <!-- 12. Evaluación -->
                         <td style="text-align: center;">
-                            <span class="lux-measured-badge {{ $statusClass }}" style="font-size: 10.5px; padding: 2px 8px;">
-                                {{ $item['estado'] }}
-                            </span>
+                            @if($item['estado'] === 'CUMPLE')
+                                <span class="lux-measured-badge compliant" style="font-size: 11px; padding: 2px 8px;">
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                    <span>CUMPLE</span>
+                                </span>
+                            @elseif($item['estado'] === 'NIVEL DE ACCIÓN')
+                                <span class="lux-measured-badge warning" style="font-size: 10px; padding: 2px 7px;">
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <line x1="12" y1="8" x2="12" y2="12" />
+                                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                                    </svg>
+                                    <span>N. ACCIÓN</span>
+                                </span>
+                            @else
+                                <span class="lux-measured-badge non-compliant" style="font-size: 10.5px; padding: 2px 8px;">
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="18" y1="6" x2="6" y2="18" />
+                                        <line x1="6" y1="6" x2="18" y2="18" />
+                                    </svg>
+                                    <span>SUPERA</span>
+                                </span>
+                            @endif
                         </td>
 
-                        <!-- 12. Imágenes -->
+                        <!-- 13. Imágenes -->
                         <td style="text-align: center;">
                             @if(!empty($firstPhoto))
                                 <div class="table-thumb-preview"
-                                    onclick='openPhotoViewerModal(@json($item['images_urls']), "{{ $item['codigo'] }} - {{ addslashes($item['area']) }}")'
+                                    onclick='openPhotoViewerModal(@json($item['images_urls'] ?? $item['images'] ?? []), "{{ $item['codigo'] }} - {{ addslashes($item['area']) }}")'
                                     title="Ver fotografía ampliada">
                                     <img src="{{ $firstPhoto }}" alt="Foto">
                                     @if($numPhotos > 1)
@@ -162,14 +194,14 @@
                             @endif
                         </td>
 
-                        <!-- 13. Registrado por -->
+                        <!-- 14. Registrado por -->
                         <td>
                             <span class="badge-registered-staff" title="Registrado por: {{ $item['registered_by'] ?? $registeredByHeader }}">
                                 {{ $item['registered_by'] ?? $registeredByHeader }}
                             </span>
                         </td>
 
-                        <!-- 14. Acciones -->
+                        <!-- 15. Acciones -->
                         <td style="text-align: right;">
                             <div class="admin-actions-cell" style="justify-content: flex-end; gap: 8px;">
                                 <!-- Ver Detalle -->
@@ -187,13 +219,11 @@
                                 <button type="button" class="btn-admin-icon-action theme-danger"
                                     onclick="confirmDeleteVibracionMeasurement('{{ $item['id'] }}', '{{ $item['codigo'] }}')"
                                     title="Eliminar Punto" aria-label="Eliminar">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                         <polyline points="3 6 5 6 21 6" />
                                         <path
                                             d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                        <line x1="10" y1="11" x2="10" y2="17" />
-                                        <line x1="14" y1="11" x2="14" y2="17" />
                                     </svg>
                                 </button>
                             </div>
@@ -201,13 +231,28 @@
                     </tr>
                 @empty
                     <tr id="emptyTableRow">
-                        <td colspan="14" style="text-align: center; color: #64748b; padding: 36px;">
-                            No se han registrado puntos de monitoreo en este módulo de vibraciones ocupacionales.
+                        <td colspan="15">
+                            <div class="table-empty-state">
+                                <div class="empty-icon-wrap" style="color: #0284c7; background: #f0f9ff;">
+                                    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                                    </svg>
+                                </div>
+                                <h3>No hay mediciones de vibración registradas</h3>
+                                <p>Haz clic en "+ Nuevo Punto de Medición" para registrar la primera evaluación de vibración ocupacional (cuerpo entero o mano-brazo).</p>
+                                <button type="button" class="btn-primary-hero-action" onclick="openCreateMeasurementModal()">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+                                        <line x1="12" y1="5" x2="12" y2="19" />
+                                        <line x1="5" y1="12" x2="19" y2="12" />
+                                    </svg>
+                                    <span>Registrar Primera Medición</span>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 @endforelse
                 <tr id="noResultsSearchRow" style="display: none;">
-                    <td colspan="14" style="text-align: center; color: #64748b; padding: 36px;">
+                    <td colspan="15" style="text-align: center; color: #64748b; padding: 36px; font-weight: 500;">
                         No se encontraron puntos de monitoreo que coincidan con la búsqueda.
                     </td>
                 </tr>
@@ -216,12 +261,12 @@
     </div>
 
     <!-- Barra de Paginación Reactiva (10 por página) -->
-    <div class="illumination-pagination-container" id="vibracionPaginationBar">
-        <div class="illumination-pagination-info" id="vibracionPaginationInfo">
-            Mostrando <strong id="vibPageStart">1</strong> a <strong id="vibPageEnd">10</strong> de <strong
-                id="vibPageTotal">{{ $measurements->count() }}</strong> puntos de monitoreo
+    <div class="illumination-pagination-container vibracion-pagination-container" id="vibracionPaginationBar">
+        <div class="illumination-pagination-info vibracion-pagination-info" id="vibracionPaginationInfo">
+            Mostrando <strong id="vibPageStart">1</strong> a <strong id="vibPageEnd">{{ min(10, count($measurements)) }}</strong> de <strong
+                id="vibPageTotal">{{ $totalMeasurements }}</strong> puntos de monitoreo
         </div>
-        <div class="illumination-pagination-controls" id="vibracionPaginationControls">
+        <div class="illumination-pagination-controls vibracion-pagination-controls" id="vibracionPaginationControls">
             <!-- Dinámico por JS -->
         </div>
     </div>
