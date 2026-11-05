@@ -199,4 +199,109 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Barra de Paginación Reactiva (10 por página) -->
+    <div class="illumination-pagination-container" id="photographicPaginationBar">
+        <div class="illumination-pagination-info" id="photographicPaginationInfo">
+            Mostrando <strong id="photoPageStart">1</strong> a <strong id="photoPageEnd">10</strong> de <strong
+                id="photoPageTotal">{{ $measurements->count() }}</strong> puntos de inspección
+        </div>
+        <div class="illumination-pagination-controls" id="photographicPaginationControls">
+            <!-- Dinámico por JS -->
+        </div>
+    </div>
 </div>
+
+<script>
+    let currentPhotoPage = 1;
+    const PHOTO_PAGE_SIZE = 10;
+
+    function getPhotoMatchingRows() {
+        const query = (document.getElementById('photographicSearchInput')?.value || '').trim().toLowerCase();
+        const allRows = Array.from(document.querySelectorAll('#photographicMasterTable tbody tr.photographic-data-row'));
+        if (!query) return allRows;
+        return allRows.filter(row => {
+            const data = (row.getAttribute('data-search') || '').toLowerCase();
+            return data.includes(query);
+        });
+    }
+
+    function updatePhotoPagination() {
+        const allRows = Array.from(document.querySelectorAll('#photographicMasterTable tbody tr.photographic-data-row'));
+        const matchingRows = getPhotoMatchingRows();
+        const totalItems = matchingRows.length;
+        const totalPages = Math.max(1, Math.ceil(totalItems / PHOTO_PAGE_SIZE));
+
+        if (currentPhotoPage > totalPages) currentPhotoPage = totalPages;
+        if (currentPhotoPage < 1) currentPhotoPage = 1;
+
+        const startIdx = (currentPhotoPage - 1) * PHOTO_PAGE_SIZE;
+        const endIdx = startIdx + PHOTO_PAGE_SIZE;
+
+        allRows.forEach(row => row.style.display = 'none');
+        matchingRows.slice(startIdx, endIdx).forEach(row => row.style.display = '');
+
+        const emptyRow = document.getElementById('emptyTableRow');
+        if (emptyRow) {
+            emptyRow.style.display = totalItems === 0 && allRows.length === 0 ? '' : 'none';
+        }
+
+        const startLabel = totalItems === 0 ? 0 : startIdx + 1;
+        const endLabel = Math.min(endIdx, totalItems);
+
+        const pageStartEl = document.getElementById('photoPageStart');
+        const pageEndEl = document.getElementById('photoPageEnd');
+        const pageTotalEl = document.getElementById('photoPageTotal');
+        if (pageStartEl) pageStartEl.textContent = startLabel;
+        if (pageEndEl) pageEndEl.textContent = endLabel;
+        if (pageTotalEl) pageTotalEl.textContent = totalItems;
+
+        renderPhotoPaginationControls(totalPages);
+    }
+
+    function renderPhotoPaginationControls(totalPages) {
+        const container = document.getElementById('photographicPaginationControls');
+        if (!container) return;
+
+        if (totalPages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        let html = '';
+        html += `<button type="button" class="ill-pag-btn" onclick="goToPhotoPage(${currentPhotoPage - 1})" ${currentPhotoPage <= 1 ? 'disabled' : ''} aria-label="Página anterior">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </button>`;
+
+        for (let p = 1; p <= totalPages; p++) {
+            if (p === 1 || p === totalPages || (p >= currentPhotoPage - 1 && p <= currentPhotoPage + 1)) {
+                html += `<button type="button" class="ill-pag-btn ${p === currentPhotoPage ? 'active' : ''}" onclick="goToPhotoPage(${p})">${p}</button>`;
+            } else if (p === currentPhotoPage - 2 || p === currentPhotoPage + 2) {
+                html += `<span style="color:#94a3b8; padding:0 3px;">...</span>`;
+            }
+        }
+
+        html += `<button type="button" class="ill-pag-btn" onclick="goToPhotoPage(${currentPhotoPage + 1})" ${currentPhotoPage >= totalPages ? 'disabled' : ''} aria-label="Página siguiente">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>`;
+
+        container.innerHTML = html;
+    }
+
+    function goToPhotoPage(page) {
+        currentPhotoPage = page;
+        updatePhotoPagination();
+    }
+
+    window.searchPhotographicLive = function() {
+        currentPhotoPage = 1;
+        updatePhotoPagination();
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updatePhotoPagination();
+    });
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(updatePhotoPagination, 50);
+    }
+</script>

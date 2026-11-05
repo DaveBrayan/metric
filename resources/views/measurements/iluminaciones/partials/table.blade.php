@@ -144,20 +144,22 @@
                                 </div>
                             </td>
 
-                            <!-- 9. Imágenes (con indicador de fotos) -->
+                            <!-- 9. Imágenes (con indicador de fotos y visor con flechas) -->
                             <td style="text-align: center;">
-                                @if(!empty($m['image_path']))
+                                @php
+                                    $illPointPhotos = !empty($m['images']) ? $m['images'] : (!empty($m['image_path']) ? [$m['image_path']] : []);
+                                @endphp
+                                @if(!empty($illPointPhotos) && count($illPointPhotos) > 0)
                                     <div class="table-thumb-preview"
-                                        onclick="openPhotoViewer('{{ $m['image_path'] }}', 'Punto {{ $m['num'] }}: {{ addslashes($m['measurement_point']) }}')"
+                                        onclick='openPhotoViewer(@json($illPointPhotos), "Punto {{ $m['num'] }}: {{ addslashes($m['measurement_point']) }}")'
                                         title="Ver fotografía ampliada">
-                                        <img src="{{ $m['image_path'] }}" alt="Foto">
-                                        @if(!empty($m['images_count']) && $m['images_count'] > 1)
-                                            <span
-                                                style="position: absolute; bottom: 2px; right: 2px; background: rgba(15, 23, 42, 0.85); color: #fff; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 4px;">{{ $m['images_count'] }}</span>
+                                        <img src="{{ $illPointPhotos[0] }}" alt="Foto">
+                                        @if(count($illPointPhotos) > 1)
+                                            <span class="table-thumb-count-badge">{{ count($illPointPhotos) }}</span>
                                         @endif
                                     </div>
                                 @else
-                                    <div class="table-thumb-preview" style="cursor: default; opacity: 0.5;"
+                                    <div class="table-thumb-preview empty"
                                         title="Sin fotografía registrada">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8"
                                             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">

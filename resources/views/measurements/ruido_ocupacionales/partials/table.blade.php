@@ -117,16 +117,17 @@
                         <!-- 8. Imágenes -->
                         <td style="text-align: center; vertical-align: middle;">
                             @php
-                                $imgSrc = !empty($m['image_path']) ? $m['image_path'] : (!empty($m['images']) && count($m['images']) > 0 ? $m['images'][0] : null);
-                                $imgCount = !empty($m['images_count']) ? $m['images_count'] : (!empty($m['images']) ? count($m['images']) : 0);
+                                $ruidoPhotos = !empty($m['images']) ? $m['images'] : (!empty($m['photos']) ? $m['photos'] : (!empty($m['image_path']) ? [$m['image_path']] : []));
+                                $imgSrc = !empty($ruidoPhotos) ? $ruidoPhotos[0] : null;
+                                $imgCount = count($ruidoPhotos);
                             @endphp
                             @if(!empty($imgSrc))
                                 <div class="table-thumb-preview"
-                                    onclick="openPhotoViewer('{{ $imgSrc }}', 'Punto {{ $m['num'] }}: {{ addslashes($m['punto_medicion'] ?: $m['area']) }}')"
+                                    onclick='openPhotoViewer(@json($ruidoPhotos), "Punto {{ $m['num'] }}: {{ addslashes($m['punto_medicion'] ?: $m['area']) }}")'
                                     title="Ver fotografía ampliada">
                                     <img src="{{ $imgSrc }}" alt="Foto">
                                     @if($imgCount > 1)
-                                        <span class="thumb-count-badge">{{ $imgCount }}</span>
+                                        <span class="table-thumb-count-badge">{{ $imgCount }}</span>
                                     @endif
                                 </div>
                             @else

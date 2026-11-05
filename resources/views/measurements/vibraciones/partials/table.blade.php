@@ -174,11 +174,11 @@
                         <td style="text-align: center;">
                             @if(!empty($firstPhoto))
                                 <div class="table-thumb-preview"
-                                    onclick='openPhotoViewerModal(@json($item['images_urls'] ?? $item['images'] ?? []), "{{ $item['codigo'] }} - {{ addslashes($item['area']) }}")'
+                                    onclick='openPhotoViewer(@json($item["images_urls"] ?? $item["images"] ?? [$firstPhoto]), "{{ $item["codigo"] }} - {{ addslashes($item["area"]) }}")'
                                     title="Ver fotografía ampliada">
                                     <img src="{{ $firstPhoto }}" alt="Foto">
                                     @if($numPhotos > 1)
-                                        <span style="position: absolute; bottom: 2px; right: 2px; background: rgba(15, 23, 42, 0.85); color: #fff; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 4px;">{{ $numPhotos }}</span>
+                                        <span class="table-thumb-count-badge">{{ $numPhotos }}</span>
                                     @endif
                                 </div>
                             @else

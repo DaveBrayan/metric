@@ -121,17 +121,20 @@
 
                         <!-- 10. Imágenes -->
                         <td style="text-align: center;">
-                            @if(!empty($m['photos']) && count($m['photos']) > 0)
+                            @php
+                                $pointPhotos = !empty($m['photos']) ? $m['photos'] : (!empty($m['image_path']) ? [$m['image_path']] : []);
+                            @endphp
+                            @if(!empty($pointPhotos) && count($pointPhotos) > 0)
                                 <div class="table-thumb-preview"
-                                    onclick="openPhotoViewer('{{ $m['photos'][0] }}', 'Vehículo {{ $m['placa'] ?: $m['num'] }}')"
+                                    onclick='openPhotoViewer(@json($pointPhotos), "Vehículo {{ addslashes($m['placa'] ?: $m['num']) }}")'
                                     title="Ver fotografía ampliada">
-                                    <img src="{{ $m['photos'][0] }}" alt="Foto">
-                                    @if(count($m['photos']) > 1)
-                                        <span style="position: absolute; bottom: 2px; right: 2px; background: rgba(15, 23, 42, 0.85); color: #fff; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 4px;">{{ count($m['photos']) }}</span>
+                                    <img src="{{ $pointPhotos[0] }}" alt="Foto">
+                                    @if(count($pointPhotos) > 1)
+                                        <span class="table-thumb-count-badge">{{ count($pointPhotos) }}</span>
                                     @endif
                                 </div>
                             @else
-                                <div class="table-thumb-preview" style="cursor: default; opacity: 0.5;" title="Sin fotografía registrada">
+                                <div class="table-thumb-preview empty" title="Sin fotografía registrada">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                         <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
                                         <circle cx="9" cy="9" r="2" />
@@ -188,16 +191,105 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Barra de Paginación Reactiva (10 por página) -->
+    <div class="illumination-pagination-container" id="opacityPaginationBar">
+        <div class="illumination-pagination-info" id="opacityPaginationInfo">
+            Mostrando <strong id="opaPageStart">1</strong> a <strong id="opaPageEnd">10</strong> de <strong
+                id="opaPageTotal">{{ count($measurements) }}</strong> vehículos registrados
+        </div>
+        <div class="illumination-pagination-controls" id="opacityPaginationControls">
+            <!-- Dinámico por JS -->
+        </div>
+    </div>
 </div>
 
 <script>
-    function searchOpacityTable() {
-        const query = document.getElementById('opacitySearchInput').value.trim().toLowerCase();
-        const rows = document.querySelectorAll('.opacity-row-item');
-        rows.forEach(row => {
-            const searchData = row.getAttribute('data-search') || '';
-            row.style.display = searchData.includes(query) ? '' : 'none';
+    let currentOpacityPage = 1;
+    const OPACITY_PAGE_SIZE = 10;
+
+    function getOpacityMatchingRows() {
+        const query = (document.getElementById('opacitySearchInput')?.value || '').trim().toLowerCase();
+        const allRows = Array.from(document.querySelectorAll('#opacityMasterTable tbody tr.opacity-row-item'));
+        if (!query) return allRows;
+        return allRows.filter(row => {
+            const data = (row.getAttribute('data-search') || '').toLowerCase();
+            return data.includes(query);
         });
+    }
+
+    function updateOpacityPagination() {
+        const allRows = Array.from(document.querySelectorAll('#opacityMasterTable tbody tr.opacity-row-item'));
+        const matchingRows = getOpacityMatchingRows();
+        const totalItems = matchingRows.length;
+        const totalPages = Math.max(1, Math.ceil(totalItems / OPACITY_PAGE_SIZE));
+
+        if (currentOpacityPage > totalPages) currentOpacityPage = totalPages;
+        if (currentOpacityPage < 1) currentOpacityPage = 1;
+
+        const startIdx = (currentOpacityPage - 1) * OPACITY_PAGE_SIZE;
+        const endIdx = startIdx + OPACITY_PAGE_SIZE;
+
+        allRows.forEach(row => row.style.display = 'none');
+        matchingRows.slice(startIdx, endIdx).forEach(row => row.style.display = '');
+
+        const startLabel = totalItems === 0 ? 0 : startIdx + 1;
+        const endLabel = Math.min(endIdx, totalItems);
+
+        const pageStartEl = document.getElementById('opaPageStart');
+        const pageEndEl = document.getElementById('opaPageEnd');
+        const pageTotalEl = document.getElementById('opaPageTotal');
+        if (pageStartEl) pageStartEl.textContent = startLabel;
+        if (pageEndEl) pageEndEl.textContent = endLabel;
+        if (pageTotalEl) pageTotalEl.textContent = totalItems;
+
+        renderOpacityPaginationControls(totalPages);
+    }
+
+    function renderOpacityPaginationControls(totalPages) {
+        const container = document.getElementById('opacityPaginationControls');
+        if (!container) return;
+
+        if (totalPages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        let html = '';
+        html += `<button type="button" class="ill-pag-btn" onclick="goToOpacityPage(${currentOpacityPage - 1})" ${currentOpacityPage <= 1 ? 'disabled' : ''} aria-label="Página anterior">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </button>`;
+
+        for (let p = 1; p <= totalPages; p++) {
+            if (p === 1 || p === totalPages || (p >= currentOpacityPage - 1 && p <= currentOpacityPage + 1)) {
+                html += `<button type="button" class="ill-pag-btn ${p === currentOpacityPage ? 'active' : ''}" onclick="goToOpacityPage(${p})">${p}</button>`;
+            } else if (p === currentOpacityPage - 2 || p === currentOpacityPage + 2) {
+                html += `<span style="color:#94a3b8; padding:0 3px;">...</span>`;
+            }
+        }
+
+        html += `<button type="button" class="ill-pag-btn" onclick="goToOpacityPage(${currentOpacityPage + 1})" ${currentOpacityPage >= totalPages ? 'disabled' : ''} aria-label="Página siguiente">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>`;
+
+        container.innerHTML = html;
+    }
+
+    function goToOpacityPage(page) {
+        currentOpacityPage = page;
+        updateOpacityPagination();
+    }
+
+    function searchOpacityTable() {
+        currentOpacityPage = 1;
+        updateOpacityPagination();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updateOpacityPagination();
+    });
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(updateOpacityPagination, 50);
     }
 
     function confirmDeleteMeasurement(id, placa) {

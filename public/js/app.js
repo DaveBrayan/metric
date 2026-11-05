@@ -148,3 +148,124 @@ window.metricAlert = function({ title, text, icon = 'success', timer = 2500 }) {
         iconColor: icon === 'error' ? '#ef4444' : (icon === 'warning' ? '#f59e0b' : '#10b9df')
     });
 };
+
+/* ==========================================================================
+   METRIC v2 Universal Photo Viewer with Navigation Arrows & Keyboard Support
+   ========================================================================== */
+let globalViewerImages = [];
+let globalViewerIndex = 0;
+
+window.openPhotoViewer = function(images, pointTitle = 'Fotografía del Punto', startIndex = 0) {
+    if (!images) return;
+    
+    if (typeof images === 'string') {
+        try {
+            const parsed = JSON.parse(images);
+            globalViewerImages = Array.isArray(parsed) ? parsed : [images];
+        } catch (e) {
+            globalViewerImages = [images];
+        }
+    } else if (Array.isArray(images)) {
+        globalViewerImages = images.filter(Boolean);
+    } else {
+        globalViewerImages = [];
+    }
+
+    if (globalViewerImages.length === 0) return;
+
+    globalViewerIndex = Math.max(0, Math.min(startIndex, globalViewerImages.length - 1));
+
+    const modal = document.getElementById('photoViewerModal');
+    const titleEl = document.getElementById('photoViewerTitle');
+    if (titleEl) titleEl.textContent = pointTitle;
+
+    renderGlobalPhotoViewer();
+
+    if (modal) {
+        modal.classList.add('open');
+        modal.style.display = 'flex';
+    }
+};
+
+window.openPhotoViewerModal = function(images, startIndex = 0, pointTitle = 'Fotografía de Medición') {
+    window.openPhotoViewer(images, pointTitle, startIndex);
+};
+
+window.closePhotoViewer = function() {
+    const modal = document.getElementById('photoViewerModal');
+    if (modal) {
+        modal.classList.remove('open');
+        modal.style.display = 'none';
+    }
+};
+
+window.closePhotoViewerModal = window.closePhotoViewer;
+
+window.navigatePhotoViewer = function(delta) {
+    if (globalViewerImages.length <= 1) return;
+    globalViewerIndex = (globalViewerIndex + delta + globalViewerImages.length) % globalViewerImages.length;
+    renderGlobalPhotoViewer();
+};
+
+window.selectGlobalPhotoViewerIndex = function(index) {
+    if (index >= 0 && index < globalViewerImages.length) {
+        globalViewerIndex = index;
+        renderGlobalPhotoViewer();
+    }
+};
+
+function renderGlobalPhotoViewer() {
+    const imgEl = document.getElementById('photoViewerImg') || document.getElementById('photoViewerMainImage') || document.getElementById('photoViewerImage');
+    const counterEl = document.getElementById('photoViewerCounter');
+    const prevBtn = document.getElementById('photoViewerPrevBtn');
+    const nextBtn = document.getElementById('photoViewerNextBtn');
+    const stripEl = document.getElementById('photoViewerThumbnailsStrip');
+
+    const total = globalViewerImages.length;
+    const currentSrc = globalViewerImages[globalViewerIndex];
+
+    if (imgEl) {
+        imgEl.src = currentSrc;
+        imgEl.style.display = 'block';
+    }
+
+    if (counterEl) {
+        if (total > 1) {
+            counterEl.textContent = `Foto ${globalViewerIndex + 1} de ${total}`;
+            counterEl.style.display = 'inline-block';
+        } else {
+            counterEl.textContent = '';
+            counterEl.style.display = 'none';
+        }
+    }
+
+    if (prevBtn) prevBtn.style.display = total > 1 ? 'grid' : 'none';
+    if (nextBtn) nextBtn.style.display = total > 1 ? 'grid' : 'none';
+
+    if (stripEl) {
+        if (total > 1) {
+            stripEl.style.display = 'flex';
+            stripEl.innerHTML = globalViewerImages.map((src, i) => `
+                <div class="viewer-thumb-item ${i === globalViewerIndex ? 'active' : ''}"
+                     onclick="selectGlobalPhotoViewerIndex(${i})"
+                     title="Ver foto ${i + 1}">
+                    <img src="${src}" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+            `).join('');
+        } else {
+            stripEl.innerHTML = '';
+            stripEl.style.display = 'none';
+        }
+    }
+}
+
+// Global Keyboard Navigation (Esc, ArrowLeft, ArrowRight)
+document.addEventListener('keydown', (e) => {
+    const modal = document.getElementById('photoViewerModal');
+    if (modal && (modal.classList.contains('open') || modal.style.display === 'flex')) {
+        if (e.key === 'Escape') closePhotoViewer();
+        if (e.key === 'ArrowLeft') navigatePhotoViewer(-1);
+        if (e.key === 'ArrowRight') navigatePhotoViewer(1);
+    }
+});
+

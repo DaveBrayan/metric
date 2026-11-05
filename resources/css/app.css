@@ -1593,3 +1593,205 @@ table.modern-table tr:last-child td {
     color: #0f172a !important;
 }
 
+/* ==========================================================================
+   METRIC v2 Universal Table Image Preview & Badges
+   ========================================================================== */
+.table-thumb-preview {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    border: 1.5px solid #cbd5e1;
+    overflow: hidden;
+    background: #f8fafc;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.table-thumb-preview:hover {
+    transform: scale(1.08);
+    border-color: var(--cyan, #10b9df);
+    box-shadow: 0 4px 10px rgba(16, 185, 223, 0.25);
+}
+
+.table-thumb-preview.empty {
+    cursor: default !important;
+    opacity: 0.5;
+}
+
+.table-thumb-preview.empty:hover {
+    transform: none;
+    border-color: #cbd5e1;
+    box-shadow: none;
+}
+
+.table-thumb-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.table-thumb-count-badge {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    background: rgba(15, 23, 42, 0.85);
+    color: #ffffff;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 1px 4px;
+    border-radius: 4px;
+    line-height: 1.1;
+}
+
+.badge-registered-staff {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1e293b;
+    background: #f8fafc;
+    padding: 4px 9px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.table-time-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    font-family: monospace;
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    width: fit-content;
+}
+
+/* ==========================================================================
+   METRIC v2 Universal Table Reactive Pagination
+   ========================================================================== */
+.illumination-pagination-container,
+.metric-pagination-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: #ffffff;
+    border-top: 1px solid rgba(226, 232, 240, 0.9);
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.illumination-pagination-info,
+.metric-pagination-info {
+    font-size: 12.5px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.illumination-pagination-info strong,
+.metric-pagination-info strong {
+    color: var(--ink, #0f1c2e);
+    font-weight: 700;
+}
+
+.illumination-pagination-controls,
+.metric-pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pagination-btn-pill,
+.ill-pag-btn {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.pagination-btn-pill:hover:not(:disabled),
+.ill-pag-btn:hover:not(:disabled) {
+    border-color: var(--cyan, #10b9df);
+    color: var(--cyan-dark, #0284c7);
+    background: #f0f9ff;
+}
+
+.pagination-btn-pill.active,
+.ill-pag-btn.active {
+    background: linear-gradient(135deg, #10b9df 0%, #0799a7 100%) !important;
+    border-color: transparent !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 223, 0.35);
+}
+
+.pagination-btn-pill:disabled,
+.ill-pag-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    border-color: #e2e8f0;
+}
+
+/* ==========================================================================
+   Photo Viewer Modal with Navigation Arrows & Thumbnails
+   ========================================================================== */
+#photoViewerModal.open {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+#photoViewerPrevBtn:hover,
+#photoViewerNextBtn:hover {
+    background: rgba(16, 185, 223, 0.9) !important;
+    border-color: #ffffff !important;
+    transform: translateY(-50%) scale(1.08) !important;
+}
+
+.viewer-thumb-item {
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    opacity: 0.6;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.viewer-thumb-item:hover {
+    opacity: 0.9;
+    transform: scale(1.05);
+}
+
+.viewer-thumb-item.active {
+    border-color: #10b9df !important;
+    opacity: 1 !important;
+    box-shadow: 0 0 10px rgba(16, 185, 223, 0.6);
+}
+
+

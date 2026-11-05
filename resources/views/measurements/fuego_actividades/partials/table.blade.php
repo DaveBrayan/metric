@@ -146,13 +146,16 @@
 
                             <!-- 8. Imágenes (con indicador de fotos) -->
                             <td style="text-align: center;">
-                                @if(!empty($m['image_path']))
+                                @php
+                                    $faPhotos = !empty($m['images']) ? $m['images'] : (!empty($m['photos']) ? $m['photos'] : (!empty($m['image_path']) ? [$m['image_path']] : []));
+                                @endphp
+                                @if(!empty($faPhotos) && count($faPhotos) > 0)
                                     <div class="table-thumb-preview"
-                                        onclick="openPhotoViewer('{{ $m['image_path'] }}', 'Sector {{ $m['num'] }}: {{ addslashes($m['sector_name']) }}')"
+                                        onclick='openPhotoViewer(@json($faPhotos), "Sector {{ $m['num'] }}: {{ addslashes($m['sector_name']) }}")'
                                         title="Ver fotografía ampliada">
-                                        <img src="{{ $m['image_path'] }}" alt="Foto">
-                                        @if(!empty($m['images_count']) && $m['images_count'] > 1)
-                                            <span style="position: absolute; bottom: 2px; right: 2px; background: rgba(15, 23, 42, 0.85); color: #fff; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 4px;">{{ $m['images_count'] }}</span>
+                                        <img src="{{ $faPhotos[0] }}" alt="Foto">
+                                        @if(count($faPhotos) > 1)
+                                            <span class="table-thumb-count-badge">{{ count($faPhotos) }}</span>
                                         @endif
                                     </div>
                                 @else

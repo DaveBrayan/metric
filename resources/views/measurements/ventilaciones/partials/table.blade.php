@@ -122,13 +122,16 @@
 
                             <!-- 9. Imágenes -->
                             <td style="text-align: center;">
-                                @if(!empty($m['image_path']))
+                                @php
+                                    $ventPhotos = !empty($m['images']) ? $m['images'] : (!empty($m['photos']) ? $m['photos'] : (!empty($m['image_path']) ? [$m['image_path']] : []));
+                                @endphp
+                                @if(!empty($ventPhotos) && count($ventPhotos) > 0)
                                     <div class="table-thumb-preview"
-                                        onclick="openPhotoViewer('{{ $m['image_path'] }}', 'Punto {{ $m['num'] }}: {{ addslashes($m['local_trabajo']) }}')"
+                                        onclick='openPhotoViewer(@json($ventPhotos), "Punto {{ $m['num'] }}: {{ addslashes($m['local_trabajo']) }}")'
                                         title="Ver evidencia fotográfica">
-                                        <img src="{{ $m['image_path'] }}" alt="Foto">
-                                        @if(!empty($m['images_count']) && $m['images_count'] > 1)
-                                            <span class="thumb-count-badge">{{ $m['images_count'] }}</span>
+                                        <img src="{{ $ventPhotos[0] }}" alt="Foto">
+                                        @if(count($ventPhotos) > 1)
+                                            <span class="table-thumb-count-badge">{{ count($ventPhotos) }}</span>
                                         @endif
                                     </div>
                                 @else

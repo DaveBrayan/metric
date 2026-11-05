@@ -129,13 +129,16 @@
 
                             <!-- 8. Imágenes -->
                             <td style="text-align: center;">
-                                @if(!empty($m['image_path']))
+                                @php
+                                    $dosiPhotos = !empty($m['images']) ? $m['images'] : (!empty($m['photos']) ? $m['photos'] : (!empty($m['image_path']) ? [$m['image_path']] : []));
+                                @endphp
+                                @if(!empty($dosiPhotos) && count($dosiPhotos) > 0)
                                     <div class="table-thumb-preview"
-                                        onclick="openPhotoViewer('{{ $m['image_path'] }}', 'Punto {{ $m['num'] }}: {{ addslashes($m['punto_medicion']) }}')"
+                                        onclick='openPhotoViewer(@json($dosiPhotos), "Punto {{ $m['num'] }}: {{ addslashes($m['punto_medicion']) }}")'
                                         title="Ver fotografía ampliada">
-                                        <img src="{{ $m['image_path'] }}" alt="Foto">
-                                        @if(!empty($m['images_count']) && $m['images_count'] > 1)
-                                            <span class="thumb-count-badge">{{ $m['images_count'] }}</span>
+                                        <img src="{{ $dosiPhotos[0] }}" alt="Foto">
+                                        @if(count($dosiPhotos) > 1)
+                                            <span class="table-thumb-count-badge">{{ count($dosiPhotos) }}</span>
                                         @endif
                                     </div>
                                 @else
