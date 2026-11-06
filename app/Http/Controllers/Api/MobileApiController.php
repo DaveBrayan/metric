@@ -35,6 +35,8 @@ use App\Http\Controllers\ErgonomiaRosaController;
 use App\Http\Controllers\GasesController;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
@@ -405,7 +407,9 @@ class MobileApiController extends Controller
             $module->points_completed = $module->noiseMeasurements()->count();
             $module->save();
 
-            $finalImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
+            $finalImages = is_array($measurement->images)
+                ? $measurement->images
+                : ($measurement->images ? (json_decode($measurement->images, true) ?: []) : []);
             $finalUrls = array_values(array_filter(array_map(function ($p) {
                 if (!$p)
                     return null;
@@ -4017,7 +4021,9 @@ class MobileApiController extends Controller
             $module->points_completed = $module->dosimetryMeasurements()->count();
             $module->save();
 
-            $finalImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
+            $finalImages = is_array($measurement->images)
+                ? $measurement->images
+                : ($measurement->images ? (json_decode($measurement->images, true) ?: []) : []);
             $finalUrls = array_values(array_filter(array_map(function ($p) {
                 if (!$p)
                     return null;
@@ -4954,15 +4960,19 @@ class MobileApiController extends Controller
         $velAire = $request->filled('vel_aire') ? (float) $request->input('vel_aire') : null;
 
         $rawSelectedGases = $request->input('selected_gases');
-        $selectedGases = is_array($rawSelectedGases) ? $rawSelectedGases : (json_decode($rawSelectedGases, true) ?: []);
+        $selectedGases = is_array($rawSelectedGases)
+            ? $rawSelectedGases
+            : (!empty($rawSelectedGases) ? (json_decode($rawSelectedGases, true) ?: []) : []);
         if (is_string($selectedGases)) {
-            $selectedGases = json_decode($selectedGases, true) ?: [];
+            $selectedGases = !empty($selectedGases) ? (json_decode($selectedGases, true) ?: []) : [];
         }
 
         $rawGasesReadings = $request->input('gases_readings');
-        $gasesReadings = is_array($rawGasesReadings) ? $rawGasesReadings : (json_decode($rawGasesReadings, true) ?: []);
+        $gasesReadings = is_array($rawGasesReadings)
+            ? $rawGasesReadings
+            : (!empty($rawGasesReadings) ? (json_decode($rawGasesReadings, true) ?: []) : []);
         if (is_string($gasesReadings)) {
-            $gasesReadings = json_decode($gasesReadings, true) ?: [];
+            $gasesReadings = !empty($gasesReadings) ? (json_decode($gasesReadings, true) ?: []) : [];
         }
 
         if (empty($selectedGases) && is_array($gasesReadings) && !empty($gasesReadings)) {
@@ -5157,7 +5167,9 @@ class MobileApiController extends Controller
             $module->points_completed = $module->gasMeasurements()->count();
             $module->save();
 
-            $finalImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
+            $finalImages = is_array($measurement->images)
+                ? $measurement->images
+                : ($measurement->images ? (json_decode($measurement->images, true) ?: []) : []);
             $finalUrls = array_values(array_filter(array_map(function ($p) {
                 if (!$p) return null;
                 if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
