@@ -138,11 +138,17 @@ class RuidoOcupacionalController extends Controller
     return [
         'id' => $item->id,
         'num' => $item->point_number ?: str_pad($index + 1, 2, '0', STR_PAD_LEFT),
+        'point_number' => $item->point_number ?: str_pad($index + 1, 2, '0', STR_PAD_LEFT),
         'date' => $dateFormatted,
         'date_formatted' => $dateFormatted,
+        'raw_date' => $item->measurement_date ? $item->measurement_date->format('Y-m-d') : '',
         'time' => $item->measurement_time ? substr($item->measurement_time, 0, 5) : '—',
+        'raw_time' => $item->measurement_time ? substr($item->measurement_time, 0, 5) : '',
         'area' => $item->area ?: 'Área General',
         'punto_medicion' => $item->punto_medicion ?: 'Punto ' . ($index + 1),
+        'workstation' => $item->punto_medicion ?: 'Punto ' . ($index + 1),
+        'actividad' => $item->actividad ?: '',
+        'maquinaria_equipo' => $item->maquinaria_equipo ?: '',
         'tipo_ruido' => $item->tipo_ruido ?: 'Continuo',
         'tiempo_expos_h' => $tpe,
         'ponderacion' => $item->ponderacion ?: 'A',
@@ -150,9 +156,17 @@ class RuidoOcupacionalController extends Controller
         'leq_t_db' => $leqFinal,
         'nps_max' => $npsMax,
         'mediciones_db' => $medicionesValidas,
+        'uso_protectores' => $item->uso_protectores ? 1 : 0,
+        'tipo_protector' => $item->tipo_protector ?: '',
+        'nrr_db' => $item->nrr_db !== null ? (float)$item->nrr_db : null,
+        'staff_id' => $item->staff_id,
         'registered_by' => $registeredBy,
         'latitude' => $lat,
         'longitude' => $lng,
+        'utm_zone' => $item->utm_zone ?: '19K',
+        'utm_easting' => $item->utm_easting ? (float)$item->utm_easting : null,
+        'utm_northing' => $item->utm_northing ? (float)$item->utm_northing : null,
+        'location' => $item->location ?: '',
         'images' => $imagesUrls,
         'image_path' => !empty($imagesUrls) ? $imagesUrls[0] : null,
         'images_count' => count($imagesUrls),
@@ -347,91 +361,79 @@ class RuidoOcupacionalController extends Controller
         $validated = $request->validate([
             'measurement_date' => 'required|date',
             'measurement_time' => 'nullable|string',
-            'normativa' => 'required|string',
-            'tipo_zona' => 'required|string',
-            'horario' => 'nullable|string',
-            'limite_normativa' => 'required|numeric',
-            'zona_banda' => 'nullable|string',
-            
-            // Colindancias
-            'norte_colindancia' => 'nullable|string',
-            'norte_x' => 'nullable|string',
-            'norte_y' => 'nullable|string',
-            'sur_colindancia' => 'nullable|string',
-            'sur_x' => 'nullable|string',
-            'sur_y' => 'nullable|string',
-            'este_colindancia' => 'nullable|string',
-            'este_x' => 'nullable|string',
-            'este_y' => 'nullable|string',
-            'oeste_colindancia' => 'nullable|string',
-            'oeste_x' => 'nullable|string',
-            'oeste_y' => 'nullable|string',
-            
-            // Horas y puntos
-            'p1_norte_inicio' => 'nullable|string',
-            'p1_norte_fin' => 'nullable|string',
-            'p1_norte_puntos' => 'nullable',
-            'p2_sur_inicio' => 'nullable|string',
-            'p2_sur_fin' => 'nullable|string',
-            'p2_sur_puntos' => 'nullable',
-            'p3_este_inicio' => 'nullable|string',
-            'p3_este_fin' => 'nullable|string',
-            'p3_este_puntos' => 'nullable',
-            'p4_oeste_inicio' => 'nullable|string',
-            'p4_oeste_fin' => 'nullable|string',
-            'p4_oeste_puntos' => 'nullable',
-            
+            'area' => 'required|string|max:255',
+            'punto_medicion' => 'required|string|max:255',
+            'actividad' => 'nullable|string|max:255',
+            'maquinaria_equipo' => 'nullable|string|max:255',
+            'tipo_ruido' => 'required|string|max:100',
+            'tiempo_expos_h' => 'required|numeric|min:0.1',
+            'ponderacion' => 'nullable|string|max:10',
+            'respuesta' => 'nullable|string|max:10',
+            'mediciones_db' => 'nullable',
+            'uso_protectores' => 'nullable',
+            'tipo_protector' => 'nullable|string|max:255',
+            'nrr_db' => 'nullable|numeric',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
             'location' => 'nullable|string',
+            'utm_zone' => 'nullable|string|max:10',
+            'utm_easting' => 'nullable|numeric',
+            'utm_northing' => 'nullable|numeric',
             'observations' => 'nullable|string',
             'staff_id' => 'nullable|exists:staff,id',
-            'registered_by' => 'nullable|string',
+            'remaining_images' => 'nullable|string',
+            'keep_images' => 'nullable|string',
+            'images.*' => 'nullable|image|max:10240',
             'photos.*' => 'nullable|image|max:10240',
         ]);
 
-        $parsePointsArray = function ($input) {
-            if (is_array($input)) {
-                return array_values(array_filter(array_map('floatval', $input)));
+        // Parse mediciones array from JSON or string
+        $medicionesRaw = $request->input('mediciones_db', '[]');
+        if (is_string($medicionesRaw)) {
+            $decoded = json_decode($medicionesRaw, true);
+            $mediciones = is_array($decoded) ? $decoded : explode(',', $medicionesRaw);
+        } else {
+            $mediciones = is_array($medicionesRaw) ? $medicionesRaw : [];
+        }
+        $mediciones = array_values(array_filter(array_map('floatval', $mediciones), fn($v) => $v > 0));
+
+        // Cálculos NTS-002/17
+        $leq = self::calculateLeq($mediciones);
+        $tpe = (float) ($validated['tiempo_expos_h'] ?? 8.0);
+        $tmpe = ($leq !== null && $leq > 0) ? (8.0 / pow(2.0, ($leq - 85.0) / 3.0)) : null;
+        $dosis = ($tmpe !== null && $tmpe > 0) ? ($tpe / $tmpe) : null;
+        $cumple = ($dosis !== null) ? ($dosis <= 1.0) : ($leq !== null ? $leq <= 85.0 : true);
+
+        // Gestión de imágenes existentes (permanecen)
+        $remainingRaw = $request->input('remaining_images') ?: $request->input('keep_images');
+        $currentImages = [];
+        if (!empty($remainingRaw)) {
+            $decodedRemaining = json_decode($remainingRaw, true);
+            if (is_array($decodedRemaining)) {
+                $currentImages = array_values(array_filter(array_map(function($path) {
+                    if (!$path) return null;
+                    return str_replace(url('/') . '/', '', parse_url($path, PHP_URL_PATH) ?: $path);
+                }, $decodedRemaining)));
             }
-            if (is_string($input) && !empty(trim($input))) {
-                $decoded = json_decode($input, true);
-                if (is_array($decoded)) {
-                    return array_values(array_filter(array_map('floatval', $decoded)));
-                }
-                $parts = explode(',', $input);
-                return array_values(array_filter(array_map('floatval', $parts)));
-            }
-            return [];
-        };
-
-        $p1 = $parsePointsArray($request->input('p1_norte_puntos'));
-        $p2 = $parsePointsArray($request->input('p2_sur_puntos'));
-        $p3 = $parsePointsArray($request->input('p3_este_puntos'));
-        $p4 = $parsePointsArray($request->input('p4_oeste_puntos'));
-
-        $allPoints = array_merge($p1, $p2, $p3, $p4);
-        $leq = self::calculateLeq($allPoints);
-        $limite = (float) $validated['limite_normativa'];
-        $isCompliant = ($leq !== null) ? ($leq <= $limite) : true;
-        $npsMax = !empty($allPoints) ? max($allPoints) : null;
-        $npsMin = !empty($allPoints) ? min($allPoints) : null;
-
-        // Imágenes existentes
-        $currentImages = is_array($m->images) ? $m->images : (json_decode($m->images, true) ?: []);
-        if (empty($currentImages) && !empty($m->image_path)) {
+        } elseif (is_array($m->images) && !empty($m->images)) {
+            $currentImages = $m->images;
+        } elseif (!empty($m->image_path)) {
             $currentImages = [$m->image_path];
         }
 
-        if ($request->hasFile('photos')) {
-            $destDir = public_path('uploads/ruido_ambiental');
+        // Subida de nuevas imágenes
+        $filesToUpload = $request->file('images') ?: ($request->file('photos') ?: []);
+        if (!empty($filesToUpload)) {
+            $destDir = public_path('uploads/ruido_ocupacional');
             if (!File::isDirectory($destDir)) {
                 File::makeDirectory($destDir, 0755, true, true);
             }
-            foreach ($request->file('photos') as $file) {
-                $fileName = 'ra_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-                $file->move($destDir, $fileName);
-                $currentImages[] = 'uploads/ruido_ambiental/' . $fileName;
+            foreach ($filesToUpload as $file) {
+                if ($file && $file->isValid()) {
+                    $fileName = 'ro_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    $file->move($destDir, $fileName);
+                    $currentImages[] = 'uploads/ruido_ocupacional/' . $fileName;
+                }
             }
         }
 
@@ -440,61 +442,35 @@ class RuidoOcupacionalController extends Controller
         if (!empty($validated['staff_id'])) {
             $m->staff_id = $validated['staff_id'];
         }
-        
-        $m->normativa = $validated['normativa'];
-        $m->tipo_zona = $validated['tipo_zona'];
-        $m->horario = $validated['horario'] ?? $m->horario;
-        $m->limite_normativa = $limite;
-        $m->zona_banda = $validated['zona_banda'] ?? $m->zona_banda;
-        
-        $m->norte_colindancia = $validated['norte_colindancia'] ?? $m->norte_colindancia;
-        $m->norte_x = $validated['norte_x'] ?? $m->norte_x;
-        $m->norte_y = $validated['norte_y'] ?? $m->norte_y;
-        $m->sur_colindancia = $validated['sur_colindancia'] ?? $m->sur_colindancia;
-        $m->sur_x = $validated['sur_x'] ?? $m->sur_x;
-        $m->sur_y = $validated['sur_y'] ?? $m->sur_y;
-        $m->este_colindancia = $validated['este_colindancia'] ?? $m->este_colindancia;
-        $m->este_x = $validated['este_x'] ?? $m->este_x;
-        $m->este_y = $validated['este_y'] ?? $m->este_y;
-        $m->oeste_colindancia = $validated['oeste_colindancia'] ?? $m->oeste_colindancia;
-        $m->oeste_x = $validated['oeste_x'] ?? $m->oeste_x;
-        $m->oeste_y = $validated['oeste_y'] ?? $m->oeste_y;
-        
-        $m->p1_norte_inicio = $validated['p1_norte_inicio'] ?? $m->p1_norte_inicio;
-        $m->p1_norte_fin = $validated['p1_norte_fin'] ?? $m->p1_norte_fin;
-        $m->p1_norte_puntos = $p1;
-        
-        $m->p2_sur_inicio = $validated['p2_sur_inicio'] ?? $m->p2_sur_inicio;
-        $m->p2_sur_fin = $validated['p2_sur_fin'] ?? $m->p2_sur_fin;
-        $m->p2_sur_puntos = $p2;
-        
-        $m->p3_este_inicio = $validated['p3_este_inicio'] ?? $m->p3_este_inicio;
-        $m->p3_este_fin = $validated['p3_este_fin'] ?? $m->p3_este_fin;
-        $m->p3_este_puntos = $p3;
-        
-        $m->p4_oeste_inicio = $validated['p4_oeste_inicio'] ?? $m->p4_oeste_inicio;
-        $m->p4_oeste_fin = $validated['p4_oeste_fin'] ?? $m->p4_oeste_fin;
-        $m->p4_oeste_puntos = $p4;
-        
-        $m->mediciones_db = $allPoints;
-        $m->leq_d = $leq;
-        $m->nps_max = $npsMax;
-        $m->nps_min = $npsMin;
-        $m->is_compliant = $isCompliant;
-        
-        if (!empty($validated['latitude'])) $m->latitude = $validated['latitude'];
-        if (!empty($validated['longitude'])) $m->longitude = $validated['longitude'];
+
+        $m->area = $validated['area'];
+        $m->punto_medicion = $validated['punto_medicion'];
+        $m->actividad = $validated['actividad'] ?? $m->actividad;
+        $m->maquinaria_equipo = $validated['maquinaria_equipo'] ?? $m->maquinaria_equipo;
+        $m->tipo_ruido = $validated['tipo_ruido'];
+        $m->tiempo_expos_h = $tpe;
+        $m->ponderacion = $validated['ponderacion'] ?? 'A';
+        $m->respuesta = $validated['respuesta'] ?? 'Lenta';
+
+        $m->mediciones_db = $mediciones;
+        $m->leq_t_db = $leq;
+        $m->cumple = $cumple;
+
+        $m->uso_protectores = !empty($validated['uso_protectores']) && $validated['uso_protectores'] !== 'false' && $validated['uso_protectores'] !== '0';
+        $m->tipo_protector = $validated['tipo_protector'] ?? null;
+        $m->nrr_db = isset($validated['nrr_db']) && is_numeric($validated['nrr_db']) ? (float)$validated['nrr_db'] : null;
+
+        if (isset($validated['latitude']) && is_numeric($validated['latitude'])) $m->latitude = (float)$validated['latitude'];
+        if (isset($validated['longitude']) && is_numeric($validated['longitude'])) $m->longitude = (float)$validated['longitude'];
         if (!empty($validated['location'])) $m->location = $validated['location'];
-        
-        if (!empty($currentImages)) {
-            $m->image_path = $currentImages[0];
-            $m->images = $currentImages;
-        }
-        
-        $m->observations = $validated['observations'] ?? $m->observations;
-        if (!empty($validated['registered_by'])) {
-            $m->registered_by = $validated['registered_by'];
-        }
+        if (!empty($validated['utm_zone'])) $m->utm_zone = $validated['utm_zone'];
+        if (isset($validated['utm_easting']) && is_numeric($validated['utm_easting'])) $m->utm_easting = (float)$validated['utm_easting'];
+        if (isset($validated['utm_northing']) && is_numeric($validated['utm_northing'])) $m->utm_northing = (float)$validated['utm_northing'];
+        $m->observations = $validated['observations'] ?? '';
+
+        $m->images = array_values(array_filter($currentImages));
+        $m->image_path = !empty($currentImages) ? $currentImages[0] : null;
+
         $m->save();
 
         return redirect()->route('modules.ruido_ocupacional', $moduleId)->with('success', "Punto de medición '{$m->point_number}' actualizado exitosamente.");

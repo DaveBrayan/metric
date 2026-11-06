@@ -765,21 +765,592 @@ table#ruidoMasterTable tbody td {
 }
 
 /* ==========================================================================
-   MODAL DE OPCIONES DE EXPORTACIÓN (DOS COLUMNAS: EXCEL & REPORTE FOTOGRÁFICO)
+   MODAL DIALOG STANDARD & 3-COLUMN METRIC SYSTEM (ILUMINACIÓN & RUIDO OCUPACIONAL)
    ========================================================================== */
 .modal-dialog-illumination {
     background: #ffffff;
     border-radius: 18px;
     box-shadow: 0 25px 60px -15px rgba(15, 28, 46, 0.35);
     width: 100%;
-    max-width: 680px;
+    max-width: 800px;
     max-height: calc(100vh - 40px);
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    animation: scaleInModal 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: scaleInModal 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 1px solid rgba(226, 232, 240, 0.95);
     box-sizing: border-box;
 }
+
+.modal-dialog-illumination.modal-dialog-lg {
+    max-width: 1240px !important;
+    width: 96% !important;
+}
+
+/* Contenedor de formulario dentro de modales para fijar el footer abajo y scrollear el body */
+.modal-dialog-illumination form {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    margin: 0;
+}
+
+/* Modal en 3 Columnas */
+.modal-three-cols-grid {
+    display: grid;
+    grid-template-columns: 1.25fr 0.9fr 0.9fr;
+    gap: 22px;
+    align-items: start;
+}
+
+@media (max-width: 1080px) {
+    .modal-three-cols-grid {
+        grid-template-columns: 1fr;
+        gap: 18px;
+    }
+}
+
+.modal-col-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.modal-col-heading {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #0284c7;
+    padding-bottom: 8px;
+    border-bottom: 1.5px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.form-grid-two-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+@media (max-width: 640px) {
+    .form-grid-two-cols {
+        grid-template-columns: 1fr;
+    }
+}
+
+.form-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+.form-field-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink, #0f172a);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.form-field-label .req {
+    color: #ef4444;
+}
+
+.custom-form-input,
+.custom-form-select {
+    width: 100%;
+    height: 38px;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0 12px;
+    font-size: 12.5px;
+    color: #0f172a;
+    outline: none;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+}
+
+.custom-form-input:focus,
+.custom-form-select:focus {
+    border-color: #10b9df;
+    box-shadow: 0 0 0 3px rgba(16, 185, 223, 0.16);
+}
+
+.custom-form-textarea {
+    width: 100%;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12.5px;
+    font-family: inherit;
+    color: #0f172a;
+    outline: none;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+    resize: vertical;
+}
+
+.custom-form-textarea:focus {
+    border-color: #10b9df;
+    box-shadow: 0 0 0 3px rgba(16, 185, 223, 0.16);
+}
+
+/* Badges y Botón de Edición del Modal */
+.modal-badge-view {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    display: inline-flex;
+    align-items: center;
+}
+
+.modal-badge-edit {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-modal-edit-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 14px;
+    border-radius: 8px;
+    border: 1.5px solid #0284c7;
+    background: #ffffff;
+    color: #0284c7;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-modal-edit-action:hover {
+    background: #0284c7;
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
+}
+
+.btn-modal-edit-action.active-editing {
+    background: #059669;
+    border-color: #059669;
+    color: #ffffff;
+}
+
+/* Mediciones en Badges */
+.readings-input-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.btn-add-reading {
+    background: #0284c7;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 0 14px;
+    height: 38px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.btn-add-reading:hover {
+    background: #0369a1;
+}
+
+.readings-badges-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-height: 95px;
+    overflow-y: auto;
+    background: #f8fafc;
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 8px;
+    padding: 8px;
+    min-height: 48px;
+    align-items: center;
+    margin-top: 6px;
+}
+
+.lux-reading-badge,
+.noise-reading-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #ffffff;
+    border: 1px solid #93c5fd;
+    color: #0369a1;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.lux-reading-badge button,
+.noise-reading-badge button {
+    background: none;
+    border: none;
+    color: #ef4444;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+}
+
+.readings-summary-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 6px;
+    padding: 6px 10px;
+    background: #f1f5f9;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #475569;
+}
+
+/* Columna 2: Visor Fotográfico TIPO SLIDE / CARRUSEL */
+.modal-photo-slider-wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.modal-slider-viewport {
+    width: 100%;
+    height: 360px;
+    border-radius: 12px;
+    background: #0b1320;
+    border: 1.5px solid #cbd5e1;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.modal-slider-main-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    transition: opacity 0.25s ease;
+}
+
+.modal-slider-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    text-align: center;
+    padding: 24px;
+}
+
+.slider-counter-badge {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(4px);
+    color: #ffffff;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 5;
+}
+
+.slider-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: all 0.2s ease;
+    z-index: 6;
+}
+
+.slider-nav-btn:hover {
+    background: #0284c7;
+    border-color: #0284c7;
+    transform: translateY(-50%) scale(1.08);
+}
+
+.slider-nav-btn.prev {
+    left: 10px;
+}
+
+.slider-nav-btn.next {
+    right: 10px;
+}
+
+.slider-thumbs-strip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 4px 0;
+    min-height: 44px;
+}
+
+.slider-thumb-item {
+    width: 44px;
+    height: 44px;
+    border-radius: 6px;
+    border: 2px solid transparent;
+    overflow: hidden;
+    cursor: pointer;
+    opacity: 0.65;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.slider-thumb-item.active {
+    border-color: #0284c7;
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+.slider-thumb-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.btn-add-photos-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    height: 36px;
+    border: 1.5px dashed #0284c7;
+    background: #f0f9ff;
+    color: #0284c7;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-add-photos-trigger:hover {
+    background: #e0f2fe;
+    border-color: #0369a1;
+}
+
+.btn-delete-active-photo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    height: 34px;
+    border: 1px solid #fca5a5;
+    background: #fef2f2;
+    color: #dc2626;
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-delete-active-photo:hover {
+    background: #fee2e2;
+    border-color: #ef4444;
+}
+
+/* Columna 3: Ubicación GPS & Mini Mapa */
+.utm-coords-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 85px;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.utm-preview-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 6px;
+    padding: 5px 10px;
+    margin-bottom: 8px;
+    font-size: 11px;
+    color: #0369a1;
+    font-family: monospace;
+    font-weight: 700;
+}
+
+.modal-minimap-container {
+    width: 100%;
+    height: 200px;
+    border-radius: 10px;
+    border: 1.5px solid #cbd5e1;
+    overflow: hidden;
+    margin-top: 6px;
+    background: #f1f5f9;
+}
+
+/* MODO LECTURA DEL MODAL */
+.modal-view-mode .custom-form-input:disabled,
+.modal-view-mode .custom-form-select:disabled,
+.modal-view-mode .custom-form-textarea:disabled {
+    background: #f8fafc !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    padding: 0 12px !important;
+    height: 38px !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    color: #1e293b !important;
+    -webkit-text-fill-color: #1e293b !important;
+    box-shadow: none !important;
+    cursor: default !important;
+    outline: none !important;
+    opacity: 1 !important;
+}
+
+.modal-view-mode .custom-form-textarea:disabled {
+    height: auto !important;
+    min-height: 72px !important;
+    padding: 8px 12px !important;
+    resize: none !important;
+}
+
+.modal-view-mode .custom-form-select:disabled {
+    cursor: default !important;
+    opacity: 1 !important;
+}
+
+.modal-view-mode input[type="date"]:disabled::-webkit-calendar-picker-indicator,
+.modal-view-mode input[type="time"]:disabled::-webkit-calendar-picker-indicator {
+    opacity: 0.45;
+    cursor: default;
+    pointer-events: none;
+}
+
+.modal-view-mode input[type="number"]:disabled::-webkit-inner-spin-button,
+.modal-view-mode input[type="number"]:disabled::-webkit-outer-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
+}
+
+.modal-view-mode .readings-badges-container {
+    border: 1.5px dashed #cbd5e1 !important;
+    background: #f8fafc !important;
+}
+
+/* Botones en Footer del Modal */
+.modal-footer-custom {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 14px 24px;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+    flex-shrink: 0;
+    margin-top: auto;
+    z-index: 10;
+}
+
+.modal-footer-custom .btn-secondary-subtle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 9999px;
+    padding: 8px 22px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.modal-footer-custom .btn-secondary-subtle:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #0f172a;
+    transform: translateY(-1px);
+}
+
+.modal-footer-custom .btn-primary-hero-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #10b9df 0%, #0799a7 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 9999px;
+    padding: 9px 24px;
+    font-weight: 700;
+    font-size: 13.5px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(16, 185, 223, 0.35);
+    transition: all 0.2s ease;
+}
+
+.modal-footer-custom .btn-primary-hero-action:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(16, 185, 223, 0.45);
+}
+
+/* ==========================================================================
+   MODAL DE OPCIONES DE EXPORTACIÓN (DOS COLUMNAS: EXCEL & REPORTE FOTOGRÁFICO)
+   ========================================================================== */
+
 
 .export-options-grid {
     display: grid;
@@ -1474,7 +2045,7 @@ textarea.custom-form-input {
 .photo-card-img-box {
     width: 100%;
     height: 175px;
-    background: #090d16;
+    background: #ffffff;
     position: relative;
     overflow: hidden;
     display: flex;
@@ -1890,7 +2461,7 @@ textarea.custom-form-input {
     width: 100% !important;
     min-height: 0 !important;
     height: 0 !important;
-    background: #090d16;
+    background: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;

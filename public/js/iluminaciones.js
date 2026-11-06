@@ -1586,8 +1586,17 @@ const UPDATE_HEADER_URL = cfg.updateHeaderUrl || window.UPDATE_HEADER_URL || ('/
         }
 
         function closePhotoViewer() {
+            if (typeof window.universalClosePhotoViewer === 'function') {
+                window.universalClosePhotoViewer();
+                return;
+            }
             const modal = document.getElementById('photoViewerModal');
-            if (modal) modal.classList.remove('open');
+            if (modal) {
+                modal.classList.remove('open', 'active', 'show');
+                modal.style.removeProperty('display');
+                modal.style.display = 'none';
+            }
+            document.body.style.removeProperty('overflow');
         }
 
         function confirmDeleteMeasurement(id, pointNum) {

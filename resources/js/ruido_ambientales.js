@@ -562,9 +562,19 @@ window.openPhotoViewerModal = function(url, pointName, caption) {
 };
 
 window.closePhotoViewerModal = function() {
+    if (typeof window.universalClosePhotoViewer === 'function') {
+        window.universalClosePhotoViewer();
+        return;
+    }
     const m = document.getElementById('photoViewerModal');
-    if (m) m.classList.remove('open');
+    if (m) {
+        m.classList.remove('open', 'active', 'show');
+        m.style.removeProperty('display');
+        m.style.display = 'none';
+    }
+    document.body.style.removeProperty('overflow');
 };
+window.closePhotoViewer = window.closePhotoViewerModal;
 
 /* ==========================================================================
    7. MODAL EXPORTAR & TABLAS TÉCNICAS

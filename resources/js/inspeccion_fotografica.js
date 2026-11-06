@@ -759,8 +759,19 @@ function navigatePhotoViewer(delta) {
 }
 
 function closePhotoViewerModal() {
-    document.getElementById('photoViewerModal')?.classList.remove('open');
+    if (typeof window.universalClosePhotoViewer === 'function') {
+        window.universalClosePhotoViewer();
+        return;
+    }
+    const modal = document.getElementById('photoViewerModal');
+    if (modal) {
+        modal.classList.remove('open', 'active', 'show');
+        modal.style.removeProperty('display');
+        modal.style.display = 'none';
+    }
+    document.body.style.removeProperty('overflow');
 }
+window.closePhotoViewer = closePhotoViewerModal;
 
 /* ==========================================================================
    EXPORTACIÓN & REPORTE FOTOGRÁFICO

@@ -25,10 +25,7 @@
                     <th style="width: 155px;">Área / Puesto</th>
                     <th style="width: 150px;">Trabajador / Equipo</th>
                     <th style="width: 115px; text-align: center;">Tipo</th>
-                    <th style="width: 80px; text-align: center;">T. Exp (h)</th>
-                    <th style="width: 85px; text-align: right;">Aeq X</th>
-                    <th style="width: 85px; text-align: right;">Aeq Y</th>
-                    <th style="width: 85px; text-align: right;">Aeq Z</th>
+                    <th style="width: 145px; text-align: center;">T. Exp / Aeq (X, Y, Z)</th>
                     <th style="width: 115px; text-align: right;">A(8) (m/s²)</th>
                     <th style="width: 115px; text-align: center;">Evaluación</th>
                     <th style="width: 75px; text-align: center;">Imágenes</th>
@@ -46,8 +43,15 @@
                             'SUPERA LÍMITE' => 'non-compliant',
                             default => 'compliant'
                         };
-                        $numPhotos = !empty($item['images_urls']) ? count($item['images_urls']) : 0;
-                        $firstPhoto = (!empty($item['images_urls']) && count($item['images_urls']) > 0) ? $item['images_urls'][0] : null;
+                        $vibPhotos = !empty($item['images']) ? (array)$item['images'] : (!empty($item['images_urls']) ? (array)$item['images_urls'] : (!empty($item['photos']) ? (array)$item['photos'] : (!empty($item['image_path']) ? [$item['image_path']] : [])));
+                        $vibPhotos = array_values(array_filter(array_map(function($p) {
+                            if (!$p) return null;
+                            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://') || str_starts_with($p, 'data:')) return $p;
+                            $c = ltrim($p, '/');
+                            return str_starts_with($c, 'storage/') ? asset($c) : (file_exists(public_path($c)) ? asset($c) : asset('storage/' . $c));
+                        }, $vibPhotos)));
+                        $numPhotos = count($vibPhotos);
+                        $firstPhoto = $vibPhotos[0] ?? null;
                         $rawNum = (string)($item['num'] ?? $item['point_number'] ?? ($idx + 1));
                         $cleanNum = intval(preg_replace('/[^0-9]/', '', $rawNum)) ?: ($idx + 1);
                     @endphp
@@ -106,35 +110,23 @@
                             </span>
                         </td>
 
-                        <!-- 7. Tiempo de Exposición (h) -->
+                        <!-- 7. T. Exp / Aeq (X, Y, Z) -->
                         <td style="text-align: center;">
-                            <span class="lux-req-code" style="font-size: 11px; padding: 2px 7px;">
-                                {{ number_format((float)$item['tiempo_expos_h'], 2, ',', '.') }} h
-                            </span>
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+                                <span class="lux-req-code" style="font-size: 11.5px; font-weight: 700; padding: 2px 8px; color: #0369a1; background: #e0f2fe; border: 1px solid #bae6fd;">
+                                    {{ number_format((float)$item['tiempo_expos_h'], 2, ',', '.') }} h
+                                </span>
+                                <span style="font-family: monospace; font-size: 10.5px; color: #475569; font-weight: 600; white-space: nowrap;" title="Aeq X: {{ number_format((float)$item['aeqx'], 4, ',', '.') }} | Aeq Y: {{ number_format((float)$item['aeqy'], 4, ',', '.') }} | Aeq Z: {{ number_format((float)$item['aeqz'], 4, ',', '.') }}">
+                                    <span style="color: #64748b;">X:</span>{{ number_format((float)$item['aeqx'], 2, ',', '.') }}
+                                    <span style="color: #cbd5e1; margin: 0 1px;">|</span>
+                                    <span style="color: #64748b;">Y:</span>{{ number_format((float)$item['aeqy'], 2, ',', '.') }}
+                                    <span style="color: #cbd5e1; margin: 0 1px;">|</span>
+                                    <span style="color: #64748b;">Z:</span>{{ number_format((float)$item['aeqz'], 2, ',', '.') }}
+                                </span>
+                            </div>
                         </td>
 
-                        <!-- 8. Aeq X -->
-                        <td style="text-align: right;">
-                            <span style="font-family: monospace; font-size: 12px; color: #475569; font-weight: 600;">
-                                {{ number_format((float)$item['aeqx'], 4, ',', '.') }}
-                            </span>
-                        </td>
-
-                        <!-- 9. Aeq Y -->
-                        <td style="text-align: right;">
-                            <span style="font-family: monospace; font-size: 12px; color: #475569; font-weight: 600;">
-                                {{ number_format((float)$item['aeqy'], 4, ',', '.') }}
-                            </span>
-                        </td>
-
-                        <!-- 10. Aeq Z -->
-                        <td style="text-align: right;">
-                            <span style="font-family: monospace; font-size: 12px; color: #475569; font-weight: 600;">
-                                {{ number_format((float)$item['aeqz'], 4, ',', '.') }}
-                            </span>
-                        </td>
-
-                        <!-- 11. A(8) Normalizado -->
+                        <!-- 8. A(8) Normalizado -->
                         <td style="text-align: right;">
                             <span class="lux-req-code" style="font-size: 12px; font-weight: 800; color: #1e293b; padding: 3px 8px;">
                                 {{ number_format((float)$item['a8'], 4, ',', '.') }} m/s²
@@ -170,13 +162,13 @@
                             @endif
                         </td>
 
-                        <!-- 13. Imágenes -->
+                        <!-- 10. Imágenes -->
                         <td style="text-align: center;">
                             @if(!empty($firstPhoto))
                                 <div class="table-thumb-preview"
-                                    onclick='openPhotoViewer(@json($item["images_urls"] ?? $item["images"] ?? [$firstPhoto]), "{{ $item["codigo"] }} - {{ addslashes($item["area"]) }}")'
+                                    onclick='openPhotoViewer(@json($vibPhotos), "{{ $item["codigo"] }} - {{ addslashes($item["area"]) }}")'
                                     title="Ver fotografía ampliada">
-                                    <img src="{{ $firstPhoto }}" alt="Foto">
+                                    <img src="{{ $firstPhoto }}" alt="Foto" style="width: 100%; height: 100%; object-fit: cover; display: block;">
                                     @if($numPhotos > 1)
                                         <span class="table-thumb-count-badge">{{ $numPhotos }}</span>
                                     @endif
@@ -231,7 +223,7 @@
                     </tr>
                 @empty
                     <tr id="emptyTableRow">
-                        <td colspan="15">
+                        <td colspan="12">
                             <div class="table-empty-state">
                                 <div class="empty-icon-wrap" style="color: #0284c7; background: #f0f9ff;">
                                     <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -252,7 +244,7 @@
                     </tr>
                 @endforelse
                 <tr id="noResultsSearchRow" style="display: none;">
-                    <td colspan="15" style="text-align: center; color: #64748b; padding: 36px; font-weight: 500;">
+                    <td colspan="12" style="text-align: center; color: #64748b; padding: 36px; font-weight: 500;">
                         No se encontraron puntos de monitoreo que coincidan con la búsqueda.
                     </td>
                 </tr>

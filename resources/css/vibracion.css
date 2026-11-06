@@ -1385,7 +1385,7 @@
 .photo-card-img-box {
     width: 100%;
     height: 175px;
-    background: #090d16;
+    background: #ffffff;
     position: relative;
     overflow: hidden;
     display: flex;
@@ -1772,7 +1772,7 @@
     flex: 1;
     height: auto;
     min-height: 50px;
-    background: #090d16;
+    background: #ffffff;
 }
 
 .sheet-card-item .photo-card-img-box img {

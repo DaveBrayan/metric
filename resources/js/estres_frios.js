@@ -1077,11 +1077,18 @@ function openPhotoViewerModal(photoUrl, title) {
 }
 
 function closePhotoViewer() {
+    if (typeof window.universalClosePhotoViewer === 'function') {
+        window.universalClosePhotoViewer();
+        return;
+    }
     const modal = document.getElementById('photoViewerModal');
     if (modal) {
-        modal.classList.remove('open');
-        document.body.style.overflow = '';
+        modal.classList.remove('open', 'active', 'show');
+        modal.style.removeProperty('display');
+        modal.style.display = 'none';
     }
+    document.body.style.removeProperty('overflow');
+    document.body.style.overflow = '';
 }
 
 function closePhotoViewerModal() {

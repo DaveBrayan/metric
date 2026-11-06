@@ -220,11 +220,6 @@ function updateCoordsFromLatLng(prefix, lat, lng) {
     if (eastingInput) eastingInput.value = utm.easting.toFixed(2);
     if (northingInput) northingInput.value = utm.northing.toFixed(2);
     if (zoneInput) zoneInput.value = utm.zone;
-
-    const disp = document.getElementById(`${prefix}_utm_display`);
-    if (disp) {
-        disp.textContent = `E: ${utm.easting.toFixed(2)}, N: ${utm.northing.toFixed(2)}, Z: ${utm.zone}`;
-    }
 }
 
 function syncUtmToMap(prefix) {
@@ -239,11 +234,6 @@ function syncUtmToMap(prefix) {
     const lngInput = document.getElementById(`${prefix}_longitude`);
     if (latInput) latInput.value = latLng.lat.toFixed(7);
     if (lngInput) lngInput.value = latLng.lng.toFixed(7);
-
-    const disp = document.getElementById(`${prefix}_utm_display`);
-    if (disp) {
-        disp.textContent = `E: ${easting.toFixed(2)}, N: ${northing.toFixed(2)}, Z: ${zone}`;
-    }
 
     if (miniMaps[prefix] && miniMapMarkers[prefix]) {
         miniMapMarkers[prefix].setLatLng([latLng.lat, latLng.lng]);
@@ -528,16 +518,19 @@ function openViewMeasurementModal(item) {
     document.getElementById('edit_utm_zone').value = item.utm_zone || '19K';
     document.getElementById('edit_latitude').value = item.latitude || '';
     document.getElementById('edit_longitude').value = item.longitude || '';
-    const utmDisp = document.getElementById('edit_utm_display');
-    if (utmDisp) {
-        utmDisp.textContent = `E: ${item.utm_easting || '—'}, N: ${item.utm_northing || '—'}, Z: ${item.utm_zone || '19K'}`;
-    }
 
     // Observaciones
     document.getElementById('edit_observations').value = item.raw_observations || item.observations || '';
 
     // Fotos
-    sliderState.edit.photos = item.images || (item.image_path ? [item.image_path] : []);
+    const rawPaPhotos = (item.images && Array.isArray(item.images) && item.images.length > 0)
+        ? item.images
+        : (item.image_path ? [item.image_path] : []);
+    sliderState.edit.photos = rawPaPhotos.filter(Boolean).map(src => {
+        if (typeof src !== 'string') return '';
+        if (src.startsWith('http') || src.startsWith('data:') || src.startsWith('blob:')) return src;
+        return src.startsWith('/') ? src : ('/' + src);
+    }).filter(Boolean);
     sliderState.edit.currentIndex = 0;
     renderPhotoSlider('edit');
 
@@ -614,24 +607,59 @@ function confirmDeleteMeasurement(id, num) {
 }
 
 function openPhotoViewer(url, title = 'Fotografía Ambiental') {
+    const list = Array.isArray(url) ? url : [url];
     const modal = document.getElementById('photoViewerModal');
-    const img = document.getElementById('photoViewerImg');
+    const img = document.getElementById('photoViewerImg') || document.getElementById('mainViewerImage');
     const titleEl = document.getElementById('photoViewerTitle');
-    if (!modal || !img) return;
+    
+    // Si app.js está cargado, usar el visor universal con flechas y miniaturas
+    if (window.formatPhotoUrl) {
+        const cleaned = list.filter(Boolean).map(window.formatPhotoUrl);
+        const counterEl = document.getElementById('photoViewerCounter');
+        const prevBtn = document.getElementById('photoViewerPrevBtn');
+        const nextBtn = document.getElementById('photoViewerNextBtn');
+        const stripEl = document.getElementById('photoViewerThumbnailsStrip');
 
-    img.src = url;
+        if (titleEl) titleEl.textContent = title;
+        if (img && cleaned[0]) {
+            img.src = cleaned[0];
+            img.style.display = 'block';
+        }
+        if (counterEl) {
+            counterEl.style.display = cleaned.length > 1 ? 'inline-block' : 'none';
+            counterEl.textContent = cleaned.length > 1 ? `Foto 1 de ${cleaned.length}` : '';
+        }
+        if (prevBtn) prevBtn.style.display = cleaned.length > 1 ? 'grid' : 'none';
+        if (nextBtn) nextBtn.style.display = cleaned.length > 1 ? 'grid' : 'none';
+        if (modal) {
+            modal.classList.add('active', 'open');
+            modal.style.display = 'flex';
+        }
+        return;
+    }
+
+    if (!modal || !img) return;
+    const first = list[0] || '';
+    img.src = first.startsWith('http') || first.startsWith('/') ? first : ('/' + first);
     if (titleEl) titleEl.textContent = title;
-    modal.classList.add('active');
+    modal.classList.add('active', 'open');
     modal.style.display = 'flex';
 }
 
 function closePhotoViewer() {
+    if (typeof window.universalClosePhotoViewer === 'function') {
+        window.universalClosePhotoViewer();
+        return;
+    }
     const modal = document.getElementById('photoViewerModal');
     if (modal) {
-        modal.classList.remove('active');
+        modal.classList.remove('active', 'open', 'show');
+        modal.style.removeProperty('display');
         modal.style.display = 'none';
     }
+    document.body.style.removeProperty('overflow');
 }
+window.closePhotoViewerModal = closePhotoViewer;
 
 function openAllLocationsModal() {
     const modal = document.getElementById('allLocationsModal');

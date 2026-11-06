@@ -106,7 +106,10 @@ class VibracionController extends Controller
                 $rawImages = [$item->image_path];
             }
             $imagesUrls = array_values(array_filter(array_map(function ($p) {
-                return $p ? (str_starts_with($p, 'http') ? $p : asset($p)) : null;
+                if (!$p) return null;
+                if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://') || str_starts_with($p, 'data:')) return $p;
+                $c = ltrim($p, '/');
+                return str_starts_with($c, 'storage/') ? asset($c) : (file_exists(public_path($c)) ? asset($c) : asset('storage/' . $c));
             }, $rawImages)));
 
             $pointNum = (!empty($item->codigo) && preg_match('/^VIB-\d+/i', $item->codigo))
@@ -165,6 +168,7 @@ class VibracionController extends Controller
                 'image_path' => $imagesUrls[0] ?? null,
                 'raw_image_path' => $rawImages[0] ?? null,
                 'images' => $imagesUrls,
+                'images_urls' => $imagesUrls,
                 'raw_images' => $rawImages,
                 'images_count' => count($imagesUrls),
                 'location' => $item->location ?: ($lat && $lng ? "{$lat}, {$lng}" : '—'),
@@ -596,7 +600,10 @@ class VibracionController extends Controller
                 $rawImages = [$item->image_path];
             }
             $imagesUrls = array_values(array_filter(array_map(function ($p) {
-                return $p ? (str_starts_with($p, 'http') ? $p : asset($p)) : null;
+                if (!$p) return null;
+                if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://') || str_starts_with($p, 'data:')) return $p;
+                $c = ltrim($p, '/');
+                return str_starts_with($c, 'storage/') ? asset($c) : (file_exists(public_path($c)) ? asset($c) : asset('storage/' . $c));
             }, $rawImages)));
 
             return (object)[

@@ -1958,11 +1958,22 @@
         }
 
         function closePhotoModal() {
+            if (typeof window.universalClosePhotoViewer === 'function') {
+                window.universalClosePhotoViewer();
+                return;
+            }
             const modal = document.getElementById('photoViewerModal');
-            modal.classList.remove('open');
+            if (modal) {
+                modal.classList.remove('open', 'active', 'show');
+                modal.style.removeProperty('display');
+                modal.style.display = 'none';
+            }
             const img = document.getElementById('photoViewerImg');
-            img.src = '';
-            img.style.display = 'none';
+            if (img) {
+                img.src = '';
+                img.style.display = 'none';
+            }
+            document.body.style.removeProperty('overflow');
             document.body.style.overflow = '';
         }
 

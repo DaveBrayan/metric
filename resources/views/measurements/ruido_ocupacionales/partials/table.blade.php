@@ -153,14 +153,14 @@
                         <!-- 10. Acciones -->
                         <td style="text-align: right;">
                             <div class="admin-actions-cell" style="display: flex; justify-content: flex-end; gap: 8px;">
-                                <!-- Editar -->
+                                <!-- Ver Detalle -->
                                 <button type="button" class="btn-admin-icon-action theme-cyan"
-                                    onclick="openEditMeasurementById({{ $m['id'] }})"
-                                    title="Editar punto de medición" aria-label="Editar">
+                                    onclick='openViewMeasurementModal(@json($m))'
+                                    title="Ver detalle del punto" aria-label="Ver">
                                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                                        <path d="m15 5 4 4" />
+                                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                        <circle cx="12" cy="12" r="3" />
                                     </svg>
                                 </button>
 

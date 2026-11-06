@@ -1,4 +1,4 @@
-﻿<!-- ==========================================================================
+<!-- ==========================================================================
      MODAL: VISOR DE FOTOGRAFÍA AMPLIFICADA CON NAVEGACIÓN (METRIC v2)
      ========================================================================== -->
 <div class="modal-backdrop-custom" id="photoViewerModal" onclick="closePhotoViewer()" role="dialog" aria-modal="true" style="z-index: 999999 !important;">
@@ -26,6 +26,7 @@
                 <!-- Alias de ID para compatibilidad -->
                 <img id="photoViewerMainImage" src="" alt="Fotografía" style="display: none;">
                 <img id="photoViewerImage" src="" alt="Fotografía" style="display: none;">
+                <img id="mainViewerImage" src="" alt="Fotografía" style="display: none;">
 
                 <!-- Flecha Anterior -->
                 <button type="button" id="photoViewerPrevBtn" onclick="navigatePhotoViewer(-1)"

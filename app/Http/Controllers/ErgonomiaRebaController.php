@@ -285,7 +285,10 @@ class ErgonomiaRebaController extends Controller
                     $rawImages = [$item->image_path];
                 }
                 $imagesUrls = array_values(array_filter(array_map(function($p) {
-                    return $p ? asset($p) : null;
+                    if (!$p) return null;
+                    if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://') || str_starts_with($p, 'data:')) return $p;
+                    $c = ltrim($p, '/');
+                    return str_starts_with($c, 'storage/') ? asset($c) : (file_exists(public_path($c)) ? asset($c) : asset('storage/' . $c));
                 }, $rawImages)));
 
                 $calc = self::calculateRebaScore([
@@ -334,8 +337,9 @@ class ErgonomiaRebaController extends Controller
                     'ubicacion_sintoma' => $item->ubicacion_sintoma,
                     'tareas' => is_array($item->tareas) ? $item->tareas : (json_decode($item->tareas, true) ?: []),
                     'observaciones' => $item->observaciones,
-                    'image_path' => $item->image_path ? asset($item->image_path) : ($imagesUrls[0] ?? null),
+                    'image_path' => $imagesUrls[0] ?? null,
                     'images' => $imagesUrls,
+                    'images_urls' => $imagesUrls,
                     'images_count' => count($imagesUrls),
                     'registered_by' => $item->registered_by ?: ($item->staff ? ($item->staff->full_name ?: $item->staff->name) : ($currentUser ? $currentUser->name : 'Técnico Ergónomo')),
                     'staff_id' => $item->staff_id,

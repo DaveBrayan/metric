@@ -1239,11 +1239,14 @@ function openViewMeasurementModal(item) {
 
     // Fotos en Slide
     modalPhotos.edit = [];
-    if (item.images && Array.isArray(item.images) && item.images.length > 0) {
-        modalPhotos.edit = [...item.images];
-    } else if (item.image_path) {
-        modalPhotos.edit = [item.image_path];
-    }
+    const rawEditPhotos = (item.images && Array.isArray(item.images) && item.images.length > 0)
+        ? item.images
+        : (item.image_path ? [item.image_path] : []);
+    modalPhotos.edit = rawEditPhotos.filter(Boolean).map(src => {
+        if (typeof src !== 'string') return '';
+        if (src.startsWith('http') || src.startsWith('data:') || src.startsWith('blob:')) return src;
+        return src.startsWith('/') ? src : ('/' + src);
+    }).filter(Boolean);
     modalPhotoIndex.edit = 0;
     syncEditRemainingImages();
     renderPhotoSlider('edit');
@@ -1557,19 +1560,58 @@ function switchRebaTab(tabName) {
 // (Los métodos completos de Exportación y Reporte Fotográfico se encuentran al final del archivo)
 
 function openPhotoViewer(url, caption) {
-    const m = document.getElementById('photoViewerModal');
-    const img = document.getElementById('photoViewerImage');
-    const cap = document.getElementById('photoViewerCaption');
-    if (m && img) {
-        img.src = url;
+    if (window.formatPhotoUrl) {
+        const list = (Array.isArray(url) ? url : [url]).filter(Boolean).map(window.formatPhotoUrl);
+        const m = document.getElementById('photoViewerModal');
+        const img = document.getElementById('photoViewerImg') || document.getElementById('photoViewerImage') || document.getElementById('mainViewerImage');
+        const cap = document.getElementById('photoViewerTitle') || document.getElementById('photoViewerCaption');
+        const counterEl = document.getElementById('photoViewerCounter');
+        const prevBtn = document.getElementById('photoViewerPrevBtn');
+        const nextBtn = document.getElementById('photoViewerNextBtn');
+        const stripEl = document.getElementById('photoViewerThumbnailsStrip');
+
         if (cap) cap.innerText = caption || 'Evidencia Fotográfica';
-        m.classList.add('open');
+        if (img && list[0]) {
+            img.src = list[0];
+            img.style.display = 'block';
+        }
+        if (counterEl) {
+            counterEl.style.display = list.length > 1 ? 'inline-block' : 'none';
+            counterEl.textContent = list.length > 1 ? `Foto 1 de ${list.length}` : '';
+        }
+        if (prevBtn) prevBtn.style.display = list.length > 1 ? 'grid' : 'none';
+        if (nextBtn) nextBtn.style.display = list.length > 1 ? 'grid' : 'none';
+        if (m) {
+            m.classList.add('open', 'active');
+            m.style.display = 'flex';
+        }
+        return;
+    }
+
+    const m = document.getElementById('photoViewerModal');
+    const img = document.getElementById('photoViewerImage') || document.getElementById('photoViewerImg');
+    const cap = document.getElementById('photoViewerCaption') || document.getElementById('photoViewerTitle');
+    if (m && img) {
+        const first = Array.isArray(url) ? url[0] : url;
+        img.src = first ? (first.startsWith('http') || first.startsWith('/') ? first : '/' + first) : '';
+        if (cap) cap.innerText = caption || 'Evidencia Fotográfica';
+        m.classList.add('open', 'active');
+        m.style.display = 'flex';
     }
 }
 
 function closePhotoViewerModal() {
+    if (typeof window.universalClosePhotoViewer === 'function') {
+        window.universalClosePhotoViewer();
+        return;
+    }
     const m = document.getElementById('photoViewerModal');
-    if (m) m.classList.remove('open');
+    if (m) {
+        m.classList.remove('open', 'active', 'show');
+        m.style.removeProperty('display');
+        m.style.display = 'none';
+    }
+    document.body.style.removeProperty('overflow');
 }
 
 function closePhotoViewer() {

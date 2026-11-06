@@ -1794,4 +1794,19 @@ table.modern-table tr:last-child td {
     box-shadow: 0 0 10px rgba(16, 185, 223, 0.6);
 }
 
+/* ==========================================================================
+   Reporte Fotográfico: Fondo blanco en tarjetas y cajas de fotos
+   ========================================================================== */
+.photo-card-img-box,
+.sheet-card-item .photo-card-img-box,
+.photo-card-interactive .photo-card-img-box,
+.sheet-photo-card .photo-card-img-box,
+.photo-interactive-img-box,
+.photo-report-sheet .photo-card-img-box,
+.photo-report-sheet .sheet-card-item .photo-card-img-box,
+.photo-sheet-card-box,
+.photo-sheet-cell-img {
+    background: #ffffff !important;
+}
+
 

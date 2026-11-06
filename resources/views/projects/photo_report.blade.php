@@ -8,6 +8,13 @@
         /* ==========================================================================
            REPORTE FOTOGRÁFICO HUB — ESTILOS COMPLEMENTARIOS Y SELECTORES
            ========================================================================== */
+        .photo-card-img-box,
+        .sheet-card-item .photo-card-img-box,
+        .photo-card-interactive .photo-card-img-box,
+        .photo-interactive-img-box {
+            background: #ffffff !important;
+        }
+
         .photo-hub-header-card {
             background: #ffffff;
             border: 1px solid #e2e8f0;
@@ -1735,8 +1742,17 @@
         }
 
         function closePhotoViewer() {
+            if (typeof window.universalClosePhotoViewer === 'function') {
+                window.universalClosePhotoViewer();
+                return;
+            }
             const m = document.getElementById('photoViewerModal');
-            if (m) m.classList.remove('open');
+            if (m) {
+                m.classList.remove('open', 'active', 'show');
+                m.style.removeProperty('display');
+                m.style.display = 'none';
+            }
+            document.body.style.removeProperty('overflow');
         }
 
         function renderEmptyState(msg) {

@@ -129,7 +129,13 @@
                             <!-- 8. Imágenes -->
                             <td style="text-align: center;">
                                 @php
-                                    $partAmbPhotos = !empty($m['images']) ? $m['images'] : (!empty($m['photos']) ? $m['photos'] : (!empty($m['image_path']) ? [$m['image_path']] : []));
+                                    $partAmbRaw = !empty($m['images']) ? (array)$m['images'] : (!empty($m['photos']) ? (array)$m['photos'] : (!empty($m['image_path']) ? [$m['image_path']] : []));
+                                    $partAmbPhotos = array_values(array_filter(array_map(function($p) {
+                                        if (!$p) return null;
+                                        if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://') || str_starts_with($p, 'data:')) return $p;
+                                        $c = ltrim($p, '/');
+                                        return str_starts_with($c, 'storage/') ? asset($c) : (file_exists(public_path($c)) ? asset($c) : asset('storage/' . $c));
+                                    }, $partAmbRaw)));
                                 @endphp
                                 @if(!empty($partAmbPhotos) && count($partAmbPhotos) > 0)
                                     <div class="table-thumb-preview"

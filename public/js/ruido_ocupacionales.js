@@ -307,88 +307,585 @@ window.closeCreateMeasurementModal = function () {
     if (m) m.classList.remove('open');
 };
 
-window.openEditMeasurementModal = function (item) {
+let editNoiseReadingsList = [];
+let isEditUnlocked = false;
+let editModalMiniMap = null;
+let editModalMarker = null;
+
+const sliderState = {
+    edit: { photos: [], currentIndex: 0, removedUrls: [] }
+};
+
+window.openViewMeasurementModal = function (item) {
     const m = document.getElementById('editMeasurementModal');
     if (!m) return;
 
     const form = document.getElementById('editMeasurementForm');
     if (form) {
-        form.action = `/modulos/${MODULE_ID}/ruido-ambiental/mediciones/${item.id}`;
+        form.action = `/modulos/${MODULE_ID}/ruido-ocupacional/mediciones/${item.id}`;
     }
 
-    // Set fields
+    const ptCode = item.num || item.point_number || `P-${item.id}`;
+    const codeDisp = document.getElementById('edit_pt_num_disp');
+    if (codeDisp) codeDisp.textContent = ptCode;
+
     const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ''; };
-    setVal('edit_measurement_date', item.raw_date);
-    setVal('edit_measurement_time', item.time);
-    setVal('edit_normativa', item.normativa);
-    handleNormativaChange('edit');
-    setVal('edit_tipo_zona', item.tipo_zona);
-    handleTipoZonaChange('edit');
-    setVal('edit_limite_normativa', item.raw_limite_normativa);
-    setVal('edit_zona_banda', item.zona_banda);
+    setVal('edit_point_number', ptCode);
+    setVal('edit_measurement_date', item.raw_date || item.date || '');
+    setVal('edit_measurement_time', item.raw_time || item.time || '08:00');
+    setVal('edit_area', item.area || '');
+    setVal('edit_punto_medicion', item.punto_medicion || '');
+    setVal('edit_actividad', item.actividad || '');
+    setVal('edit_tipo_ruido', item.tipo_ruido || 'Continuo');
+    setVal('edit_tiempo_expos_h', item.tiempo_expos_h || 8.0);
+    setVal('edit_ponderacion', item.ponderacion || 'A');
+    setVal('edit_respuesta', item.respuesta || 'Lenta');
+    setVal('edit_uso_protectores', item.uso_protectores ? '1' : '0');
+    setVal('edit_tipo_protector', item.tipo_protector || '');
+    setVal('edit_nrr_db', item.nrr_db || '');
+    setVal('edit_observations', item.observations || '');
 
-    setVal('edit_norte_colindancia', item.norte_colindancia);
-    setVal('edit_norte_x', item.norte_x);
-    setVal('edit_norte_y', item.norte_y);
+    if (item.staff_id && document.getElementById('edit_staff_id')) {
+        document.getElementById('edit_staff_id').value = item.staff_id;
+    }
 
-    setVal('edit_sur_colindancia', item.sur_colindancia);
-    setVal('edit_sur_x', item.sur_x);
-    setVal('edit_sur_y', item.sur_y);
+    const staffBadge = document.getElementById('edit_modal_registered_by');
+    if (staffBadge) {
+        staffBadge.textContent = item.registered_by || window.REGISTERED_BY_HEADER || 'Técnico';
+    }
 
-    setVal('edit_este_colindancia', item.este_colindancia);
-    setVal('edit_este_x', item.este_x);
-    setVal('edit_este_y', item.este_y);
+    // Georreferenciación UTM y Lat/Lng
+    setVal('edit_utm_zone', item.utm_zone || '19K');
+    setVal('edit_utm_easting', item.utm_easting || '');
+    setVal('edit_utm_northing', item.utm_northing || '');
+    setVal('edit_latitude', item.latitude || '');
+    setVal('edit_longitude', item.longitude || '');
+    setVal('edit_location', item.location || '');
 
-    setVal('edit_oeste_colindancia', item.oeste_colindancia);
-    setVal('edit_oeste_x', item.oeste_x);
-    setVal('edit_oeste_y', item.oeste_y);
+    const utmDisp = document.getElementById('edit_utm_display');
+    if (utmDisp) {
+        utmDisp.textContent = `E: ${item.utm_easting || '—'}, N: ${item.utm_northing || '—'}, Z: ${item.utm_zone || '19K'}`;
+    }
 
-    setVal('edit_p1_norte_inicio', item.p1_norte_inicio);
-    setVal('edit_p1_norte_fin', item.p1_norte_fin);
-    setVal('edit_p2_sur_inicio', item.p2_sur_inicio);
-    setVal('edit_p2_sur_fin', item.p2_sur_fin);
-    setVal('edit_p3_este_inicio', item.p3_este_inicio);
-    setVal('edit_p3_este_fin', item.p3_este_fin);
-    setVal('edit_p4_oeste_inicio', item.p4_oeste_inicio);
-    setVal('edit_p4_oeste_fin', item.p4_oeste_fin);
+    // Lecturas del Sonómetro (dBA)
+    editNoiseReadingsList = [];
+    if (item.mediciones_db && Array.isArray(item.mediciones_db) && item.mediciones_db.length > 0) {
+        editNoiseReadingsList = [...item.mediciones_db];
+    }
+    renderNoiseReadings('edit');
 
-    // Populate cardinal point input rows
-    const populatePoints = (cardinalKey, pointsList) => {
-        const container = document.getElementById(`edit_${cardinalKey}_points_container`);
-        if (!container) return;
-        container.innerHTML = '';
-        (pointsList || []).forEach(val => {
-            const row = document.createElement('div');
-            row.className = 'point-pill-input-row';
-            row.innerHTML = `
-                <input type="number" step="0.1" class="custom-form-input cardinal-point-val" value="${val}" oninput="recalcruidoOcupacional('edit')">
-                <button type="button" class="btn-icon-del-point" onclick="this.closest('.point-pill-input-row').remove(); recalcruidoOcupacional('edit');">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                </button>
-            `;
-            container.appendChild(row);
-        });
-    };
+    // Archivo fotográfico (Slide continuo)
+    let images = [];
+    if (item.images && Array.isArray(item.images) && item.images.length > 0) {
+        images = item.images;
+    } else if (item.image_path) {
+        images = [item.image_path];
+    }
+    const safeImages = images.filter(Boolean).map(src => {
+        if (typeof src !== 'string') return '';
+        if (src.startsWith('http') || src.startsWith('data:') || src.startsWith('blob:')) return src;
+        return src.startsWith('/') ? src : ('/' + src);
+    }).filter(Boolean);
+    sliderState.edit = { photos: safeImages, currentIndex: 0, removedUrls: [] };
+    renderPhotoSlider('edit');
+    syncEditRemainingImages();
 
-    populatePoints('p1_norte', item.p1_norte_puntos);
-    populatePoints('p2_sur', item.p2_sur_puntos);
-    populatePoints('p3_este', item.p3_este_puntos);
-    populatePoints('p4_oeste', item.p4_oeste_puntos);
+    // Iniciar siempre en modo Solo Lectura
+    applyEditModeState(false);
 
-    setVal('edit_observations', item.raw_observations);
-    setVal('edit_latitude', item.latitude);
-    setVal('edit_longitude', item.longitude);
-
-    recalcruidoOcupacional('edit');
     m.classList.add('open');
+    m.style.display = 'flex';
+
+    setTimeout(() => {
+        let lat = parseFloat(item.latitude);
+        let lng = parseFloat(item.longitude);
+        if (isNaN(lat) || isNaN(lng)) {
+            if (item.utm_easting && item.utm_northing) {
+                const conv = utmToLatLngJS(item.utm_easting, item.utm_northing, item.utm_zone || '19K');
+                lat = conv.lat;
+                lng = conv.lng;
+            } else {
+                lat = -16.5;
+                lng = -68.15;
+            }
+        }
+        initModalMiniMap('edit', lat, lng);
+    }, 150);
+};
+
+window.openEditMeasurementModal = function (item) {
+    window.openViewMeasurementModal(item);
 };
 
 window.closeEditMeasurementModal = function () {
     const m = document.getElementById('editMeasurementModal');
-    if (m) m.classList.remove('open');
+    if (m) {
+        m.classList.remove('open', 'active');
+        m.style.display = 'none';
+        applyEditModeState(false);
+    }
 };
 
+window.toggleModalEditMode = function () {
+    applyEditModeState(!isEditUnlocked);
+};
+
+function applyEditModeState(isEditing) {
+    isEditUnlocked = isEditing;
+    const form = document.getElementById('editMeasurementForm');
+    const badge = document.getElementById('modalModeStatusBadge');
+    const btn = document.getElementById('btnToggleEditMode');
+    const btnText = document.getElementById('btnToggleEditModeText');
+    const btnIcon = document.getElementById('btnToggleEditModeIcon');
+    const submitBtn = document.getElementById('edit_modal_submit_btn');
+    const btnGps = document.getElementById('edit_btn_gps');
+    const btnAddPhotos = document.getElementById('edit_btn_add_photos');
+    const btnDelPhoto = document.getElementById('edit_btn_delete_photo');
+    const readingsInputBar = document.getElementById('edit_readings_input_bar');
+
+    if (!form) return;
+
+    if (isEditing) {
+        form.classList.remove('modal-view-mode');
+        if (badge) {
+            badge.className = 'modal-badge-edit';
+            badge.textContent = 'Modo Edición';
+            badge.style.cssText = '';
+        }
+        if (btn) btn.classList.add('active-editing');
+        if (btnText) btnText.textContent = 'Lectura';
+        if (btnIcon) {
+            btnIcon.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`;
+        }
+        if (submitBtn) submitBtn.style.display = 'inline-flex';
+        if (btnGps) btnGps.style.display = 'inline-flex';
+        if (btnAddPhotos) btnAddPhotos.style.display = 'flex';
+        if (btnDelPhoto && sliderState.edit.photos.length > 0) btnDelPhoto.style.display = 'inline-flex';
+        if (readingsInputBar) readingsInputBar.style.display = 'flex';
+
+        form.querySelectorAll('input:not([type="hidden"]), select, textarea').forEach(el => {
+            el.disabled = false;
+        });
+
+        if (editModalMarker && editModalMarker.dragging) {
+            editModalMarker.dragging.enable();
+        }
+    } else {
+        form.classList.add('modal-view-mode');
+        if (badge) {
+            badge.className = 'modal-badge-view';
+            badge.textContent = 'Solo Lectura';
+            badge.style.cssText = '';
+        }
+        if (btn) btn.classList.remove('active-editing');
+        if (btnText) btnText.textContent = 'Editar';
+        if (btnIcon) {
+            btnIcon.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`;
+        }
+        if (submitBtn) submitBtn.style.display = 'none';
+        if (btnGps) btnGps.style.display = 'none';
+        if (btnAddPhotos) btnAddPhotos.style.display = 'none';
+        if (btnDelPhoto) btnDelPhoto.style.display = 'none';
+        if (readingsInputBar) readingsInputBar.style.display = 'none';
+
+        form.querySelectorAll('input:not([type="hidden"]), select, textarea').forEach(el => {
+            el.disabled = true;
+        });
+
+        if (editModalMarker && editModalMarker.dragging) {
+            editModalMarker.dragging.disable();
+        }
+    }
+
+    renderNoiseReadings('edit');
+}
+
+window.addNoiseReadingPoint = function (prefix) {
+    if (prefix === 'edit' && !isEditUnlocked) return;
+    const input = document.getElementById(`${prefix}_quick_db_input`);
+    if (!input) return;
+    const val = parseFloat(input.value);
+    if (isNaN(val) || val <= 0) {
+        alert('Ingrese un nivel de decibeles válido (> 0 dBA).');
+        input.focus();
+        return;
+    }
+    editNoiseReadingsList.push(val);
+    input.value = '';
+    input.focus();
+    renderNoiseReadings(prefix);
+};
+
+window.removeNoiseReadingPoint = function (prefix, index) {
+    if (prefix === 'edit' && !isEditUnlocked) return;
+    editNoiseReadingsList.splice(index, 1);
+    renderNoiseReadings(prefix);
+};
+
+function renderNoiseReadings(prefix) {
+    const container = document.getElementById(`${prefix}_readings_badges_container`);
+    const countBadge = document.getElementById(`${prefix}_readings_count_badge`);
+    const hiddenJson = document.getElementById(`${prefix}_mediciones_db_json`);
+
+    if (!container) return;
+
+    if (countBadge) countBadge.textContent = `${editNoiseReadingsList.length} ${editNoiseReadingsList.length === 1 ? 'lectura' : 'lecturas'}`;
+    if (hiddenJson) hiddenJson.value = JSON.stringify(editNoiseReadingsList);
+
+    if (editNoiseReadingsList.length === 0) {
+        container.innerHTML = `<span style="font-size: 11.5px; color: #94a3b8; font-style: italic;">Sin lecturas registradas.</span>`;
+        updateNoiseSummaryStrip(prefix, null);
+        return;
+    }
+
+    const canDelete = isEditUnlocked;
+    let badgesHtml = '';
+    editNoiseReadingsList.forEach((val, idx) => {
+        badgesHtml += `
+            <span class="lux-reading-badge" style="font-size: 12px; font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 3px 8px; border-radius: 6px; border: 1px solid #bae6fd; display: inline-flex; align-items: center; gap: 4px;">
+                <span>#${idx + 1}: <strong>${val.toFixed(1)} dB</strong></span>
+                ${canDelete ? `<button type="button" onclick="removeNoiseReadingPoint('${prefix}', ${idx})" title="Eliminar lectura #${idx + 1}" style="background: none; border: none; color: #0284c7; cursor: pointer; font-size: 11px; padding: 0 2px;">✕</button>` : ''}
+            </span>
+        `;
+    });
+    container.innerHTML = badgesHtml;
+
+    recalculateRuidoModal(prefix);
+}
+
+window.recalculateRuidoModal = function (prefix) {
+    const list = editNoiseReadingsList.map(v => parseFloat(v)).filter(v => !isNaN(v) && v > 0);
+    const leq = calculateAcousticLeq(list);
+    const tpeInput = document.getElementById(`${prefix}_tiempo_expos_h`);
+    const tpe = tpeInput ? (parseFloat(tpeInput.value) || 8.0) : 8.0;
+
+    let tmpe = null;
+    let dosis = null;
+    if (leq !== null && leq > 0) {
+        tmpe = 8.0 / Math.pow(2.0, (leq - 85.0) / 3.0);
+        dosis = (tpe / tmpe) * 100.0;
+    }
+
+    updateNoiseSummaryStrip(prefix, { leq, tmpe, dosis });
+};
+
+function updateNoiseSummaryStrip(prefix, data) {
+    const laeqEl = document.getElementById(`${prefix}_calc_laeq`);
+    const tmpeEl = document.getElementById(`${prefix}_calc_tmpe`);
+    const dosisEl = document.getElementById(`${prefix}_calc_dosis`);
+    const badgeEl = document.getElementById(`${prefix}_calc_badge`);
+
+    if (!data || data.leq === null) {
+        if (laeqEl) laeqEl.textContent = '—';
+        if (tmpeEl) tmpeEl.textContent = '—';
+        if (dosisEl) dosisEl.textContent = '—';
+        if (badgeEl) {
+            badgeEl.textContent = 'Sin datos';
+            badgeEl.className = 'lux-measured-badge';
+            badgeEl.style.background = '#f1f5f9';
+            badgeEl.style.color = '#64748b';
+            badgeEl.style.borderColor = '#cbd5e1';
+        }
+        return;
+    }
+
+    const { leq, tmpe, dosis } = data;
+    const isCompliant = (dosis !== null && dosis <= 100.0) && (leq <= 85.0);
+
+    if (laeqEl) {
+        laeqEl.textContent = `${leq.toFixed(1)} dBA`;
+        laeqEl.style.color = (leq <= 85.0) ? '#059669' : '#dc2626';
+    }
+    if (tmpeEl) tmpeEl.textContent = tmpe !== null ? `${tmpe.toFixed(2)} h` : '—';
+    if (dosisEl) {
+        dosisEl.textContent = dosis !== null ? `${dosis.toFixed(1)}%` : '—';
+        dosisEl.style.color = (dosis <= 100.0) ? '#059669' : '#dc2626';
+    }
+    if (badgeEl) {
+        badgeEl.textContent = isCompliant ? '✔ CUMPLE' : '✕ NO CUMPLE';
+        badgeEl.className = `lux-measured-badge ${isCompliant ? 'compliant' : 'non-compliant'}`;
+        badgeEl.style.background = isCompliant ? '#ecfdf5' : '#fef2f2';
+        badgeEl.style.color = isCompliant ? '#059669' : '#dc2626';
+        badgeEl.style.borderColor = isCompliant ? '#a7f3d0' : '#fecaca';
+    }
+}
+
+// Carrusel de Fotografías
+function renderPhotoSlider(mode) {
+    const state = sliderState[mode] || { photos: [], currentIndex: 0 };
+    const counter = document.getElementById(`${mode}_slider_counter`);
+    const btnPrev = document.getElementById(`${mode}_slider_btn_prev`);
+    const btnNext = document.getElementById(`${mode}_slider_btn_next`);
+    const mainImg = document.getElementById(`${mode}_slider_img`);
+    const placeholder = document.getElementById(`${mode}_slider_placeholder`);
+    const thumbsStrip = document.getElementById(`${mode}_slider_thumbs`);
+    const countIndicator = document.getElementById(`${mode}_photo_count_indicator`);
+    const btnDel = document.getElementById(`${mode}_btn_delete_photo`);
+
+    const count = state.photos.length;
+    if (countIndicator) {
+        countIndicator.textContent = count === 1 ? '1 foto' : `${count} fotos`;
+    }
+
+    if (count === 0) {
+        if (counter) counter.style.display = 'none';
+        if (btnPrev) btnPrev.style.display = 'none';
+        if (btnNext) btnNext.style.display = 'none';
+        if (mainImg) { mainImg.style.display = 'none'; mainImg.src = ''; }
+        if (placeholder) placeholder.style.display = 'flex';
+        if (thumbsStrip) { thumbsStrip.style.display = 'none'; thumbsStrip.innerHTML = ''; }
+        if (btnDel) btnDel.style.display = 'none';
+        return;
+    }
+
+    if (state.currentIndex >= count) state.currentIndex = Math.max(0, count - 1);
+
+    if (counter) {
+        counter.textContent = `${state.currentIndex + 1} / ${count}`;
+        counter.style.display = count > 1 ? 'block' : 'none';
+    }
+    if (btnPrev) btnPrev.style.display = count > 1 ? 'flex' : 'none';
+    if (btnNext) btnNext.style.display = count > 1 ? 'flex' : 'none';
+
+    if (mainImg) {
+        mainImg.src = state.photos[state.currentIndex];
+        mainImg.style.display = 'block';
+    }
+    if (placeholder) placeholder.style.display = 'none';
+
+    if (btnDel) {
+        btnDel.style.display = isEditUnlocked ? 'inline-flex' : 'none';
+    }
+
+    if (thumbsStrip) {
+        if (count > 1) {
+            thumbsStrip.style.display = 'flex';
+            thumbsStrip.innerHTML = state.photos.map((src, idx) => `
+                <div class="slider-thumb-item ${idx === state.currentIndex ? 'active' : ''}"
+                     onclick="selectSlidePhoto('${mode}', ${idx})"
+                     title="Ver foto ${idx + 1}"
+                     style="width: 48px; height: 48px; border-radius: 6px; overflow: hidden; cursor: pointer; border: 2px solid ${idx === state.currentIndex ? '#0284c7' : '#cbd5e1'}; flex-shrink: 0;">
+                    <img src="${src}" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                </div>
+            `).join('');
+        } else {
+            thumbsStrip.style.display = 'none';
+            thumbsStrip.innerHTML = '';
+        }
+    }
+}
+
+window.slidePhotoNav = function (mode, delta) {
+    const state = sliderState[mode];
+    if (!state || state.photos.length <= 1) return;
+    state.currentIndex = (state.currentIndex + delta + state.photos.length) % state.photos.length;
+    renderPhotoSlider(mode);
+};
+
+window.selectSlidePhoto = function (mode, index) {
+    const state = sliderState[mode];
+    if (!state || index < 0 || index >= state.photos.length) return;
+    state.currentIndex = index;
+    renderPhotoSlider(mode);
+};
+
+window.deleteActivePhoto = function (mode) {
+    if (!isEditUnlocked) return;
+    const state = sliderState[mode];
+    if (!state || state.photos.length === 0) return;
+
+    if (!confirm('¿Deseas remover esta fotografía del punto de medición?')) return;
+
+    const removedUrl = state.photos.splice(state.currentIndex, 1)[0];
+    if (removedUrl && !removedUrl.startsWith('data:')) {
+        state.removedUrls.push(removedUrl);
+    }
+    if (state.currentIndex >= state.photos.length) {
+        state.currentIndex = Math.max(0, state.photos.length - 1);
+    }
+    syncEditRemainingImages();
+    renderPhotoSlider(mode);
+};
+
+function syncEditRemainingImages() {
+    const state = sliderState.edit;
+    const input = document.getElementById('edit_remaining_images');
+    if (!input || !state) return;
+    const remaining = state.photos.filter(p => !p.startsWith('data:') && !p.startsWith('blob:'));
+    input.value = JSON.stringify(remaining);
+}
+
+window.handleMultipleImagesSelected = function (input, mode) {
+    const state = sliderState[mode];
+    if (!state || !input.files || input.files.length === 0) return;
+
+    Array.from(input.files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            state.photos.push(e.target.result);
+            renderPhotoSlider(mode);
+            syncEditRemainingImages();
+        };
+        reader.readAsDataURL(file);
+    });
+};
+
+// Mini Mapa Leaflet
+function initModalMiniMap(mode, lat, lng) {
+    const mapEl = document.getElementById(`${mode}_modal_map`);
+    if (!mapEl || typeof L === 'undefined') return;
+
+    if (editModalMiniMap) {
+        editModalMiniMap.remove();
+        editModalMiniMap = null;
+        editModalMarker = null;
+    }
+
+    editModalMiniMap = L.map(mapEl, {
+        center: [lat, lng],
+        zoom: 16,
+        attributionControl: false
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19
+    }).addTo(editModalMiniMap);
+
+    editModalMarker = L.marker([lat, lng], {
+        draggable: isEditUnlocked
+    }).addTo(editModalMiniMap);
+
+    editModalMarker.on('dragend', function (e) {
+        const pos = e.target.getLatLng();
+        updateUtmFromLatLng(pos.lat, pos.lng, mode);
+    });
+
+    setTimeout(() => {
+        if (editModalMiniMap) editModalMiniMap.invalidateSize();
+    }, 200);
+}
+
+function updateUtmFromLatLng(lat, lng, mode) {
+    const latInput = document.getElementById(`${mode}_latitude`);
+    const lngInput = document.getElementById(`${mode}_longitude`);
+    if (latInput) latInput.value = lat.toFixed(7);
+    if (lngInput) lngInput.value = lng.toFixed(7);
+
+    const conv = latLngToUtmJS(lat, lng);
+    const eInput = document.getElementById(`${mode}_utm_easting`);
+    const nInput = document.getElementById(`${mode}_utm_northing`);
+    const zInput = document.getElementById(`${mode}_utm_zone`);
+    const disp = document.getElementById(`${mode}_utm_display`);
+    const locInput = document.getElementById(`${mode}_location`);
+
+    if (eInput) eInput.value = conv.easting.toFixed(3);
+    if (nInput) nInput.value = conv.northing.toFixed(3);
+    if (zInput) zInput.value = conv.zone;
+    const formatted = `E: ${conv.easting.toFixed(3)}, N: ${conv.northing.toFixed(3)}, Z: ${conv.zone}`;
+    if (disp) disp.textContent = formatted;
+    if (locInput) locInput.value = formatted;
+}
+
+window.syncUtmToMap = function (mode) {
+    const eInput = document.getElementById(`${mode}_utm_easting`);
+    const nInput = document.getElementById(`${mode}_utm_northing`);
+    const zInput = document.getElementById(`${mode}_utm_zone`);
+    if (!eInput || !nInput) return;
+
+    const easting = parseFloat(eInput.value);
+    const northing = parseFloat(nInput.value);
+    const zone = zInput ? zInput.value : '19K';
+
+    if (isNaN(easting) || isNaN(northing)) return;
+
+    const pos = utmToLatLngJS(easting, northing, zone);
+    const latInput = document.getElementById(`${mode}_latitude`);
+    const lngInput = document.getElementById(`${mode}_longitude`);
+    if (latInput) latInput.value = pos.lat.toFixed(7);
+    if (lngInput) lngInput.value = pos.lng.toFixed(7);
+
+    const disp = document.getElementById(`${mode}_utm_display`);
+    const locInput = document.getElementById(`${mode}_location`);
+    const formatted = `E: ${easting.toFixed(3)}, N: ${northing.toFixed(3)}, Z: ${zone}`;
+    if (disp) disp.textContent = formatted;
+    if (locInput) locInput.value = formatted;
+
+    if (editModalMarker && editModalMiniMap) {
+        editModalMarker.setLatLng([pos.lat, pos.lng]);
+        editModalMiniMap.panTo([pos.lat, pos.lng]);
+    }
+};
+
+window.getCurrentGpsPosition = function (latId, lngId, mode) {
+    if (!navigator.geolocation) {
+        alert('La geolocalización no está soportada por su navegador.');
+        return;
+    }
+    navigator.geolocation.getCurrentPosition(
+        function (pos) {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            updateUtmFromLatLng(lat, lng, mode);
+            if (editModalMarker && editModalMiniMap) {
+                editModalMarker.setLatLng([lat, lng]);
+                editModalMiniMap.panTo([lat, lng]);
+            }
+        },
+        function (err) {
+            alert('No se pudo obtener la ubicación GPS: ' + err.message);
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+    );
+};
+
+function latLngToUtmJS(lat, lng) {
+    let zoneNumber = Math.floor((lng + 180) / 6) + 1;
+    if (zoneNumber < 1) zoneNumber = 1;
+    if (zoneNumber > 60) zoneNumber = 60;
+    const a = 6378137.0;
+    const f = 1 / 298.257223563;
+    const e = Math.sqrt(2 * f - f * f);
+    const ePrimeSquared = (e * e) / (1 - e * e);
+    const latRad = lat * (Math.PI / 180);
+    const lngRad = lng * (Math.PI / 180);
+    const centralLongitude = ((zoneNumber - 1) * 6 - 180 + 3) * (Math.PI / 180);
+    const k0 = 0.9996;
+    const N = a / Math.sqrt(1 - e * e * Math.sin(latRad) * Math.sin(latRad));
+    const T = Math.tan(latRad) * Math.tan(latRad);
+    const C = ePrimeSquared * Math.cos(latRad) * Math.cos(latRad);
+    const A = Math.cos(latRad) * (lngRad - centralLongitude);
+    const M = a * ((1 - e * e / 4 - 3 * e * e * e * e / 64 - 5 * e * e * e * e * e * e / 256) * latRad
+        - (3 * e * e / 8 + 3 * e * e * e * e / 32 + 45 * e * e * e * e * e * e / 1024) * Math.sin(2 * latRad)
+        + (15 * e * e * e * e / 256 + 45 * e * e * e * e * e * e / 1024) * Math.sin(4 * latRad)
+        - (35 * e * e * e * e * e * e / 3072) * Math.sin(6 * latRad));
+    const easting = k0 * N * (A + (1 - T + C) * A * A * A / 6 + (5 - 18 * T + T * T + 72 * C - 58 * ePrimeSquared) * A * A * A * A * A / 120) + 500000;
+    let northing = k0 * (M + N * Math.tan(latRad) * (A * A / 2 + (5 - T + 9 * C + 4 * C * C) * A * A * A * A / 24 + (61 - 58 * T + T * T + 600 * C - 330 * ePrimeSquared) * A * A * A * A * A * A / 720));
+    if (lat < 0) northing += 10000000.0;
+    return { easting: Math.round(easting * 1000) / 1000, northing: Math.round(northing * 1000) / 1000, zone: zoneNumber + 'K' };
+}
+
 window.confirmDeleteMeasurement = function (id, pointNum) {
+    const deleteAction = () => {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/modulos/${MODULE_ID}/ruido-ocupacional/mediciones/${id}`;
+        
+        const csrf = document.createElement('input');
+        csrf.type = 'hidden';
+        csrf.name = '_token';
+        csrf.value = CSRF_TOKEN;
+        form.appendChild(csrf);
+
+        const method = document.createElement('input');
+        method.type = 'hidden';
+        method.name = '_method';
+        method.value = 'DELETE';
+        form.appendChild(method);
+
+        document.body.appendChild(form);
+        form.submit();
+    };
+
     if (typeof Swal !== 'undefined') {
         Swal.fire({
             title: '¿Eliminar medición?',
@@ -404,21 +901,11 @@ window.confirmDeleteMeasurement = function (id, pointNum) {
                 cancelButton: 'metric-swal-btn-cancel'
             }
         }).then((res) => {
-            if (res.isConfirmed) {
-                const f = document.getElementById('deleteMeasurementForm');
-                if (f) {
-                    f.action = `/modulos/${MODULE_ID}/ruido-ambiental/mediciones/${id}`;
-                    f.submit();
-                }
-            }
+            if (res.isConfirmed) deleteAction();
         });
     } else {
         if (confirm(`¿Eliminar medición ${pointNum}?`)) {
-            const f = document.getElementById('deleteMeasurementForm');
-            if (f) {
-                f.action = `/modulos/${MODULE_ID}/ruido-ambiental/mediciones/${id}`;
-                f.submit();
-            }
+            deleteAction();
         }
     }
 };
@@ -619,9 +1106,19 @@ window.openPhotoViewerModal = function (url, pointName, caption) {
 };
 
 window.closePhotoViewerModal = function () {
+    if (typeof window.universalClosePhotoViewer === 'function') {
+        window.universalClosePhotoViewer();
+        return;
+    }
     const m = document.getElementById('photoViewerModal');
-    if (m) m.classList.remove('open');
+    if (m) {
+        m.classList.remove('open', 'active', 'show');
+        m.style.removeProperty('display');
+        m.style.display = 'none';
+    }
+    document.body.style.removeProperty('overflow');
 };
+window.closePhotoViewer = window.closePhotoViewerModal;
 
 /* ==========================================================================
    7. MODAL EXPORTAR & TABLAS TÉCNICAS
@@ -875,11 +1372,17 @@ window.openTechHeaderEditModal = function () {
     window.openPhotoViewerModal = window.openPhotoViewer;
 
     window.closePhotoViewerModal = function() {
+        if (typeof window.universalClosePhotoViewer === 'function') {
+            window.universalClosePhotoViewer();
+            return;
+        }
         const modal = document.getElementById('photoViewerModal');
         if (modal) {
+            modal.classList.remove('open', 'active', 'show');
+            modal.style.removeProperty('display');
             modal.style.display = 'none';
-            modal.classList.remove('open');
         }
+        document.body.style.removeProperty('overflow');
     };
     window.closePhotoViewer = window.closePhotoViewerModal;
 

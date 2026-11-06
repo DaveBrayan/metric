@@ -155,8 +155,33 @@ window.metricAlert = function({ title, text, icon = 'success', timer = 2500 }) {
 let globalViewerImages = [];
 let globalViewerIndex = 0;
 
-window.openPhotoViewer = function(images, pointTitle = 'Fotografía del Punto', startIndex = 0) {
+function formatPhotoUrl(src) {
+    if (!src || typeof src !== 'string') return '';
+    src = src.trim();
+    if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:') || src.startsWith('blob:')) {
+        return src;
+    }
+    if (src.startsWith('/')) {
+        return src;
+    }
+    return '/' + src;
+}
+
+window.formatPhotoUrl = formatPhotoUrl;
+
+window.openPhotoViewer = function(images, p2 = 'Fotografía del Punto', p3 = 0) {
     if (!images) return;
+
+    let pointTitle = 'Fotografía del Punto';
+    let startIndex = 0;
+
+    if (typeof p2 === 'number') {
+        startIndex = p2;
+        if (typeof p3 === 'string' && p3.trim()) pointTitle = p3;
+    } else {
+        if (typeof p2 === 'string' && p2.trim()) pointTitle = p2;
+        if (typeof p3 === 'number') startIndex = p3;
+    }
     
     if (typeof images === 'string') {
         try {
@@ -171,6 +196,9 @@ window.openPhotoViewer = function(images, pointTitle = 'Fotografía del Punto', 
         globalViewerImages = [];
     }
 
+    // Aplanar arrays anidados si vinieron [["url"]]
+    globalViewerImages = globalViewerImages.flat().filter(Boolean).map(formatPhotoUrl);
+
     if (globalViewerImages.length === 0) return;
 
     globalViewerIndex = Math.max(0, Math.min(startIndex, globalViewerImages.length - 1));
@@ -182,24 +210,54 @@ window.openPhotoViewer = function(images, pointTitle = 'Fotografía del Punto', 
     renderGlobalPhotoViewer();
 
     if (modal) {
-        modal.classList.add('open');
+        modal.classList.add('open', 'active');
         modal.style.display = 'flex';
     }
 };
 
-window.openPhotoViewerModal = function(images, startIndex = 0, pointTitle = 'Fotografía de Medición') {
-    window.openPhotoViewer(images, pointTitle, startIndex);
-};
-
-window.closePhotoViewer = function() {
-    const modal = document.getElementById('photoViewerModal');
-    if (modal) {
-        modal.classList.remove('open');
-        modal.style.display = 'none';
+window.openPhotoViewerModal = function(images, p2 = 0, p3 = 'Fotografía de Medición') {
+    if (typeof p2 === 'string' && typeof p3 === 'number') {
+        window.openPhotoViewer(images, p2, p3);
+    } else if (typeof p2 === 'number') {
+        window.openPhotoViewer(images, p3, p2);
+    } else {
+        window.openPhotoViewer(images, p2 || 'Fotografía de Medición', 0);
     }
 };
 
-window.closePhotoViewerModal = window.closePhotoViewer;
+function universalClosePhotoViewer() {
+    const modal = document.getElementById('photoViewerModal');
+    if (modal) {
+        modal.classList.remove('open', 'active', 'show');
+        modal.style.removeProperty('display');
+        modal.style.display = 'none';
+        
+        const mainImg = document.getElementById('photoViewerImg') || 
+                        document.getElementById('photoViewerMainImage') || 
+                        document.getElementById('mainViewerImage') || 
+                        document.getElementById('photoViewerImage');
+        if (mainImg) mainImg.src = '';
+    }
+    document.body.style.removeProperty('overflow');
+    document.body.style.overflow = '';
+}
+window.universalClosePhotoViewer = universalClosePhotoViewer;
+
+try {
+    Object.defineProperty(window, 'closePhotoViewer', {
+        get: function() { return universalClosePhotoViewer; },
+        set: function() { /* Evitar que scripts secundarios lo sobreescriban */ },
+        configurable: true
+    });
+    Object.defineProperty(window, 'closePhotoViewerModal', {
+        get: function() { return universalClosePhotoViewer; },
+        set: function() { /* Evitar que scripts secundarios lo sobreescriban */ },
+        configurable: true
+    });
+} catch (e) {
+    window.closePhotoViewer = universalClosePhotoViewer;
+    window.closePhotoViewerModal = universalClosePhotoViewer;
+}
 
 window.navigatePhotoViewer = function(delta) {
     if (globalViewerImages.length <= 1) return;
@@ -215,11 +273,14 @@ window.selectGlobalPhotoViewerIndex = function(index) {
 };
 
 function renderGlobalPhotoViewer() {
-    const imgEl = document.getElementById('photoViewerImg') || document.getElementById('photoViewerMainImage') || document.getElementById('photoViewerImage');
+    const imgEl = document.getElementById('photoViewerImg') || 
+                  document.getElementById('photoViewerMainImage') || 
+                  document.getElementById('mainViewerImage') || 
+                  document.getElementById('photoViewerImage');
     const counterEl = document.getElementById('photoViewerCounter');
     const prevBtn = document.getElementById('photoViewerPrevBtn');
     const nextBtn = document.getElementById('photoViewerNextBtn');
-    const stripEl = document.getElementById('photoViewerThumbnailsStrip');
+    const stripEl = document.getElementById('photoViewerThumbnailsStrip') || document.getElementById('photoThumbnailsRow');
 
     const total = globalViewerImages.length;
     const currentSrc = globalViewerImages[globalViewerIndex];
@@ -248,8 +309,9 @@ function renderGlobalPhotoViewer() {
             stripEl.innerHTML = globalViewerImages.map((src, i) => `
                 <div class="viewer-thumb-item ${i === globalViewerIndex ? 'active' : ''}"
                      onclick="selectGlobalPhotoViewerIndex(${i})"
-                     title="Ver foto ${i + 1}">
-                    <img src="${src}" style="width: 100%; height: 100%; object-fit: cover;">
+                     title="Ver foto ${i + 1}"
+                     style="width: 52px; height: 52px; border-radius: 6px; overflow: hidden; cursor: pointer; border: 2px solid ${i === globalViewerIndex ? '#10b9df' : '#475569'}; flex-shrink: 0; transition: all 0.2s ease;">
+                    <img src="${src}" style="width: 100%; height: 100%; object-fit: cover; display: block;">
                 </div>
             `).join('');
         } else {
@@ -262,10 +324,43 @@ function renderGlobalPhotoViewer() {
 // Global Keyboard Navigation (Esc, ArrowLeft, ArrowRight)
 document.addEventListener('keydown', (e) => {
     const modal = document.getElementById('photoViewerModal');
-    if (modal && (modal.classList.contains('open') || modal.style.display === 'flex')) {
-        if (e.key === 'Escape') closePhotoViewer();
-        if (e.key === 'ArrowLeft') navigatePhotoViewer(-1);
-        if (e.key === 'ArrowRight') navigatePhotoViewer(1);
+    if (modal && (modal.classList.contains('open') || modal.classList.contains('active') || modal.style.display === 'flex')) {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            universalClosePhotoViewer();
+        }
+        if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            navigatePhotoViewer(-1);
+        }
+        if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            navigatePhotoViewer(1);
+        }
     }
 });
+
+// Global Event Delegation for clicking backdrop or close buttons (Capture Phase)
+document.addEventListener('click', (e) => {
+    const modal = document.getElementById('photoViewerModal');
+    if (!modal) return;
+    const isVisible = modal.classList.contains('open') || 
+                      modal.classList.contains('active') || 
+                      modal.style.display === 'flex';
+    if (!isVisible) return;
+
+    // Click on backdrop directly
+    if (e.target === modal) {
+        universalClosePhotoViewer();
+        return;
+    }
+
+    // Click on close button inside photoViewerModal
+    const closeBtn = e.target.closest('#photoViewerModal .btn-close-modal, #photoViewerModal [aria-label="Cerrar"], #photoViewerModal [title*="Cerrar"], #photoViewerModal .close-modal-btn');
+    if (closeBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        universalClosePhotoViewer();
+    }
+}, true);
 

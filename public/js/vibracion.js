@@ -265,14 +265,21 @@ window.openViewMeasurementModal = function(item) {
 
     // Archivo fotográfico (Slide continuo)
     let images = [];
-    if (item.images_urls && Array.isArray(item.images_urls)) {
+    if (item.images && Array.isArray(item.images) && item.images.length > 0) {
+        images = item.images;
+    } else if (item.images_urls && Array.isArray(item.images_urls) && item.images_urls.length > 0) {
         images = item.images_urls;
-    } else if (item.image_urls && Array.isArray(item.image_urls)) {
+    } else if (item.image_urls && Array.isArray(item.image_urls) && item.image_urls.length > 0) {
         images = item.image_urls;
     } else if (item.image_path) {
         images = [item.image_path];
     }
-    sliderState.edit = { photos: [...images], currentIndex: 0, removedUrls: [] };
+    const safeImages = images.filter(Boolean).map(src => {
+        if (typeof src !== 'string') return '';
+        if (src.startsWith('http') || src.startsWith('data:') || src.startsWith('blob:')) return src;
+        return src.startsWith('/') ? src : ('/' + src);
+    }).filter(Boolean);
+    sliderState.edit = { photos: safeImages, currentIndex: 0, removedUrls: [] };
     renderPhotoSlider('edit');
     updateRemainingImagesInput('edit');
 
@@ -833,15 +840,20 @@ window.closeExportModal = function() {
 };
 
 window.openPhotoViewerModal = function(photos, title) {
+    if (window.openPhotoViewer) {
+        window.openPhotoViewer(photos, title || 'Evidencia Fotográfica');
+        return;
+    }
     const modal = document.getElementById('photoViewerModal');
     if (!modal) return;
 
     const list = Array.isArray(photos) ? photos : [photos];
     if (list.length === 0) return;
 
-    document.getElementById('photoViewerTitle').textContent = title || 'Evidencia Fotográfica';
-    const mainImg = document.getElementById('mainViewerImage');
-    mainImg.src = list[0];
+    const titleEl = document.getElementById('photoViewerTitle');
+    if (titleEl) titleEl.textContent = title || 'Evidencia Fotográfica';
+    const mainImg = document.getElementById('photoViewerImg') || document.getElementById('mainViewerImage');
+    if (mainImg) mainImg.src = list[0];
 
     const thumbsRow = document.getElementById('photoThumbnailsRow');
     thumbsRow.innerHTML = '';
@@ -869,8 +881,17 @@ window.openPhotoViewerModal = function(photos, title) {
 };
 
 window.closePhotoViewerModal = function() {
+    if (typeof window.universalClosePhotoViewer === 'function') {
+        window.universalClosePhotoViewer();
+        return;
+    }
     const modal = document.getElementById('photoViewerModal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        modal.classList.remove('open', 'active', 'show');
+        modal.style.removeProperty('display');
+        modal.style.display = 'none';
+    }
+    document.body.style.removeProperty('overflow');
 };
 
 window.confirmDeleteVibracionMeasurement = function(id, code) {
@@ -1138,12 +1159,41 @@ function closeExportModal() {
 window.closeExportModal = closeExportModal;
 
 function openPhotoViewer(src, caption = '') {
+    if (window.formatPhotoUrl) {
+        const list = (Array.isArray(src) ? src : [src]).filter(Boolean).map(window.formatPhotoUrl);
+        const modal = document.getElementById('photoViewerModal');
+        const img = document.getElementById('photoViewerImg') || document.getElementById('mainViewerImage');
+        const title = document.getElementById('photoViewerTitle');
+        const counterEl = document.getElementById('photoViewerCounter');
+        const prevBtn = document.getElementById('photoViewerPrevBtn');
+        const nextBtn = document.getElementById('photoViewerNextBtn');
+        const stripEl = document.getElementById('photoViewerThumbnailsStrip') || document.getElementById('photoThumbnailsRow');
+
+        if (title) title.textContent = caption || 'Evidencia Fotográfica de Vibración';
+        if (img && list[0]) {
+            img.src = list[0];
+            img.style.display = 'block';
+        }
+        if (counterEl) {
+            counterEl.style.display = list.length > 1 ? 'inline-block' : 'none';
+            counterEl.textContent = list.length > 1 ? `Foto 1 de ${list.length}` : '';
+        }
+        if (prevBtn) prevBtn.style.display = list.length > 1 ? 'grid' : 'none';
+        if (nextBtn) nextBtn.style.display = list.length > 1 ? 'grid' : 'none';
+        if (modal) {
+            modal.classList.add('open', 'active');
+            modal.style.display = 'flex';
+        }
+        return;
+    }
+
     const modal = document.getElementById('photoViewerModal');
     const img = document.getElementById('mainViewerImage') || document.getElementById('photoViewerImg');
     const title = document.getElementById('photoViewerTitle');
     if (!modal || !img) return;
 
-    img.src = src;
+    const first = Array.isArray(src) ? src[0] : src;
+    img.src = first ? (first.startsWith('http') || first.startsWith('/') ? first : '/' + first) : '';
     if (title) title.textContent = caption || 'Evidencia Fotográfica de Vibración';
     modal.classList.add('open', 'active');
     modal.style.display = 'flex';
@@ -1151,11 +1201,17 @@ function openPhotoViewer(src, caption = '') {
 window.openPhotoViewer = openPhotoViewer;
 
 function closePhotoViewer() {
+    if (typeof window.universalClosePhotoViewer === 'function') {
+        window.universalClosePhotoViewer();
+        return;
+    }
     const modal = document.getElementById('photoViewerModal');
     if (modal) {
-        modal.classList.remove('open', 'active');
+        modal.classList.remove('open', 'active', 'show');
+        modal.style.removeProperty('display');
         modal.style.display = 'none';
     }
+    document.body.style.removeProperty('overflow');
 }
 window.closePhotoViewer = closePhotoViewer;
 window.closePhotoViewerModal = closePhotoViewer;

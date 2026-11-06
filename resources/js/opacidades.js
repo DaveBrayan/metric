@@ -305,28 +305,23 @@ window.openPhotoViewer = function (photoUrl, title) {
     window.openPhotoViewerModal(photoUrl, title);
 };
 
-window.closePhotoViewer = function () {
-    window.closePhotoViewerModal();
-};
-
-window.openPhotoViewerModal = function (photoUrl, title) {
-    const modal = document.getElementById('photoViewerModal');
-    const img = document.getElementById('photoViewerImg');
-    const t = document.getElementById('photoViewerTitle');
-    if (modal && img) {
-        img.src = photoUrl;
-        if (t) t.textContent = title || 'Evidencia Fotográfica del Vehículo';
-        modal.classList.add('open');
-        document.body.style.overflow = 'hidden';
-    }
-};
-
 window.closePhotoViewerModal = function () {
+    if (typeof window.universalClosePhotoViewer === 'function') {
+        window.universalClosePhotoViewer();
+        return;
+    }
     const modal = document.getElementById('photoViewerModal');
     if (modal) {
-        modal.classList.remove('open');
-        document.body.style.overflow = '';
+        modal.classList.remove('open', 'active', 'show');
+        modal.style.removeProperty('display');
+        modal.style.display = 'none';
     }
+    document.body.style.removeProperty('overflow');
+    document.body.style.overflow = '';
+};
+
+window.closePhotoViewer = function () {
+    window.closePhotoViewerModal();
 };
 
 window.renderPhotoSlider = function (prefix) {

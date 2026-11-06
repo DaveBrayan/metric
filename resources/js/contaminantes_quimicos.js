@@ -745,9 +745,19 @@ function openPhotoViewer(url, title) {
 }
 
 function closePhotoViewer() {
+    if (typeof window.universalClosePhotoViewer === 'function') {
+        window.universalClosePhotoViewer();
+        return;
+    }
     const modal = document.getElementById('photoViewerModal');
-    if (modal) modal.classList.remove('open');
+    if (modal) {
+        modal.classList.remove('open', 'active', 'show');
+        modal.style.removeProperty('display');
+        modal.style.display = 'none';
+    }
+    document.body.style.removeProperty('overflow');
 }
+window.closePhotoViewerModal = closePhotoViewer;
 
 function openExportModal() {
     const modal = document.getElementById('exportOptionsModal');
