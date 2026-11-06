@@ -1061,11 +1061,16 @@ function switchColdStressTableTab(tab, btn) {
 }
 
 function openPhotoViewer(photoUrl, title) {
+    if (typeof window.universalOpenPhotoViewer === 'function') {
+        window.universalOpenPhotoViewer(photoUrl, title);
+        return;
+    }
     const modal = document.getElementById('photoViewerModal');
     const img = document.getElementById('photoViewerImg');
     const t = document.getElementById('photoViewerTitle');
     if (modal && img) {
-        img.src = photoUrl;
+        const single = Array.isArray(photoUrl) ? photoUrl[0] : photoUrl;
+        img.src = typeof window.formatPhotoUrl === 'function' ? window.formatPhotoUrl(single) : single;
         if (t) t.textContent = title || 'Evidencia Fotográfica';
         modal.classList.add('open');
         document.body.style.overflow = 'hidden';

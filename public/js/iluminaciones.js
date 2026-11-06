@@ -1577,10 +1577,15 @@ const UPDATE_HEADER_URL = cfg.updateHeaderUrl || window.UPDATE_HEADER_URL || ('/
         }
 
         function openPhotoViewer(url, title) {
+            if (typeof window.universalOpenPhotoViewer === 'function') {
+                window.universalOpenPhotoViewer(url, title);
+                return;
+            }
             const modal = document.getElementById('photoViewerModal');
             const img = document.getElementById('photoViewerImg');
             const t = document.getElementById('photoViewerTitle');
-            if (img) img.src = url;
+            const single = Array.isArray(url) ? url[0] : url;
+            if (img) img.src = typeof window.formatPhotoUrl === 'function' ? window.formatPhotoUrl(single) : single;
             if (t) t.textContent = title || 'Fotografía del Punto';
             if (modal) modal.classList.add('open');
         }

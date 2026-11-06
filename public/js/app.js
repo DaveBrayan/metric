@@ -161,15 +161,21 @@ function formatPhotoUrl(src) {
     if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:') || src.startsWith('blob:')) {
         return src;
     }
+    if (src.startsWith('img_')) {
+        return 'https://pachabol.com/metric/upload/' + src;
+    }
     if (src.startsWith('/')) {
         return src;
     }
-    return '/' + src;
+    if (src.startsWith('uploads/')) {
+        return '/' + src;
+    }
+    return '/uploads/measurements/' + src;
 }
 
 window.formatPhotoUrl = formatPhotoUrl;
 
-window.openPhotoViewer = function(images, p2 = 'Fotografía del Punto', p3 = 0) {
+const universalOpenPhotoViewer = function(images, p2 = 'Fotografía del Punto', p3 = 0) {
     if (!images) return;
 
     let pointTitle = 'Fotografía del Punto';
@@ -196,8 +202,8 @@ window.openPhotoViewer = function(images, p2 = 'Fotografía del Punto', p3 = 0) 
         globalViewerImages = [];
     }
 
-    // Aplanar arrays anidados si vinieron [["url"]]
-    globalViewerImages = globalViewerImages.flat().filter(Boolean).map(formatPhotoUrl);
+    // Aplanar arrays anidados si vinieron [["url"]] y normalizar URLs
+    globalViewerImages = globalViewerImages.flat(Infinity).filter(Boolean).map(formatPhotoUrl);
 
     if (globalViewerImages.length === 0) return;
 
@@ -214,6 +220,19 @@ window.openPhotoViewer = function(images, p2 = 'Fotografía del Punto', p3 = 0) 
         modal.style.display = 'flex';
     }
 };
+
+window.universalOpenPhotoViewer = universalOpenPhotoViewer;
+window.openPhotoViewer = universalOpenPhotoViewer;
+
+try {
+    Object.defineProperty(window, 'openPhotoViewer', {
+        get: function() { return universalOpenPhotoViewer; },
+        set: function() { /* Evitar que scripts secundarios lo sobreescriban */ },
+        configurable: true
+    });
+} catch (e) {
+    window.openPhotoViewer = universalOpenPhotoViewer;
+}
 
 window.openPhotoViewerModal = function(images, p2 = 0, p3 = 'Fotografía de Medición') {
     if (typeof p2 === 'string' && typeof p3 === 'number') {

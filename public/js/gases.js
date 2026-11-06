@@ -1216,12 +1216,17 @@ function expandCurrentMapPhoto() {
 }
 
 function openPhotoViewer(src, caption = '') {
+    if (typeof window.universalOpenPhotoViewer === 'function') {
+        window.universalOpenPhotoViewer(src, caption);
+        return;
+    }
     const modal = document.getElementById('photoViewerModal');
     const img = document.getElementById('photoViewerImg');
     const title = document.getElementById('photoViewerTitle');
     if (!modal || !img) return;
 
-    img.src = src;
+    const singleUrl = Array.isArray(src) ? src[0] : src;
+    img.src = typeof window.formatPhotoUrl === 'function' ? window.formatPhotoUrl(singleUrl) : singleUrl;
     if (title) title.textContent = caption || 'Fotografía de Medición de Gases';
     modal.classList.add('open');
 }
@@ -2334,7 +2339,7 @@ window.focusPointOnAllLocationsMap = focusPointOnAllLocationsMap;
 window.openMapModal = openMapModal;
 window.closeMapModal = closeMapModal;
 window.expandCurrentMapPhoto = expandCurrentMapPhoto;
-window.openPhotoViewer = openPhotoViewer;
+if (!window.openPhotoViewer) window.openPhotoViewer = openPhotoViewer;
 window.closePhotoViewer = closePhotoViewer;
 window.openExportModal = openExportModal;
 window.closeExportModal = closeExportModal;

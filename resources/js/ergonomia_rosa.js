@@ -2560,6 +2560,10 @@ window.printPhotoReport = printPhotoReport;
 
 
 function openPhotoViewer(url, caption) {
+    if (typeof window.universalOpenPhotoViewer === 'function') {
+        window.universalOpenPhotoViewer(url, caption);
+        return;
+    }
     if (window.formatPhotoUrl) {
         const list = (Array.isArray(url) ? url : [url]).filter(Boolean).map(window.formatPhotoUrl);
         const m = document.getElementById('photoViewerModal');

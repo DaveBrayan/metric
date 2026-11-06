@@ -1485,8 +1485,10 @@ function openPhotoViewerByPointId(pointId) {
     if (img) {
         const code = formatPointCode(item.num || item.id);
         const title = `${code}: ${item.punto_medicion || item.area || 'Punto'}`;
-        if (typeof openPhotoViewer === 'function') {
-            openPhotoViewer(img, title);
+        if (typeof window.universalOpenPhotoViewer === 'function') {
+            window.universalOpenPhotoViewer(images, title, idx);
+        } else if (typeof openPhotoViewer === 'function') {
+            openPhotoViewer(images, title);
         }
     }
 }

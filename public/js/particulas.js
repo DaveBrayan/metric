@@ -635,12 +635,17 @@ function confirmDeleteMeasurement(id, num) {
    5. VISOR DE FOTOGRAFÍA AMPLIFICADA
    ========================================================================== */
 function openPhotoViewer(url, title = 'Fotografía de Medición') {
+    if (typeof window.universalOpenPhotoViewer === 'function') {
+        window.universalOpenPhotoViewer(url, title);
+        return;
+    }
     const modal = document.getElementById('photoViewerModal');
     const img = document.getElementById('photoViewerImg');
     const titleEl = document.getElementById('photoViewerTitle');
     if (!modal || !img) return;
 
-    img.src = url;
+    const single = Array.isArray(url) ? url[0] : url;
+    img.src = typeof window.formatPhotoUrl === 'function' ? window.formatPhotoUrl(single) : single;
     if (titleEl) titleEl.textContent = title;
     modal.style.display = 'grid';
 }

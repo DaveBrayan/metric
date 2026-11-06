@@ -778,10 +778,15 @@ function closeMapModal() {
 }
 
 function openPhotoViewer(imgUrl, title = 'Fotografía del Punto') {
+    if (typeof window.universalOpenPhotoViewer === 'function') {
+        window.universalOpenPhotoViewer(imgUrl, title);
+        return;
+    }
     const modal = document.getElementById('photoViewerModal');
     const img = document.getElementById('photoViewerImg');
     const titleEl = document.getElementById('photoViewerTitle');
-    if (img) img.src = imgUrl;
+    const single = Array.isArray(imgUrl) ? imgUrl[0] : imgUrl;
+    if (img) img.src = typeof window.formatPhotoUrl === 'function' ? window.formatPhotoUrl(single) : single;
     if (titleEl) titleEl.textContent = title;
     if (modal) modal.classList.add('open');
 }

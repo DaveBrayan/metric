@@ -1159,6 +1159,10 @@ function closeExportModal() {
 window.closeExportModal = closeExportModal;
 
 function openPhotoViewer(src, caption = '') {
+    if (typeof window.universalOpenPhotoViewer === 'function') {
+        window.universalOpenPhotoViewer(src, caption);
+        return;
+    }
     if (window.formatPhotoUrl) {
         const list = (Array.isArray(src) ? src : [src]).filter(Boolean).map(window.formatPhotoUrl);
         const modal = document.getElementById('photoViewerModal');

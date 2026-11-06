@@ -129,7 +129,12 @@ class GasesController extends Controller
                 $rawImages = [$item->image_path];
             }
             $imagesUrls = array_values(array_filter(array_map(function ($p) {
-                return $p ? asset($p) : null;
+                if (!$p) return null;
+                $p = trim($p);
+                if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+                if (str_starts_with($p, 'img_')) return 'https://pachabol.com/metric/upload/' . $p;
+                if (!str_starts_with($p, 'uploads/') && !str_starts_with($p, '/')) return asset('uploads/measurements/' . $p);
+                return asset($p);
             }, $rawImages)));
 
             $selectedGases = is_array($item->selected_gases) ? $item->selected_gases : (json_decode($item->selected_gases, true) ?: []);

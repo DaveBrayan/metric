@@ -314,75 +314,118 @@ class MobileApiController extends Controller
         }
 
         $measurementId = $request->input('id') ?? $request->input('remote_id');
-        $measurement = null;
-        if (!empty($measurementId)) {
-            $measurement = $module->noiseMeasurements()->find($measurementId);
-        }
+        $localUuid = $request->input('local_uuid');
+        $observations = $request->input('observations') ?? $request->input('observaciones');
 
-        $data = [
-            'point_number' => $measurement ? $measurement->point_number : $pointNumber,
-            'measurement_date' => $measurementDate,
-            'measurement_time' => $measurementTime,
-            'area' => $area,
-            'maquinaria_equipo' => $maquinariaEquipo,
-            'actividad' => $actividad,
-            'descripcion_actividad' => $descripcionActividad,
-            'tipo_ruido' => $tipoRuido,
-            'punto_medicion' => $puntoMedicion,
-            'tiempo_expos_h' => $tiempoExposH,
-            'ponderacion' => $ponderacion,
-            'respuesta' => $respuesta,
-            'mediciones_db' => !empty($readings) ? $readings : null,
-            'leq_t_db' => $leqT,
-            'uso_protectores' => $usoProtectores,
-            'tipo_protector' => $tipoProtector,
-            'nrr_db' => $nrrDb,
-            'cumple' => $cumple,
-            'image_path' => $imagePath,
-            'images' => !empty($uploadedImages) ? $uploadedImages : null,
-            'location' => $locationRaw,
-            'latitude' => $latitude !== null ? (float) $latitude : null,
-            'longitude' => $longitude !== null ? (float) $longitude : null,
-            'utm_zone' => $utmZone,
-            'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
-            'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
-            'observations' => $request->input('observations') ?? $request->input('observaciones'),
-            'registered_by' => null,
-            'staff_id' => $staffId,
-        ];
+        return DB::transaction(function () use (
+            $module, $request, $measurementId, $localUuid, $pointNumber, $measurementDate,
+            $measurementTime, $area, $maquinariaEquipo, $actividad, $descripcionActividad,
+            $tipoRuido, $puntoMedicion, $tiempoExposH, $ponderacion, $respuesta,
+            $readings, $leqT, $usoProtectores, $tipoProtector, $nrrDb, $cumple,
+            $imagePath, $uploadedImages, $locationRaw, $latitude, $longitude,
+            $utmZone, $utmEasting, $utmNorthing, $observations, $staffId
+        ) {
+            $measurement = null;
+            if (!empty($measurementId)) {
+                $measurement = $module->noiseMeasurements()->lockForUpdate()->find($measurementId);
+            }
+            if (!$measurement && !empty($localUuid)) {
+                $measurement = $module->noiseMeasurements()->lockForUpdate()->where('local_uuid', $localUuid)->first();
+            }
 
-        if ($measurement) {
-            $measurement->update($data);
-            $statusCode = 200;
-        } else {
-            $measurement = $module->noiseMeasurements()->create($data);
-            $statusCode = 201;
-        }
+            // Deduplicación inteligente para sync offline concurrente
+            if (!$measurement) {
+                $candidateQuery = $module->noiseMeasurements()
+                    ->lockForUpdate()
+                    ->where('area', $area)
+                    ->where('punto_medicion', $puntoMedicion)
+                    ->where('measurement_date', $measurementDate)
+                    ->where('tipo_ruido', $tipoRuido)
+                    ->where('created_at', '>=', Carbon::now()->subMinutes(15));
 
-        // Actualizar puntos completados
-        $module->points_completed = $module->noiseMeasurements()->count();
-        $module->save();
+                if ($leqT !== null && $leqT > 0) {
+                    $candidateQuery->whereBetween('leq_t_db', [$leqT - 0.05, $leqT + 0.05]);
+                }
 
-        $finalImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
-        $finalUrls = array_values(array_filter(array_map(function ($p) {
-            if (!$p)
-                return null;
-            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://'))
-                return $p;
-            return asset($p);
-        }, $finalImages)));
+                $candidate = $candidateQuery->latest('id')->first();
+                if ($candidate) {
+                    $measurement = $candidate;
+                    if (!empty($localUuid) && empty($candidate->local_uuid)) {
+                        $candidate->local_uuid = $localUuid;
+                        $candidate->save();
+                    }
+                }
+            }
 
-        return response()->json([
-            'success' => true,
-            'message' => "Medición de ruido ocupacional #{$measurement->point_number} guardada exitosamente.",
-            'id' => $measurement->id,
-            'remote_id' => (string) $measurement->id,
-            'point_number' => $measurement->point_number,
-            'leq_t_db' => $measurement->leq_t_db,
-            'cumple' => $measurement->cumple,
-            'image_urls' => $finalUrls,
-            'points_completed' => $module->points_completed,
-        ], $statusCode);
+            $existingCount = $module->noiseMeasurements()->count();
+            $assignedPoint = $request->input('point_number') ?? $request->input('num') ?? str_pad($existingCount + 1, 2, '0', STR_PAD_LEFT);
+
+            $data = [
+                'point_number' => $measurement ? $measurement->point_number : $assignedPoint,
+                'measurement_date' => $measurementDate,
+                'measurement_time' => $measurementTime,
+                'area' => $area,
+                'maquinaria_equipo' => $maquinariaEquipo,
+                'actividad' => $actividad,
+                'descripcion_actividad' => $descripcionActividad,
+                'tipo_ruido' => $tipoRuido,
+                'punto_medicion' => $puntoMedicion,
+                'tiempo_expos_h' => $tiempoExposH,
+                'ponderacion' => $ponderacion,
+                'respuesta' => $respuesta,
+                'mediciones_db' => !empty($readings) ? $readings : null,
+                'leq_t_db' => $leqT,
+                'uso_protectores' => $usoProtectores,
+                'tipo_protector' => $tipoProtector,
+                'nrr_db' => $nrrDb,
+                'cumple' => $cumple,
+                'image_path' => $imagePath ?: ($measurement ? $measurement->image_path : null),
+                'images' => !empty($uploadedImages) ? $uploadedImages : ($measurement ? $measurement->images : null),
+                'location' => $locationRaw,
+                'latitude' => $latitude !== null ? (float) $latitude : null,
+                'longitude' => $longitude !== null ? (float) $longitude : null,
+                'utm_zone' => $utmZone,
+                'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
+                'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
+                'observations' => $observations,
+                'registered_by' => null,
+                'staff_id' => $staffId,
+                'local_uuid' => $localUuid ?: ($measurement ? $measurement->local_uuid : null),
+            ];
+
+            if ($measurement) {
+                $measurement->update($data);
+                $statusCode = 200;
+            } else {
+                $measurement = $module->noiseMeasurements()->create($data);
+                $statusCode = 201;
+            }
+
+            // Actualizar puntos completados
+            $module->points_completed = $module->noiseMeasurements()->count();
+            $module->save();
+
+            $finalImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
+            $finalUrls = array_values(array_filter(array_map(function ($p) {
+                if (!$p)
+                    return null;
+                if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://'))
+                    return $p;
+                return asset($p);
+            }, $finalImages)));
+
+            return response()->json([
+                'success' => true,
+                'message' => "Medición de ruido ocupacional #{$measurement->point_number} guardada exitosamente.",
+                'id' => $measurement->id,
+                'remote_id' => (string) $measurement->id,
+                'point_number' => $measurement->point_number,
+                'leq_t_db' => $measurement->leq_t_db,
+                'cumple' => $measurement->cumple,
+                'image_urls' => $finalUrls,
+                'points_completed' => $module->points_completed,
+            ], $statusCode);
+        });
     }
 
     /**
@@ -1157,53 +1200,86 @@ class MobileApiController extends Controller
         }
 
         $measurementId = $request->input('id') ?? $request->input('remote_id');
-        $measurement = null;
-        if (!empty($measurementId)) {
-            $measurement = $module->illuminationMeasurements()->find($measurementId);
-        }
+        $observations = $request->input('observations') ?? $request->input('observaciones');
 
-        $data = [
-            'point_number' => $measurement ? $measurement->point_number : $pointNumber,
-            'measurement_date' => $measurementDate,
-            'measurement_time' => $measurementTime,
-            'area' => $area ?: 'Área Principal',
-            'workstation' => $workstation,
-            'measurement_point' => $measurementPoint,
-            'activity_description' => $activityDescription,
-            'lighting_type' => $lightingType,
-            'required_lux' => $requiredLux,
-            'measured_lux' => $measuredLux,
-            'readings' => !empty($readings) ? $readings : null,
-            'image_path' => $imagePath,
-            'images' => !empty($uploadedImages) ? $uploadedImages : null,
-            'location' => $locationRaw,
-            'latitude' => $latitude !== null ? (float) $latitude : null,
-            'longitude' => $longitude !== null ? (float) $longitude : null,
-            'observations' => $request->input('observations') ?? $request->input('observaciones'),
-            'registered_by' => $registeredByName,
-            'staff_id' => $staffId,
-        ];
+        return DB::transaction(function () use (
+            $module, $request, $measurementId, $pointNumber, $measurementDate,
+            $measurementTime, $area, $workstation, $measurementPoint, $activityDescription,
+            $lightingType, $requiredLux, $measuredLux, $readings, $imagePath,
+            $uploadedImages, $locationRaw, $latitude, $longitude, $observations,
+            $registeredByName, $staffId
+        ) {
+            $measurement = null;
+            if (!empty($measurementId)) {
+                $measurement = $module->illuminationMeasurements()->lockForUpdate()->find($measurementId);
+            }
 
-        if ($measurement) {
-            $measurement->update($data);
-            $statusCode = 200;
-        } else {
-            $measurement = $module->illuminationMeasurements()->create($data);
-            $statusCode = 201;
-        }
+            // Deduplicación inteligente para sync offline concurrente
+            if (!$measurement) {
+                $candidateQuery = $module->illuminationMeasurements()
+                    ->lockForUpdate()
+                    ->where('area', $area ?: 'Área Principal')
+                    ->where('workstation', $workstation)
+                    ->where('measurement_point', $measurementPoint)
+                    ->where('measurement_date', $measurementDate)
+                    ->where('created_at', '>=', Carbon::now()->subMinutes(15));
 
-        // Actualizar puntos completados del módulo
-        $module->points_completed = $module->illuminationMeasurements()->count();
-        $module->save();
+                if ($measuredLux !== null && $measuredLux > 0) {
+                    $candidateQuery->whereBetween('measured_lux', [$measuredLux - 0.5, $measuredLux + 0.5]);
+                }
 
-        return response()->json([
-            'success' => true,
-            'message' => "Punto de medición #{$measurement->point_number} registrado exitosamente.",
-            'id' => $measurement->id,
-            'remote_id' => (string) $measurement->id,
-            'point_number' => $measurement->point_number,
-            'points_completed' => $module->points_completed,
-        ], $statusCode);
+                $candidate = $candidateQuery->latest('id')->first();
+                if ($candidate) {
+                    $measurement = $candidate;
+                }
+            }
+
+            $existingCount = $module->illuminationMeasurements()->count();
+            $assignedPoint = $request->input('point_number') ?? $request->input('num') ?? str_pad($existingCount + 1, 2, '0', STR_PAD_LEFT);
+
+            $data = [
+                'point_number' => $measurement ? $measurement->point_number : $assignedPoint,
+                'measurement_date' => $measurementDate,
+                'measurement_time' => $measurementTime,
+                'area' => $area ?: 'Área Principal',
+                'workstation' => $workstation,
+                'measurement_point' => $measurementPoint,
+                'activity_description' => $activityDescription,
+                'lighting_type' => $lightingType,
+                'required_lux' => $requiredLux,
+                'measured_lux' => $measuredLux,
+                'readings' => !empty($readings) ? $readings : null,
+                'image_path' => $imagePath ?: ($measurement ? $measurement->image_path : null),
+                'images' => !empty($uploadedImages) ? $uploadedImages : ($measurement ? $measurement->images : null),
+                'location' => $locationRaw,
+                'latitude' => $latitude !== null ? (float) $latitude : null,
+                'longitude' => $longitude !== null ? (float) $longitude : null,
+                'observations' => $observations,
+                'registered_by' => $registeredByName,
+                'staff_id' => $staffId,
+            ];
+
+            if ($measurement) {
+                $measurement->update($data);
+                $statusCode = 200;
+            } else {
+                $measurement = $module->illuminationMeasurements()->create($data);
+                $statusCode = 201;
+            }
+
+            // Actualizar puntos completados del módulo
+            $module->points_completed = $module->illuminationMeasurements()->count();
+            $module->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Punto de medición #{$measurement->point_number} registrado exitosamente.",
+                'id' => $measurement->id,
+                'remote_id' => (string) $measurement->id,
+                'point_number' => $measurement->point_number,
+                'points_completed' => $module->points_completed,
+            ], $statusCode);
+        });
     }
 
     /**
@@ -3854,78 +3930,114 @@ class MobileApiController extends Controller
 
         $localUuid = $request->input('local_uuid');
         $measurementId = $request->input('id') ?? $request->input('remote_id');
-
-        $measurement = null;
-        if (!empty($measurementId)) {
-            $measurement = $module->dosimetryMeasurements()->find($measurementId);
-        }
-        if (!$measurement && !empty($localUuid)) {
-            $measurement = $module->dosimetryMeasurements()->where('local_uuid', $localUuid)->first();
-        }
-
         $observations = $request->input('observations') ?? $request->input('observaciones');
 
-        $data = [
-            'point_number' => $measurement ? $measurement->point_number : $pointNumber,
-            'measurement_date' => $measurementDate,
-            'measurement_time' => $measurementTime,
-            'area' => $area,
-            'punto_medicion' => $puntoMedicion,
-            'tipo_ruido' => $tipoRuido,
-            'tiempo_expos_h' => $tpe,
-            'ponderacion' => $ponderacion,
-            'respuesta' => $respuesta,
-            'duracion_medicion_h' => $duracion,
-            'nps_max_db' => $npsMax,
-            'nps_min_db' => $npsMin,
-            'leq_t_db' => $leqT,
-            'dosis_pct' => $dosis,
-            'cumple' => $cumple,
-            'image_path' => $imagePath ?: ($measurement ? $measurement->image_path : null),
-            'images' => !empty($uploadedImages) ? $uploadedImages : ($measurement ? $measurement->images : null),
-            'location' => $locationRaw,
-            'latitude' => $latitude !== null ? (float) $latitude : null,
-            'longitude' => $longitude !== null ? (float) $longitude : null,
-            'utm_zone' => $utmZone,
-            'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
-            'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
-            'observations' => $observations,
-            'staff_id' => $staffId,
-            'registered_by' => $registeredByName,
-            'local_uuid' => $localUuid ?: ($measurement ? $measurement->local_uuid : null),
-        ];
+        return DB::transaction(function () use (
+            $module, $request, $area, $puntoMedicion, $tipoRuido, $tpe, $ponderacion, $respuesta,
+            $duracion, $npsMax, $npsMin, $leqT, $measurementDate, $measurementTime,
+            $registeredByName, $staffId, $imagePath, $uploadedImages, $locationRaw,
+            $latitude, $longitude, $utmZone, $utmEasting, $utmNorthing, $observations,
+            $localUuid, $measurementId, $cumple, $dosis
+        ) {
+            $measurement = null;
+            if (!empty($measurementId)) {
+                $measurement = $module->dosimetryMeasurements()->lockForUpdate()->find($measurementId);
+            }
+            if (!$measurement && !empty($localUuid)) {
+                $measurement = $module->dosimetryMeasurements()->lockForUpdate()->where('local_uuid', $localUuid)->first();
+            }
 
-        if ($measurement) {
-            $measurement->update($data);
-            $statusCode = 200;
-        } else {
-            $measurement = $module->dosimetryMeasurements()->create($data);
-            $statusCode = 201;
-        }
+            // Deduplicación inteligente de seguridad para sincronización offline concurrente:
+            // Si dos peticiones llegan al mismo tiempo o una llegó sin local_uuid (ej. SyncManager en segundo plano),
+            // verificar si en los últimos 15 minutos ya se registró esta misma medición en el módulo.
+            if (!$measurement) {
+                $candidateQuery = $module->dosimetryMeasurements()
+                    ->lockForUpdate()
+                    ->where('area', $area)
+                    ->where('punto_medicion', $puntoMedicion)
+                    ->where('measurement_date', $measurementDate)
+                    ->where('tipo_ruido', $tipoRuido)
+                    ->where('created_at', '>=', Carbon::now()->subMinutes(15));
 
-        $module->points_completed = $module->dosimetryMeasurements()->count();
-        $module->save();
+                if ($leqT > 0) {
+                    $candidateQuery->whereBetween('leq_t_db', [$leqT - 0.05, $leqT + 0.05]);
+                }
 
-        $finalImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
-        $finalUrls = array_values(array_filter(array_map(function ($p) {
-            if (!$p)
-                return null;
-            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://'))
-                return $p;
-            return asset($p);
-        }, $finalImages)));
+                $candidate = $candidateQuery->latest('id')->first();
+                if ($candidate) {
+                    $measurement = $candidate;
+                    if (!empty($localUuid) && empty($candidate->local_uuid)) {
+                        $candidate->local_uuid = $localUuid;
+                        $candidate->save();
+                    }
+                }
+            }
 
-        return response()->json([
-            'success' => true,
-            'message' => "Medición de dosimetría #{$measurement->point_number} guardada exitosamente.",
-            'id' => $measurement->id,
-            'remote_id' => (string) $measurement->id,
-            'point_number' => $measurement->point_number,
-            'leq_t_db' => $measurement->leq_t_db,
-            'cumple' => $measurement->cumple,
-            'image_urls' => $finalUrls,
-            'points_completed' => $module->points_completed,
-        ], $statusCode);
+            $existingCount = $module->dosimetryMeasurements()->count();
+            $pointNumber = $request->input('point_number') ?? $request->input('num') ?? str_pad($existingCount + 1, 2, '0', STR_PAD_LEFT);
+
+            $data = [
+                'point_number' => $measurement ? $measurement->point_number : $pointNumber,
+                'measurement_date' => $measurementDate,
+                'measurement_time' => $measurementTime,
+                'area' => $area,
+                'punto_medicion' => $puntoMedicion,
+                'tipo_ruido' => $tipoRuido,
+                'tiempo_expos_h' => $tpe,
+                'ponderacion' => $ponderacion,
+                'respuesta' => $respuesta,
+                'duracion_medicion_h' => $duracion,
+                'nps_max_db' => $npsMax,
+                'nps_min_db' => $npsMin,
+                'leq_t_db' => $leqT,
+                'dosis_pct' => $dosis,
+                'cumple' => $cumple,
+                'image_path' => $imagePath ?: ($measurement ? $measurement->image_path : null),
+                'images' => !empty($uploadedImages) ? $uploadedImages : ($measurement ? $measurement->images : null),
+                'location' => $locationRaw,
+                'latitude' => $latitude !== null ? (float) $latitude : null,
+                'longitude' => $longitude !== null ? (float) $longitude : null,
+                'utm_zone' => $utmZone,
+                'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
+                'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
+                'observations' => $observations,
+                'staff_id' => $staffId,
+                'registered_by' => $registeredByName,
+                'local_uuid' => $localUuid ?: ($measurement ? $measurement->local_uuid : null),
+            ];
+
+            if ($measurement) {
+                $measurement->update($data);
+                $statusCode = 200;
+            } else {
+                $measurement = $module->dosimetryMeasurements()->create($data);
+                $statusCode = 201;
+            }
+
+            $module->points_completed = $module->dosimetryMeasurements()->count();
+            $module->save();
+
+            $finalImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
+            $finalUrls = array_values(array_filter(array_map(function ($p) {
+                if (!$p)
+                    return null;
+                if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://'))
+                    return $p;
+                return asset($p);
+            }, $finalImages)));
+
+            return response()->json([
+                'success' => true,
+                'message' => "Medición de dosimetría #{$measurement->point_number} guardada exitosamente.",
+                'id' => $measurement->id,
+                'remote_id' => (string) $measurement->id,
+                'point_number' => $measurement->point_number,
+                'leq_t_db' => $measurement->leq_t_db,
+                'cumple' => $measurement->cumple,
+                'image_urls' => $finalUrls,
+                'points_completed' => $module->points_completed,
+            ], $statusCode);
+        });
     }
 
     /**
@@ -4826,14 +4938,6 @@ class MobileApiController extends Controller
         $localUuid = $request->input('local_uuid');
         $id = $request->input('id');
 
-        $measurement = null;
-        if (!empty($localUuid)) {
-            $measurement = $module->gasMeasurements()->where('local_uuid', $localUuid)->first();
-        }
-        if (!$measurement && !empty($id)) {
-            $measurement = $module->gasMeasurements()->find($id);
-        }
-
         $date = $request->input('measurement_date') ?? $request->input('date') ?? $request->input('measured_at') ?? Carbon::now()->format('Y-m-d');
         if (str_contains($date, 'T')) {
             $date = explode('T', $date)[0];
@@ -4843,11 +4947,7 @@ class MobileApiController extends Controller
 
         $area = $request->input('area') ?? 'Área de Trabajo';
         $workstation = $request->input('workstation') ?? $request->input('puesto_trabajo') ?? 'Puesto General';
-        $pointNumber = $request->input('point_number');
-        if (empty($pointNumber)) {
-            $count = $module->gasMeasurements()->count();
-            $pointNumber = str_pad($count + 1, 2, '0', STR_PAD_LEFT);
-        }
+        $measPoint = $request->input('measurement_point') ?? $workstation;
 
         $temp = $request->filled('temperatura') ? (float) $request->input('temperatura') : null;
         $presion = $request->filled('presion_atm') ? (float) $request->input('presion_atm') : null;
@@ -4869,12 +4969,13 @@ class MobileApiController extends Controller
             $selectedGases = array_keys($gasesReadings);
         }
 
-        // Subida de imágenes
+        // Subida de imágenes multipart
         $uploadedImages = [];
         $uploadDir = public_path('uploads/measurements');
         if (!File::isDirectory($uploadDir)) {
             File::makeDirectory($uploadDir, 0755, true, true);
         }
+        $hasNewUploadedFiles = false;
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $file) {
                 if ($file->isValid()) {
@@ -4883,6 +4984,7 @@ class MobileApiController extends Controller
                     $fname = 'gas_' . time() . '_' . uniqid() . '.' . $safeExt;
                     $file->move($uploadDir, $fname);
                     $uploadedImages[] = 'uploads/measurements/' . $fname;
+                    $hasNewUploadedFiles = true;
                 }
             }
         }
@@ -4894,6 +4996,7 @@ class MobileApiController extends Controller
                 $fname = 'gas_' . time() . '_' . uniqid() . '.' . $safeExt;
                 $file->move($uploadDir, $fname);
                 array_unshift($uploadedImages, 'uploads/measurements/' . $fname);
+                $hasNewUploadedFiles = true;
             }
         }
 
@@ -4903,8 +5006,14 @@ class MobileApiController extends Controller
             $decodedUrls = is_array($rawUrls) ? $rawUrls : json_decode($rawUrls, true);
             if (is_array($decodedUrls)) {
                 foreach ($decodedUrls as $u) {
-                    if ($u && !in_array($u, $uploadedImages)) {
-                        $uploadedImages[] = $u;
+                    if ($u && is_string($u)) {
+                        $u = trim($u);
+                        // Si ya se subieron fotos nuevas por multipart, evitar duplicar con URLs que apunten al mismo archivo
+                        if (!$hasNewUploadedFiles || (!str_contains($u, 'gas_') && !str_starts_with($u, 'img_'))) {
+                            if (!in_array($u, $uploadedImages)) {
+                                $uploadedImages[] = $u;
+                            }
+                        }
                     }
                 }
             }
@@ -4941,89 +5050,136 @@ class MobileApiController extends Controller
                 $registeredBy = $st->full_name ?: $st->name;
         }
 
-        $data = [
-            'point_number' => $pointNumber,
-            'measurement_date' => $date,
-            'measurement_time' => $time,
-            'area' => $area,
-            'workstation' => $workstation,
-            'measurement_point' => $request->input('measurement_point') ?? $workstation,
-            'activity_description' => $request->input('activity_description') ?? 'Operaciones generales',
-            'temperatura' => $temp,
-            'presion_atm' => $presion,
-            'vel_aire' => $velAire,
-            'selected_gases' => $selectedGases,
-            'gases_readings' => $gasesReadings,
-            'latitude' => $lat,
-            'longitude' => $lng,
-            'utm_zone' => $utmZone,
-            'utm_easting' => $utmE,
-            'utm_northing' => $utmN,
-            'location' => $request->input('location'),
-            'observations' => $request->input('observations') ?? $request->input('observaciones'),
-            'registered_by' => $registeredBy,
-            'staff_id' => $staffId,
-            'local_uuid' => $localUuid ?? ($measurement ? $measurement->local_uuid : Str::uuid()->toString()),
-        ];
-
-        // Columnas de respaldo por gas si vienen
-        $gasesDefs = GasesController::getGasesDefinitions();
-        foreach ($gasesDefs as $gDef) {
-            $gk = $gDef['key'];
-            if (is_array($gasesReadings) && isset($gasesReadings[$gk])) {
-                $gData = $gasesReadings[$gk];
-                $vals = [];
-                if (isset($gData['values']) && is_array($gData['values'])) {
-                    $vals = array_values(array_map('floatval', array_filter($gData['values'], 'is_numeric')));
-                } elseif (isset($gData['med1']) || isset($gData['med2']) || isset($gData['med3'])) {
-                    $m1 = isset($gData['med1']) && is_numeric($gData['med1']) ? (float) $gData['med1'] : null;
-                    $m2 = isset($gData['med2']) && is_numeric($gData['med2']) ? (float) $gData['med2'] : null;
-                    $m3 = isset($gData['med3']) && is_numeric($gData['med3']) ? (float) $gData['med3'] : null;
-                    $vals = array_values(array_filter([$m1, $m2, $m3], fn($x) => $x !== null));
-                }
-                $data["{$gk}_values"] = !empty($vals) ? $vals : null;
-                $data["{$gk}_prom"] = isset($gData['prom']) && is_numeric($gData['prom']) ? (float) $gData['prom'] : (!empty($vals) ? array_sum($vals) / count($vals) : null);
+        return DB::transaction(function () use (
+            $module, $request, $localUuid, $id, $date, $time, $area, $workstation, $measPoint,
+            $temp, $presion, $velAire, $selectedGases, $gasesReadings, $uploadedImages,
+            $lat, $lng, $utmZone, $utmE, $utmN, $staffId, $registeredBy
+        ) {
+            $measurement = null;
+            if (!empty($id)) {
+                $measurement = $module->gasMeasurements()->lockForUpdate()->find($id);
             }
-        }
+            if (!$measurement && !empty($localUuid)) {
+                $measurement = $module->gasMeasurements()->lockForUpdate()->where('local_uuid', $localUuid)->first();
+            }
 
-        if (!empty($uploadedImages)) {
-            $data['images'] = $uploadedImages;
-            $data['image_path'] = $uploadedImages[0];
-        }
+            // Deduplicación preventiva para concurrencia o sincronización offline simultánea
+            if (!$measurement) {
+                $candidate = $module->gasMeasurements()
+                    ->lockForUpdate()
+                    ->where('area', $area)
+                    ->where(function ($q) use ($workstation, $measPoint) {
+                        $q->where('workstation', $workstation)
+                          ->orWhere('measurement_point', $measPoint);
+                    })
+                    ->where('measurement_date', $date)
+                    ->where('created_at', '>=', Carbon::now()->subMinutes(15))
+                    ->latest('id')
+                    ->first();
 
-        if ($measurement) {
-            $measurement->update($data);
-            $statusCode = 200;
-        } else {
-            $measurement = $module->gasMeasurements()->create($data);
-            $statusCode = 201;
-        }
+                if ($candidate) {
+                    $measurement = $candidate;
+                    if (!empty($localUuid) && empty($candidate->local_uuid)) {
+                        $candidate->local_uuid = $localUuid;
+                        $candidate->save();
+                    }
+                }
+            }
 
-        $module->points_completed = $module->gasMeasurements()->count();
-        $module->save();
+            $pointNumber = $request->input('point_number');
+            if (empty($pointNumber)) {
+                if ($measurement) {
+                    $pointNumber = $measurement->point_number;
+                } else {
+                    $count = $module->gasMeasurements()->count();
+                    $pointNumber = str_pad($count + 1, 2, '0', STR_PAD_LEFT);
+                }
+            }
 
-        $finalImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
-        $finalUrls = array_values(array_filter(array_map(function ($p) {
-            if (!$p)
-                return null;
-            if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://'))
-                return $p;
-            return asset($p);
-        }, $finalImages)));
+            $data = [
+                'point_number' => $pointNumber,
+                'measurement_date' => $date,
+                'measurement_time' => $time,
+                'area' => $area,
+                'workstation' => $workstation,
+                'measurement_point' => $measPoint,
+                'activity_description' => $request->input('activity_description') ?? 'Operaciones generales',
+                'temperatura' => $temp,
+                'presion_atm' => $presion,
+                'vel_aire' => $velAire,
+                'selected_gases' => $selectedGases,
+                'gases_readings' => $gasesReadings,
+                'latitude' => $lat,
+                'longitude' => $lng,
+                'utm_zone' => $utmZone,
+                'utm_easting' => $utmE,
+                'utm_northing' => $utmN,
+                'location' => $request->input('location'),
+                'observations' => $request->input('observations') ?? $request->input('observaciones'),
+                'registered_by' => $registeredBy,
+                'staff_id' => $staffId,
+                'local_uuid' => $localUuid ?? ($measurement ? $measurement->local_uuid : Str::uuid()->toString()),
+            ];
 
-        return response()->json([
-            'success' => true,
-            'message' => "Punto de medición de gases #{$measurement->point_number} guardado exitosamente.",
-            'id' => (string) $measurement->id,
-            'remote_id' => (string) $measurement->id,
-            'point_number' => $measurement->point_number,
-            'area' => $measurement->area,
-            'workstation' => $measurement->workstation,
-            'local_uuid' => $measurement->local_uuid,
-            'images' => $finalUrls,
-            'image_urls' => $finalUrls,
-            'points_completed' => $module->points_completed,
-        ], $statusCode);
+            // Columnas de respaldo por gas si vienen
+            $gasesDefs = GasesController::getGasesDefinitions();
+            foreach ($gasesDefs as $gDef) {
+                $gk = $gDef['key'];
+                if (is_array($gasesReadings) && isset($gasesReadings[$gk])) {
+                    $gData = $gasesReadings[$gk];
+                    $vals = [];
+                    if (isset($gData['values']) && is_array($gData['values'])) {
+                        $vals = array_values(array_map('floatval', array_filter($gData['values'], 'is_numeric')));
+                    } elseif (isset($gData['med1']) || isset($gData['med2']) || isset($gData['med3'])) {
+                        $m1 = isset($gData['med1']) && is_numeric($gData['med1']) ? (float) $gData['med1'] : null;
+                        $m2 = isset($gData['med2']) && is_numeric($gData['med2']) ? (float) $gData['med2'] : null;
+                        $m3 = isset($gData['med3']) && is_numeric($gData['med3']) ? (float) $gData['med3'] : null;
+                        $vals = array_values(array_filter([$m1, $m2, $m3], fn($x) => $x !== null));
+                    }
+                    $data["{$gk}_values"] = !empty($vals) ? $vals : null;
+                    $data["{$gk}_prom"] = isset($gData['prom']) && is_numeric($gData['prom']) ? (float) $gData['prom'] : (!empty($vals) ? array_sum($vals) / count($vals) : null);
+                }
+            }
+
+            if (!empty($uploadedImages)) {
+                $data['images'] = $uploadedImages;
+                $data['image_path'] = $uploadedImages[0];
+            }
+
+            if ($measurement) {
+                $measurement->update($data);
+                $statusCode = 200;
+            } else {
+                $measurement = $module->gasMeasurements()->create($data);
+                $statusCode = 201;
+            }
+
+            $module->points_completed = $module->gasMeasurements()->count();
+            $module->save();
+
+            $finalImages = is_array($measurement->images) ? $measurement->images : (json_decode($measurement->images, true) ?: []);
+            $finalUrls = array_values(array_filter(array_map(function ($p) {
+                if (!$p) return null;
+                if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) return $p;
+                if (str_starts_with($p, 'img_')) return 'https://pachabol.com/metric/upload/' . $p;
+                if (!str_starts_with($p, 'uploads/') && !str_starts_with($p, '/')) return asset('uploads/measurements/' . $p);
+                return asset($p);
+            }, $finalImages)));
+
+            return response()->json([
+                'success' => true,
+                'message' => "Punto de medición de gases #{$measurement->point_number} guardado exitosamente.",
+                'id' => (string) $measurement->id,
+                'remote_id' => (string) $measurement->id,
+                'point_number' => $measurement->point_number,
+                'area' => $measurement->area,
+                'workstation' => $measurement->workstation,
+                'local_uuid' => $measurement->local_uuid,
+                'images' => $finalUrls,
+                'image_urls' => $finalUrls,
+                'points_completed' => $module->points_completed,
+            ], $statusCode);
+        });
     }
 
     /**

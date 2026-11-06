@@ -1560,6 +1560,10 @@ function switchRebaTab(tabName) {
 // (Los métodos completos de Exportación y Reporte Fotográfico se encuentran al final del archivo)
 
 function openPhotoViewer(url, caption) {
+    if (typeof window.universalOpenPhotoViewer === 'function') {
+        window.universalOpenPhotoViewer(url, caption);
+        return;
+    }
     if (window.formatPhotoUrl) {
         const list = (Array.isArray(url) ? url : [url]).filter(Boolean).map(window.formatPhotoUrl);
         const m = document.getElementById('photoViewerModal');

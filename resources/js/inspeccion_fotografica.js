@@ -708,6 +708,10 @@ function closeMapModal() {
    ========================================================================== */
 
 function openPhotoViewerModal(images, startIndex, pointTitle) {
+    if (typeof window.universalOpenPhotoViewer === 'function') {
+        window.universalOpenPhotoViewer(images, pointTitle, startIndex);
+        return;
+    }
     if (!images || images.length === 0) return;
     currentViewerImages = images;
     currentViewerIndex = startIndex || 0;

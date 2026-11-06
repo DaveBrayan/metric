@@ -939,12 +939,17 @@ function focusPointOnAllLocationsMap(index) {
 }
 
 function openPhotoViewer(url, title) {
+    if (typeof window.universalOpenPhotoViewer === 'function') {
+        window.universalOpenPhotoViewer(url, title);
+        return;
+    }
     const modal = document.getElementById('photoViewerModal');
     const img = document.getElementById('photoViewerImg');
     const titleEl = document.getElementById('photoViewerTitle');
     if (!modal || !img) return;
 
-    img.src = url;
+    const single = Array.isArray(url) ? url[0] : url;
+    img.src = typeof window.formatPhotoUrl === 'function' ? window.formatPhotoUrl(single) : single;
     if (titleEl) titleEl.textContent = title || 'Evidencia Fotográfica';
     modal.classList.add('open');
 }

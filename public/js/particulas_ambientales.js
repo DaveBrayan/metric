@@ -607,6 +607,10 @@ function confirmDeleteMeasurement(id, num) {
 }
 
 function openPhotoViewer(url, title = 'Fotografía Ambiental') {
+    if (typeof window.universalOpenPhotoViewer === 'function') {
+        window.universalOpenPhotoViewer(url, title);
+        return;
+    }
     const list = Array.isArray(url) ? url : [url];
     const modal = document.getElementById('photoViewerModal');
     const img = document.getElementById('photoViewerImg') || document.getElementById('mainViewerImage');
