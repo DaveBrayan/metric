@@ -4767,6 +4767,22 @@ class MobileApiController extends Controller
             }
         }
 
+        // Si se enviaron URLs remotas o preexistentes
+        $rawUrls = $request->input('image_urls') ?? $request->input('photo_paths') ?? $request->input('images');
+        if (is_string($rawUrls)) {
+            $rawUrls = json_decode($rawUrls, true);
+        }
+        if (is_array($rawUrls)) {
+            foreach ($rawUrls as $u) {
+                if ($u && is_string($u)) {
+                    $u = trim($u);
+                    if (!in_array($u, $uploadedImages)) {
+                        $uploadedImages[] = $u;
+                    }
+                }
+            }
+        }
+
         // Buscar registro existente para actualizar o crear uno nuevo
         $measurementId = $request->input('id') ?? $request->input('remote_id');
         $measurement = null;
@@ -4998,6 +5014,17 @@ class MobileApiController extends Controller
                 }
             }
         }
+        if ($request->hasFile('photos')) {
+            foreach ($request->file('photos') as $file) {
+                if ($file->isValid()) {
+                    $ext = strtolower($file->getClientOriginalExtension());
+                    $safeExt = in_array($ext, ['jpeg', 'jpg', 'png', 'webp']) ? $ext : 'jpg';
+                    $fname = 'gas_' . time() . '_' . uniqid() . '.' . $safeExt;
+                    $file->move($uploadDir, $fname);
+                    $uploadedImages[] = 'uploads/measurements/' . $fname;
+                }
+            }
+        }
         if ($request->hasFile('image')) {
             $file = $request->file('image');
             if ($file->isValid()) {
@@ -5006,24 +5033,20 @@ class MobileApiController extends Controller
                 $fname = 'gas_' . time() . '_' . uniqid() . '.' . $safeExt;
                 $file->move($uploadDir, $fname);
                 array_unshift($uploadedImages, 'uploads/measurements/' . $fname);
-                $hasNewUploadedFiles = true;
             }
         }
 
         // Si se enviaron URLs remotas o preexistentes
-        if ($request->filled('image_urls')) {
-            $rawUrls = $request->input('image_urls');
-            $decodedUrls = is_array($rawUrls) ? $rawUrls : json_decode($rawUrls, true);
-            if (is_array($decodedUrls)) {
-                foreach ($decodedUrls as $u) {
-                    if ($u && is_string($u)) {
-                        $u = trim($u);
-                        // Si ya se subieron fotos nuevas por multipart, evitar duplicar con URLs que apunten al mismo archivo
-                        if (!$hasNewUploadedFiles || (!str_contains($u, 'gas_') && !str_starts_with($u, 'img_'))) {
-                            if (!in_array($u, $uploadedImages)) {
-                                $uploadedImages[] = $u;
-                            }
-                        }
+        $rawUrls = $request->input('image_urls') ?? $request->input('images');
+        if (is_string($rawUrls)) {
+            $rawUrls = json_decode($rawUrls, true);
+        }
+        if (is_array($rawUrls)) {
+            foreach ($rawUrls as $u) {
+                if ($u && is_string($u)) {
+                    $u = trim($u);
+                    if (!in_array($u, $uploadedImages)) {
+                        $uploadedImages[] = $u;
                     }
                 }
             }
@@ -5154,6 +5177,9 @@ class MobileApiController extends Controller
             if (!empty($uploadedImages)) {
                 $data['images'] = $uploadedImages;
                 $data['image_path'] = $uploadedImages[0];
+            } elseif ($request->has('image_urls') && ($request->input('image_urls') === '[]' || $request->input('image_urls') === [])) {
+                $data['images'] = null;
+                $data['image_path'] = null;
             }
 
             if ($measurement) {
@@ -5360,8 +5386,18 @@ class MobileApiController extends Controller
 
         // Si ya tenía imágenes remotas pasadas en el payload
         $existingImages = $request->input('image_urls') ?? $request->input('images');
-        if (is_array($existingImages) && empty($uploadedImages)) {
-            $uploadedImages = array_slice($existingImages, 0, 3);
+        if (is_string($existingImages)) {
+            $existingImages = json_decode($existingImages, true);
+        }
+        if (is_array($existingImages)) {
+            foreach ($existingImages as $img) {
+                if ($img && is_string($img)) {
+                    $img = trim($img);
+                    if (!in_array($img, $uploadedImages) && count($uploadedImages) < 3) {
+                        $uploadedImages[] = $img;
+                    }
+                }
+            }
         }
 
         if (empty($pointNumber)) {

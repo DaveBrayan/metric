@@ -892,12 +892,20 @@ function openEditMeasurementModal(item) {
 
     // Manejo de fotografías para carrusel
     modalPhotos.edit = [];
+    const getCleanGasPhotoUrl = (p) => {
+        if (!p || typeof p !== 'string') return '';
+        p = p.trim();
+        if (typeof window.formatPhotoUrl === 'function') return window.formatPhotoUrl(p);
+        if (p.startsWith('http://') || p.startsWith('https://') || p.startsWith('/') || p.startsWith('data:') || p.startsWith('blob:')) return p;
+        if (p.startsWith('img_')) return 'https://pachabol.com/metric/upload/' + p;
+        return '/' + p;
+    };
     if (Array.isArray(item.images) && item.images.length > 0) {
-        modalPhotos.edit = item.images.map(p => p.startsWith('http') || p.startsWith('/') ? p : `/storage/${p}`);
+        modalPhotos.edit = item.images.map(getCleanGasPhotoUrl).filter(Boolean);
     } else if (Array.isArray(item.photos) && item.photos.length > 0) {
-        modalPhotos.edit = item.photos.map(p => p.startsWith('http') || p.startsWith('/') ? p : `/storage/${p}`);
+        modalPhotos.edit = item.photos.map(getCleanGasPhotoUrl).filter(Boolean);
     } else if (item.image_path) {
-        modalPhotos.edit = [item.image_path.startsWith('http') || item.image_path.startsWith('/') ? item.image_path : `/storage/${item.image_path}`];
+        modalPhotos.edit = [getCleanGasPhotoUrl(item.image_path)].filter(Boolean);
     }
     modalPhotoIndex.edit = 0;
     renderPhotoSlider('edit');
