@@ -20,6 +20,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Enforce Operational Timezone from System Settings (Configuración -> Zona Horaria de Operaciones)
+        try {
+            $tz = \App\Services\SystemSetting::getTimezone();
+            if (!empty($tz)) {
+                date_default_timezone_set($tz);
+                config(['app.timezone' => $tz]);
+            }
+        } catch (\Throwable $e) {
+        }
+
         // Auto-Serving & Live-Sync Stylesheets (No npm run build required!)
         Blade::directive('metricStyle', function ($expression) {
             return "<?php 
