@@ -176,6 +176,13 @@ class MobileApiController extends Controller
             }
         }
 
+        if ($request->filled('measurement_date')) {
+            $measurementDate = trim($request->input('measurement_date'));
+        }
+        if ($request->filled('measurement_time')) {
+            $measurementTime = trim($request->input('measurement_time'));
+        }
+
         // Staff / Registrador
         $staffId = $request->input('staff_id');
         $rawCreatedBy = $request->input('created_by');
@@ -1032,6 +1039,13 @@ class MobileApiController extends Controller
                 $measurementTime = $dt->format('H:i');
             } catch (\Throwable $e) {
             }
+        }
+
+        if ($request->filled('measurement_date')) {
+            $measurementDate = trim($request->input('measurement_date'));
+        }
+        if ($request->filled('measurement_time')) {
+            $measurementTime = trim($request->input('measurement_time'));
         }
 
         // Staff / Registrador
@@ -4012,6 +4026,13 @@ class MobileApiController extends Controller
             }
         }
 
+        if ($request->filled('measurement_date')) {
+            $measurementDate = trim($request->input('measurement_date'));
+        }
+        if ($request->filled('measurement_time')) {
+            $measurementTime = trim($request->input('measurement_time'));
+        }
+
         // Staff / Registrador
         $staffId = $request->input('staff_id');
         $rawCreatedBy = $request->input('created_by');
@@ -4575,6 +4596,13 @@ class MobileApiController extends Controller
                 $measurementTime = $dt->format('H:i');
             } catch (\Throwable $e) {
             }
+        }
+
+        if ($request->filled('measurement_date')) {
+            $measurementDate = trim($request->input('measurement_date'));
+        }
+        if ($request->filled('measurement_time')) {
+            $measurementTime = trim($request->input('measurement_time'));
         }
 
         // Staff / Registrador
@@ -6960,11 +6988,17 @@ class MobileApiController extends Controller
             'q_inicial_lmin' => 'nullable|numeric',
             'q_final_lmin' => 'nullable|numeric',
             'location' => 'nullable',
+            'location_data' => 'nullable',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
+            'gps_latitude' => 'nullable|numeric',
+            'gps_longitude' => 'nullable|numeric',
             'utm_zone' => 'nullable|string|max:20',
+            'zone' => 'nullable|string|max:20',
             'utm_easting' => 'nullable|numeric',
+            'easting' => 'nullable|numeric',
             'utm_northing' => 'nullable|numeric',
+            'northing' => 'nullable|numeric',
             'observations' => 'nullable|string',
             'observaciones' => 'nullable|string',
             'registered_by' => 'nullable|string|max:255',
@@ -7094,6 +7128,22 @@ class MobileApiController extends Controller
             $resolvedRegisteredBy = 'Técnico';
         }
 
+        $lat = $validated['latitude'] ?? ($validated['gps_latitude'] ?? ($request->input('latitude') ?? ($request->input('gps_latitude') ?? null)));
+        $lng = $validated['longitude'] ?? ($validated['gps_longitude'] ?? ($request->input('longitude') ?? ($request->input('gps_longitude') ?? null)));
+        $utmZone = $validated['utm_zone'] ?? ($validated['zone'] ?? ($request->input('utm_zone') ?? ($request->input('zone') ?? '19K')));
+        $utmEasting = $validated['utm_easting'] ?? ($validated['easting'] ?? ($request->input('utm_easting') ?? ($request->input('easting') ?? null)));
+        $utmNorthing = $validated['utm_northing'] ?? ($validated['northing'] ?? ($request->input('utm_northing') ?? ($request->input('northing') ?? null)));
+
+        if (($lat === null || $lng === null) && !empty($utmEasting) && !empty($utmNorthing)) {
+            $conv = $this->utmToLatLng((float) $utmEasting, (float) $utmNorthing, $utmZone);
+            $lat = $conv['lat'];
+            $lng = $conv['lng'];
+        }
+
+        if (empty($locationVal) && !empty($utmEasting) && !empty($utmNorthing)) {
+            $locationVal = "E: " . number_format((float)$utmEasting, 3, '.', '') . ", N: " . number_format((float)$utmNorthing, 3, '.', '') . ", Z: " . $utmZone;
+        }
+
         $data = [
             'point_number' => $pointNum,
             'codigo' => $pointNum,
@@ -7112,11 +7162,11 @@ class MobileApiController extends Controller
             'q_inicial_lmin' => isset($validated['q_inicial_lmin']) ? (float) $validated['q_inicial_lmin'] : null,
             'q_final_lmin' => isset($validated['q_final_lmin']) ? (float) $validated['q_final_lmin'] : null,
             'location' => $locationVal,
-            'latitude' => $validated['latitude'] ?? null,
-            'longitude' => $validated['longitude'] ?? null,
-            'utm_zone' => $validated['utm_zone'] ?? '19K',
-            'utm_easting' => $validated['utm_easting'] ?? null,
-            'utm_northing' => $validated['utm_northing'] ?? null,
+            'latitude' => $lat !== null ? (float) $lat : null,
+            'longitude' => $lng !== null ? (float) $lng : null,
+            'utm_zone' => $utmZone,
+            'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
+            'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
             'image_urls' => $finalUrls,
             'images' => $finalUrls,
             'image_path' => !empty($finalUrls) ? $finalUrls[0] : null,
