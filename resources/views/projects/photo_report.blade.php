@@ -871,7 +871,7 @@
             const item = photoReportConfig.measurements.find(m => Number(m.id) === pointId);
             if (!item) return;
 
-            const images = item.images || (item.image_path ? [item.image_path] : []);
+            const images = item.images && item.images.length > 0 ? item.images : (item.photo_paths && item.photo_paths.length > 0 ? item.photo_paths : (item.image_path ? [item.image_path] : []));
             if (images.length <= 1) return;
 
             const curr = photoReportConfig.photoIndices[pointId] || 0;
@@ -935,7 +935,7 @@
             let html = '';
             items.forEach(m => {
                 const pointId = Number(m.id);
-                const images = m.images && m.images.length > 0 ? m.images : (m.image_path ? [m.image_path] : []);
+                const images = m.images && m.images.length > 0 ? m.images : (m.photo_paths && m.photo_paths.length > 0 ? m.photo_paths : (m.image_path ? [m.image_path] : []));
                 const selectedIdx = photoReportConfig.photoIndices[pointId] || 0;
                 const currentImg = images[selectedIdx] || images[0] || '';
                 const isSelected = photoReportConfig.selectedPoints.has(pointId);
@@ -1124,7 +1124,7 @@
                         <div class="sheet-photos-grid dist-${photoReportConfig.grid}">
                             ${pageItems.map(m => {
                                 const pointId = Number(m.id);
-                                const images = m.images && m.images.length > 0 ? m.images : (m.image_path ? [m.image_path] : []);
+                                const images = m.images && m.images.length > 0 ? m.images : (m.photo_paths && m.photo_paths.length > 0 ? m.photo_paths : (m.image_path ? [m.image_path] : []));
                                 const selectedIdx = photoReportConfig.photoIndices[pointId] || 0;
                                 const currentImg = images[selectedIdx] || images[0] || '';
                                 const pointFit = getPointImageFit(pointId);

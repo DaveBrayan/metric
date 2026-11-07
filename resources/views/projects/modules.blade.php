@@ -925,16 +925,18 @@ table#modulesMasterTable td {
                 </svg>
                 <span>Volver a Proyectos</span>
             </a>
-            <a href="{{ route('photo_reports.index', !empty($activeProject) ? ['proyecto' => $activeProject->id] : ($selectedProjectId !== 'todos' && !empty($selectedProjectId) ? ['proyecto' => $selectedProjectId] : [])) }}"
-               class="btn-secondary-subtle"
-               style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; padding: 10px 18px; border-radius: 12px; font-weight: 700; color: #0284c7; background: #e0f2fe; border: 1.5px solid #bae6fd; transition: all 0.2s ease; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.08);"
-               title="Ver y generar reporte fotográfico mosaico de los monitoreos">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                    <circle cx="12" cy="13" r="4"/>
-                </svg>
-                <span>Reporte Fotográfico</span>
-            </a>
+            @if(!empty($activeProject))
+                <a href="{{ route('photo_reports.index', ['proyecto' => $activeProject->id]) }}"
+                   class="btn-secondary-subtle"
+                   style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; padding: 10px 18px; border-radius: 12px; font-weight: 700; color: #0284c7; background: #e0f2fe; border: 1.5px solid #bae6fd; transition: all 0.2s ease; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.08);"
+                   title="Ver y generar reporte fotográfico mosaico de los monitoreos de este proyecto">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                    <span>Reporte Fotográfico</span>
+                </a>
+            @endif
             <button type="button" class="btn-primary-hero-action" onclick="openCreateModuleModal()">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19"/>

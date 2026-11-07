@@ -157,14 +157,63 @@ class PhotoReportController extends Controller
         $measurementsList = [];
         if ($dbMeasurements->isNotEmpty()) {
             $measurementsList = $dbMeasurements->map(function ($item, $index) use ($key, $registeredByHeader) {
-                // Extracción segura de imágenes
-                $rawImages = is_array($item->images) ? $item->images : (json_decode($item->images, true) ?: []);
-                if (empty($rawImages) && !empty($item->image_path)) {
-                    $rawImages = [$item->image_path];
+                // Extracción segura y multiformato de imágenes (soporta photo_paths, images, image_urls, photos, image_path)
+                $rawCandidateImages = [];
+                if (!empty($item->photo_paths)) {
+                    $rawCandidateImages = is_array($item->photo_paths) ? $item->photo_paths : (json_decode($item->photo_paths, true) ?: [$item->photo_paths]);
                 }
+                if (empty($rawCandidateImages) && !empty($item->images)) {
+                    $rawCandidateImages = is_array($item->images) ? $item->images : (json_decode($item->images, true) ?: [$item->images]);
+                }
+                if (empty($rawCandidateImages) && !empty($item->image_urls)) {
+                    $rawCandidateImages = is_array($item->image_urls) ? $item->image_urls : (json_decode($item->image_urls, true) ?: [$item->image_urls]);
+                }
+                if (empty($rawCandidateImages) && !empty($item->photos)) {
+                    $rawCandidateImages = is_array($item->photos) ? $item->photos : (json_decode($item->photos, true) ?: [$item->photos]);
+                }
+                if (empty($rawCandidateImages) && !empty($item->image_path)) {
+                    $rawCandidateImages = [$item->image_path];
+                }
+                if (empty($rawCandidateImages) && !empty($item->photo_url)) {
+                    $rawCandidateImages = [$item->photo_url];
+                }
+
+                // Aplanar y sanitizar strings y arrays anidados
+                $flatImages = [];
+                foreach ((array)$rawCandidateImages as $img) {
+                    if (is_array($img)) {
+                        foreach ($img as $sub) {
+                            if ($sub && is_string($sub)) {
+                                $flatImages[] = $sub;
+                            }
+                        }
+                    } elseif (is_string($img)) {
+                        $trimmed = trim($img);
+                        if (str_starts_with($trimmed, '[') && str_ends_with($trimmed, ']')) {
+                            $decoded = json_decode($trimmed, true);
+                            if (is_array($decoded)) {
+                                foreach ($decoded as $sub) {
+                                    if ($sub && is_string($sub)) {
+                                        $flatImages[] = $sub;
+                                    }
+                                }
+                                continue;
+                            }
+                        }
+                        if ($trimmed !== '') {
+                            $flatImages[] = $trimmed;
+                        }
+                    }
+                }
+
                 $imagesUrls = array_values(array_filter(array_map(function($p) {
-                    return $p ? (str_starts_with($p, 'http') ? $p : asset($p)) : null;
-                }, $rawImages)));
+                    if (empty($p)) return null;
+                    $clean = trim($p, '"\'');
+                    if (str_starts_with($clean, 'http://') || str_starts_with($clean, 'https://') || str_starts_with($clean, 'data:')) {
+                        return $clean;
+                    }
+                    return asset(ltrim($clean, '/'));
+                }, $flatImages)));
 
                 $pointNum = $item->point_number ?: str_pad($index + 1, 2, '0', STR_PAD_LEFT);
                 $code = $this->formatPointCode($key, $pointNum);
@@ -254,9 +303,11 @@ class PhotoReportController extends Controller
             'estres_calor' => 'heatStressMeasurements',
             'estres_calores' => 'heatStressMeasurements',
             'heat_stress' => 'heatStressMeasurements',
+            'calor' => 'heatStressMeasurements',
             'estres_frio' => 'coldStressMeasurements',
             'estres_frios' => 'coldStressMeasurements',
             'cold_stress' => 'coldStressMeasurements',
+            'frio' => 'coldStressMeasurements',
             'vibracion' => 'vibracionMeasurements',
             'vibraciones' => 'vibracionMeasurements',
             'gases' => 'gasMeasurements',
@@ -266,10 +317,14 @@ class PhotoReportController extends Controller
             'particulas_ambientales' => 'particulasAmbientalesMeasurements',
             'ambient_particles' => 'particulasAmbientalesMeasurements',
             'carga_fuego_actividad' => 'fireActivityMeasurements',
+            'fuego_actividad' => 'fireActivityMeasurements',
             'carga_fuego_peso' => 'fireWeightMeasurements',
+            'fuego_peso' => 'fireWeightMeasurements',
             'opacidad' => 'opacityMeasurements',
             'opacidades' => 'opacityMeasurements',
+            'opacity' => 'opacityMeasurements',
             'inspeccion_fotografica' => 'photographicInspections',
+            'fotografica' => 'photographicInspections',
             'contaminantes_quimicos' => 'contaminantesQuimicosMeasurements',
             'quimicos' => 'contaminantesQuimicosMeasurements',
         ];
@@ -277,6 +332,18 @@ class PhotoReportController extends Controller
         $relation = $relations[$key] ?? null;
         if ($relation && method_exists($module, $relation)) {
             return $module->{$relation}()->with('staff')->get();
+        }
+
+        // Búsqueda inteligente por nombre del módulo si la key no coincide
+        $nameLower = strtolower($module->name ?? '');
+        if (str_contains($nameLower, 'calor') && method_exists($module, 'heatStressMeasurements')) {
+            return $module->heatStressMeasurements()->with('staff')->get();
+        }
+        if (str_contains($nameLower, 'frío') || str_contains($nameLower, 'frio') && method_exists($module, 'coldStressMeasurements')) {
+            return $module->coldStressMeasurements()->with('staff')->get();
+        }
+        if (str_contains($nameLower, 'opacid') && method_exists($module, 'opacityMeasurements')) {
+            return $module->opacityMeasurements()->with('staff')->get();
         }
 
         // Búsqueda inteligente de respaldo si no coincidiera la key exacta
@@ -297,7 +364,7 @@ class PhotoReportController extends Controller
      */
     protected function extractTechnicalDetails($item, string $key): array
     {
-        $title = $item->puesto_trabajo ?? ($item->point_name ?? ($item->tarea_evaluada ?? ($item->equipment_evaluated ?? 'Punto de Monitoreo')));
+        $title = $item->puesto_trabajo ?? ($item->point_name ?? ($item->tarea_evaluada ?? ($item->equipment_evaluated ?? null)));
         $area = $item->area_sector ?? ($item->area ?? ($item->sector ?? 'Área de Trabajo'));
         $badgeLabel = 'Monitoreo';
         $badgeColor = '#0284c7';
@@ -343,11 +410,36 @@ class PhotoReportController extends Controller
             $badgeLabel = "{$awz} m/s² • " . ($item->tipo_vibracion ?? 'Cuerpo Entero');
             $badgeColor = '#7c3aed'; $badgeBg = '#f3e8ff';
             $details = 'Eje dominante: ' . ($item->eje_dominante ?? 'Z');
-        } elseif (str_contains($key, 'calor') || str_contains($key, 'heat') || str_contains($key, 'frio') || str_contains($key, 'cold')) {
-            $temp = $item->tgbh_indoor ?? ($item->ambient_temp ?? ($item->temperatura ?? '—'));
-            $badgeLabel = "{$temp} °C";
-            $badgeColor = '#ea580c'; $badgeBg = '#ffedd5';
-            $details = 'Régimen: ' . ($item->work_regime ?? 'Continuo');
+        } elseif (str_contains($key, 'calor') || str_contains($key, 'heat')) {
+            $title = $item->puesto_trabajo ?: ($item->desc_actividades ?: 'Puesto de Trabajo');
+            $area = $item->area ?: 'Área Operativa';
+            $temp = $item->wbgt_efectivo_c ?? ($item->wbgt_c ?? ($item->temp_c ?? ($item->tgbh_indoor ?? '—')));
+            $isCompliant = $item->is_compliant ?? true;
+            $badgeLabel = "TGBH: {$temp} °C • " . ($isCompliant ? 'Conforme' : 'No Conforme');
+            $badgeColor = $isCompliant ? '#166534' : '#ea580c';
+            $badgeBg = $isCompliant ? '#dcfce7' : '#ffedd5';
+            $details = 'Régimen: ' . ($item->regimen_trabajo_descanso ?: ($item->work_regime ?: 'Continuo'));
+        } elseif (str_contains($key, 'frio') || str_contains($key, 'cold')) {
+            $title = $item->puesto_trabajo ?: ($item->desc_actividades ?: 'Puesto de Trabajo');
+            $area = $item->area ?: 'Área Operativa';
+            $temp = $item->sensacion_termica_c ?? ($item->temp_c ?? ($item->ambient_temp ?? '—'));
+            $risk = $item->nivel_riesgo ?: ($item->is_compliant ? 'Bajo' : 'Moderado');
+            $isCompliant = $item->is_compliant ?? ($risk === 'Bajo');
+            $badgeLabel = "Sensación: {$temp} °C • Riesgo {$risk}";
+            $badgeColor = $isCompliant ? '#166534' : '#0369a1';
+            $badgeBg = $isCompliant ? '#dcfce7' : '#e0f2fe';
+            $details = 'Viento: ' . ($item->vel_viento_ms ? "{$item->vel_viento_ms} m/s" : '—') . ' • Presión: ' . ($item->presion_mmhg ? "{$item->presion_mmhg} mmHg" : '—');
+        } elseif (str_contains($key, 'opacid') || str_contains($key, 'opacity')) {
+            $vehicleTitle = trim(($item->marca ?? '') . ' ' . ($item->modelo ?? ''));
+            $title = $vehicleTitle ?: ($item->tipo_vehiculo ?: ($item->placa ? "Vehículo {$item->placa}" : 'Vehículo Evaluado'));
+            $area = $item->area ?: 'Patio de Maniobras / Operaciones';
+            $opaVal = $item->opa_promedio !== null ? (float)$item->opa_promedio : ($item->opa_1 ?? null);
+            $opaText = $opaVal !== null ? "{$opaVal}% Opacidad" : 'Opacidad';
+            $isCompliant = $item->is_compliant ?? true;
+            $badgeLabel = "{$opaText} • " . ($isCompliant ? 'Cumple' : 'Excede');
+            $badgeColor = $isCompliant ? '#166534' : '#991b1b';
+            $badgeBg = $isCompliant ? '#dcfce7' : '#fee2e2';
+            $details = 'Placa: ' . ($item->placa ?: 'S/P') . ' • RPM: ' . ($item->rpm_promedio ?: '—');
         } elseif (str_contains($key, 'gas')) {
             $ppm = $item->measured_ppm ?? ($item->concentracion ?? '—');
             $gas = $item->gas_type ?? 'Gas';
@@ -363,6 +455,10 @@ class PhotoReportController extends Controller
             $badgeLabel = 'Evaluado';
             $badgeColor = '#0284c7'; $badgeBg = '#e0f2fe';
             $details = $item->observaciones ?? ($item->descripcion ?? '');
+        }
+
+        if (empty($title)) {
+            $title = 'Punto de Monitoreo';
         }
 
         return [
@@ -419,6 +515,7 @@ class PhotoReportController extends Controller
             str_contains($key, 'vibrac') => 'NORMA ISO 2631 / ISO 5349 • VIBRACIONES MANO-BRAZO Y CUERPO ENTERO',
             str_contains($key, 'calor') => 'NORMA ISO 7243 • ESTIMACIÓN DEL ESTRÉS TÉRMICO MEDIANTE ÍNDICE TGBH',
             str_contains($key, 'frio') => 'NORMA ISO 11079 • EVALUACIÓN DE AMBIENTES FRÍOS Y AISLAMIENTO REQUERIDO',
+            str_contains($key, 'opacid') || str_contains($key, 'opacity') => 'NORMA AMBIENTAL DE EMISIONES VEHICULARES • MÉTODO DE OPACIDAD RINGELMANN',
             default => 'SISTEMA DE GESTIÓN DE SEGURIDAD Y SALUD EN EL TRABAJO — METRIC V2',
         };
     }
