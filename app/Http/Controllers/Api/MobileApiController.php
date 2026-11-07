@@ -687,7 +687,9 @@ class MobileApiController extends Controller
             });
 
             $totalMods = $userMods->count();
-            $completedMods = $userMods->where('status', 'Completado')->count();
+            $completedMods = $userMods->filter(function ($m) {
+                return $m->isCompleted();
+            })->count();
             $compliancePct = round($prj->compliance_pct ?? 0);
 
             $projectTotalMods = $prj->modules->count();

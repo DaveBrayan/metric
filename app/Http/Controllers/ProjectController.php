@@ -24,8 +24,10 @@ class ProjectController extends Controller
 
         $projects = Project::with(['company', 'manager', 'modules'])->orderBy('id', 'desc')->get()->map(function ($prj, $index) {
             $totalMods = $prj->modules->count();
-            $completedMods = $prj->modules->where('status', 'Completado')->count();
-            $ratio = $totalMods > 0 ? round(($completedMods / $totalMods) * 100) : 0;
+            $completedMods = $prj->modules->filter(function ($m) {
+                return $m->isCompleted();
+            })->count();
+            $ratio = $totalMods > 0 ? min(100, round(($completedMods / $totalMods) * 100)) : 0;
 
             $startDateObj = $prj->start_date ? \Carbon\Carbon::parse($prj->start_date) : ($prj->created_at ? $prj->created_at : null);
             $startDateFormatted = $startDateObj ? $startDateObj->format('d/m/Y') : '-';

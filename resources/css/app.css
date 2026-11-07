@@ -1364,6 +1364,9 @@ table.modern-table tr:last-child td {
 .btn-admin-icon-action {
     width: 35px;
     height: 35px;
+    min-width: 32px;
+    aspect-ratio: 1 / 1;
+    flex-shrink: 0;
     border-radius: 9px;
     border: 1px solid rgba(226, 232, 240, 0.95);
     background: #ffffff;

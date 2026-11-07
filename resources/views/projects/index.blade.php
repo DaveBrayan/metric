@@ -136,6 +136,35 @@ table#projectsFullMasterTable td {
     word-break: break-word;
 }
 
+.admin-actions-cell {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 6px !important;
+    flex-wrap: nowrap !important;
+    width: 100% !important;
+}
+
+.admin-actions-cell .btn-admin-icon-action {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
+    flex: 0 0 32px !important;
+    aspect-ratio: 1 / 1 !important;
+    border-radius: 8px !important;
+    padding: 0 !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    box-sizing: border-box !important;
+}
+
+.admin-actions-cell .btn-admin-icon-action svg {
+    width: 15px !important;
+    height: 15px !important;
+    flex-shrink: 0 !important;
+}
+
 .date-created-badge {
     display: inline-flex;
     align-items: center;
@@ -562,14 +591,14 @@ textarea.custom-form-input {
             <table class="modern-table" id="projectsFullMasterTable">
                 <thead>
                     <tr>
-                        <th style="width: 50px;">#</th>
-                        <th style="width: 155px;">Código</th>
-                        <th style="width: 260px;">Proyecto</th>
-                        <th style="width: 240px;">Descripción</th>
+                        <th style="width: 40px;">#</th>
+                        <th style="width: 115px;">Código</th>
+                        <th style="width: 200px;">Proyecto</th>
+                        <th style="width: 180px;">Descripción</th>
                         <th style="width: 160px;">Módulos Completados</th>
-                        <th style="width: 120px;">Estado</th>
-                        <th style="width: 130px;">Fecha de Inicio</th>
-                        <th style="width: 110px; text-align: right;">Acciones</th>
+                        <th style="width: 115px;">Estado</th>
+                        <th style="width: 120px;">Fecha de Inicio</th>
+                        <th style="width: 170px; text-align: right;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="projectsTableBody">

@@ -192,5 +192,38 @@ class MeasurementModule extends Model
         }
         return collect();
     }
+
+    /**
+     * Determina si el módulo se considera completado
+     * (por estado explícito 'Completado' o por haber completado/superado los puntos requeridos).
+     */
+    public function isCompleted(): bool
+    {
+        if (strtolower($this->status ?? '') === 'completado') {
+            return true;
+        }
+        $total = (int) ($this->points_total ?? 0);
+        $completed = (int) ($this->points_completed ?? 0);
+        if ($total > 0 && $completed >= $total) {
+            return true;
+        }
+        if ($total <= 0 && $completed > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    protected static function booted()
+    {
+        static::saving(function ($module) {
+            $total = (int) ($module->points_total ?? 0);
+            $completed = (int) ($module->points_completed ?? 0);
+            if ($total > 0 && $completed >= $total) {
+                if (empty($module->status) || in_array($module->status, ['En Progreso', 'Pendiente', 'in_progress', 'pending'])) {
+                    $module->status = 'Completado';
+                }
+            }
+        });
+    }
 }
 

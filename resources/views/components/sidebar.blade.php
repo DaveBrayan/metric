@@ -101,9 +101,22 @@
                 </svg>
                 <span class="nav-item-text">Personal</span>
             </a>
+
+            <!-- Submenu Equipos (trasladado a Organización, debajo de Personal) -->
+            <a href="{{ route('equipment.index') }}" class="nav-item-btn {{ request()->routeIs('equipment.*') ? 'active' : '' }}" data-tooltip="Equipos de Medición & Calibración">
+                <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                </svg>
+                <span class="nav-item-text">Equipos</span>
+                @if(request()->routeIs('equipment.*'))
+                    <span class="nav-badge-pill" style="margin-left: auto; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 20px; background: #f2fadc; color: #5c840c; border: 1px solid rgba(145, 197, 27, 0.45); box-shadow: 0 0 8px rgba(145, 197, 27, 0.2);">{{ $sidebarEquipmentCount }}</span>
+                @else
+                    <span class="nav-badge-pill" style="margin-left: auto; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 20px; background: rgba(16, 185, 223, 0.18); color: #0896b5; border: 1px solid rgba(16, 185, 223, 0.35);">{{ $sidebarEquipmentCount }}</span>
+                @endif
+            </a>
         </div>
 
-        <!-- Section 3: Proyectos & Submódulos -->
+        <!-- Section 3: Proyectos -->
         <div class="nav-group-section">
             <div class="nav-section-title">Proyectos</div>
             <a href="{{ route('projects.index') }}" class="nav-item-btn {{ request()->routeIs('projects.index') ? 'active' : '' }}" data-tooltip="Proyectos Activos">
@@ -116,38 +129,6 @@
                 @else
                     <span class="nav-badge-pill" style="margin-left: auto; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 20px; background: rgba(16, 185, 223, 0.18); color: #0896b5; border: 1px solid rgba(16, 185, 223, 0.35);">{{ $sidebarProjectsCount }}</span>
                 @endif
-            </a>
-
-            <!-- Submenu Módulos -->
-            <a href="{{ route('modules.index') }}" class="nav-item-btn nav-subitem-indent {{ request()->routeIs('modules.*') ? 'active' : '' }}" data-tooltip="Módulos: Ruido, Agua, Opacidad, Partículas">
-                <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 17px; height: 17px;">
-                    <polygon points="12 2 2 7 12 12 22 7 12 2"/>
-                    <polyline points="2 17 12 22 22 17"/>
-                    <polyline points="2 12 12 17 22 12"/>
-                </svg>
-                <span class="nav-item-text">Módulos</span>
-            </a>
-
-            <!-- Submenu Equipos -->
-            <a href="{{ route('equipment.index') }}" class="nav-item-btn nav-subitem-indent {{ request()->routeIs('equipment.*') ? 'active' : '' }}" data-tooltip="Equipos de Medición & Calibración">
-                <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 17px; height: 17px;">
-                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-                </svg>
-                <span class="nav-item-text">Equipos</span>
-                @if(request()->routeIs('equipment.*'))
-                    <span class="nav-badge-pill" style="margin-left: auto; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 20px; background: #f2fadc; color: #5c840c; border: 1px solid rgba(145, 197, 27, 0.45); box-shadow: 0 0 8px rgba(145, 197, 27, 0.2);">{{ $sidebarEquipmentCount }}</span>
-                @else
-                    <span class="nav-badge-pill" style="margin-left: auto; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 20px; background: rgba(16, 185, 223, 0.18); color: #0896b5; border: 1px solid rgba(16, 185, 223, 0.35);">{{ $sidebarEquipmentCount }}</span>
-                @endif
-            </a>
-
-            <!-- Submenu Reporte Fotográfico -->
-            <a href="{{ route('photo_reports.index') }}" class="nav-item-btn nav-subitem-indent {{ request()->routeIs('photo_reports.*') ? 'active' : '' }}" data-tooltip="Catálogo & Reportes Fotográficos en Mosaico Carta">
-                <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 17px; height: 17px;">
-                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                    <circle cx="12" cy="13" r="4"/>
-                </svg>
-                <span class="nav-item-text">Reporte Fotográfico</span>
             </a>
         </div>
 
