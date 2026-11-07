@@ -15,6 +15,7 @@ class ColdStressMeasurement extends Model
         'module_id',
         'project_id',
         'staff_id',
+        'local_uuid',
         'point_number',
         'measurement_date',
         'measurement_time',
@@ -39,6 +40,8 @@ class ColdStressMeasurement extends Model
         'utm_northing',
         'location_description',
         'observations',
+        'registered_by',
+        'created_by',
         'photo_paths',
     ];
 

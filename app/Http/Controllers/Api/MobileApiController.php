@@ -2231,66 +2231,106 @@ class MobileApiController extends Controller
         }
 
         $measurementId = $request->input('id') ?? $request->input('remote_id');
-        $measurement = null;
-        if (!empty($measurementId)) {
-            $measurement = $module->coldStressMeasurements()->find($measurementId);
-        }
+        $localUuid = $request->input('local_uuid');
 
-        $existingCount = $module->coldStressMeasurements()->count();
-        $pointNumber = $request->input('point_number') ?? ('F-' . str_pad($existingCount + 1, 2, '0', STR_PAD_LEFT));
+        return DB::transaction(function () use (
+            $module, $request, $measurementId, $localUuid, $measurementDate,
+            $measurementTime, $area, $puestoTrabajo, $descActividades,
+            $tempC, $hrPercent, $velViento, $presion, $metabolismo,
+            $aislamiento, $eval, $latitude, $longitude, $utmZone,
+            $utmEasting, $utmNorthing, $locationRaw, $uploadedImages,
+            $staffId, $rawCreatedBy
+        ) {
+            $measurement = null;
+            if (!empty($measurementId)) {
+                $measurement = $module->coldStressMeasurements()->lockForUpdate()->find($measurementId);
+            }
+            if (!$measurement && !empty($localUuid)) {
+                $measurement = $module->coldStressMeasurements()->lockForUpdate()->where('local_uuid', $localUuid)->first();
+            }
 
-        $data = [
-            'project_id' => $module->project_id,
-            'point_number' => $measurement ? $measurement->point_number : $pointNumber,
-            'measurement_date' => $measurementDate,
-            'measurement_time' => $measurementTime,
-            'area' => $area,
-            'puesto_trabajo' => $puestoTrabajo,
-            'desc_actividades' => $descActividades,
-            'temp_c' => $tempC,
-            'hr_percent' => $hrPercent,
-            'vel_viento_ms' => $velViento,
-            'presion_mmhg' => $presion,
-            'metabolismo' => $metabolismo,
-            'aislamiento' => $aislamiento,
-            'indice_viento_wci' => $eval['wci'],
-            'sensacion_termica_c' => $eval['sensacion'],
-            'nivel_riesgo' => $eval['riesgo'],
-            'tiempo_limite_exposicion' => $eval['tle'],
-            'is_compliant' => $eval['compliant'],
-            'latitude' => $latitude !== null ? (float) $latitude : null,
-            'longitude' => $longitude !== null ? (float) $longitude : null,
-            'utm_zone' => $utmZone,
-            'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
-            'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
-            'location_description' => $locationRaw,
-            'observations' => $request->input('observations') ?? $request->input('observaciones'),
-            'photo_paths' => !empty($uploadedImages) ? $uploadedImages : null,
-            'staff_id' => $staffId,
-        ];
+            // Deduplicación inteligente para sync offline concurrente
+            if (!$measurement) {
+                $candidateQuery = $module->coldStressMeasurements()
+                    ->lockForUpdate()
+                    ->where('puesto_trabajo', $puestoTrabajo)
+                    ->where('measurement_date', $measurementDate)
+                    ->where('created_at', '>=', Carbon::now()->subMinutes(15));
 
-        if ($measurement) {
-            $measurement->update($data);
-            $statusCode = 200;
-        } else {
-            $measurement = $module->coldStressMeasurements()->create($data);
-            $statusCode = 201;
-        }
+                if ($tempC !== null) {
+                    $candidateQuery->whereBetween('temp_c', [$tempC - 0.1, $tempC + 0.1]);
+                }
 
-        $module->points_completed = $module->coldStressMeasurements()->count();
-        $module->save();
+                $candidate = $candidateQuery->latest('id')->first();
+                if ($candidate) {
+                    $measurement = $candidate;
+                    if (!empty($localUuid) && empty($candidate->local_uuid)) {
+                        $candidate->local_uuid = $localUuid;
+                        $candidate->save();
+                    }
+                }
+            }
 
-        return response()->json([
-            'success' => true,
-            'message' => "Punto de medición de estrés por frío #{$measurement->point_number} registrado exitosamente.",
-            'id' => $measurement->id,
-            'remote_id' => (string) $measurement->id,
-            'point_number' => $measurement->point_number,
-            'points_completed' => $module->points_completed,
-            'indice_viento_wci' => $measurement->indice_viento_wci,
-            'sensacion_termica_c' => $measurement->sensacion_termica_c,
-            'is_compliant' => $measurement->is_compliant,
-        ], $statusCode);
+            $existingCount = $module->coldStressMeasurements()->count();
+            $pointNumber = $request->input('point_number') ?? ($measurement ? $measurement->point_number : ('F-' . str_pad($existingCount + 1, 2, '0', STR_PAD_LEFT)));
+
+            $data = [
+                'project_id' => $module->project_id,
+                'point_number' => $measurement ? $measurement->point_number : $pointNumber,
+                'measurement_date' => $measurementDate,
+                'measurement_time' => $measurementTime,
+                'area' => $area,
+                'puesto_trabajo' => $puestoTrabajo,
+                'desc_actividades' => $descActividades,
+                'temp_c' => $tempC,
+                'hr_percent' => $hrPercent,
+                'vel_viento_ms' => $velViento,
+                'presion_mmhg' => $presion,
+                'metabolismo' => $metabolismo,
+                'aislamiento' => $aislamiento,
+                'indice_viento_wci' => $eval['wci'],
+                'sensacion_termica_c' => $eval['sensacion'],
+                'nivel_riesgo' => $eval['riesgo'],
+                'tiempo_limite_exposicion' => $eval['tle'],
+                'is_compliant' => $eval['compliant'],
+                'latitude' => $latitude !== null ? (float) $latitude : null,
+                'longitude' => $longitude !== null ? (float) $longitude : null,
+                'utm_zone' => $utmZone,
+                'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
+                'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
+                'location_description' => $locationRaw,
+                'observations' => $request->input('observations') ?? $request->input('observaciones'),
+                'photo_paths' => !empty($uploadedImages) ? $uploadedImages : null,
+                'staff_id' => $staffId,
+                'local_uuid' => $localUuid ?: ($measurement ? $measurement->local_uuid : null),
+                'registered_by' => $rawCreatedBy ?: ($measurement ? $measurement->registered_by : 'Técnico de Campo'),
+                'created_by' => $rawCreatedBy ?: ($measurement ? $measurement->created_by : 'Técnico de Campo'),
+            ];
+
+            if ($measurement) {
+                $measurement->update($data);
+                $statusCode = 200;
+            } else {
+                $measurement = $module->coldStressMeasurements()->create($data);
+                $statusCode = 201;
+            }
+
+            $module->points_completed = $module->coldStressMeasurements()->count();
+            $module->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Punto de medición de estrés por frío #{$measurement->point_number} registrado exitosamente.",
+                'id' => $measurement->id,
+                'remote_id' => (string) $measurement->id,
+                'point_number' => $measurement->point_number,
+                'local_uuid' => $measurement->local_uuid,
+                'points_completed' => $module->points_completed,
+                'indice_viento_wci' => $measurement->indice_viento_wci,
+                'sensacion_termica_c' => $measurement->sensacion_termica_c,
+                'is_compliant' => $measurement->is_compliant,
+            ], $statusCode);
+        });
     }
 
     /**
@@ -3303,85 +3343,126 @@ class MobileApiController extends Controller
         }
 
         $measurementId = $request->input('id') ?? $request->input('remote_id');
-        $measurement = null;
-        if (!empty($measurementId)) {
-            $measurement = $module->fireActivityMeasurements()->find($measurementId);
-        }
-        if (!$measurement && $request->filled('point_number')) {
-            $measurement = $module->fireActivityMeasurements()->where('point_number', $request->input('point_number'))->first();
-        }
-        if (!$measurement && $request->filled('sector_name')) {
-            $measurement = $module->fireActivityMeasurements()->where('sector_name', $request->input('sector_name'))->first();
-        }
+        $localUuid = $request->input('local_uuid');
 
-        $existingCount = $module->fireActivityMeasurements()->count();
-        $pointNumber = $request->input('point_number') ?? str_pad($existingCount + 1, 2, '0', STR_PAD_LEFT);
+        return DB::transaction(function () use (
+            $module, $request, $measurementId, $localUuid, $measurementDate,
+            $measurementTime, $macroarea, $sectorName, $dimensions,
+            $yiLargo, $xiAncho, $areaM2, $activities, $fireEquipments,
+            $qsMjM2, $qsMcalM2, $riskLevel, $riskColor, $raValue,
+            $uploadedImages, $locationRaw, $latitude, $longitude,
+            $utmZone, $utmEasting, $utmNorthing, $registeredByName, $staffId
+        ) {
+            $measurement = null;
+            if (!empty($measurementId)) {
+                $measurement = $module->fireActivityMeasurements()->lockForUpdate()->find($measurementId);
+            }
+            if (!$measurement && !empty($localUuid)) {
+                $measurement = $module->fireActivityMeasurements()->lockForUpdate()->where('local_uuid', $localUuid)->first();
+            }
 
-        $data = [
-            'point_number' => $measurement ? $measurement->point_number : $pointNumber,
-            'measurement_date' => $measurementDate,
-            'measurement_time' => $measurementTime,
-            'macroarea' => $macroarea,
-            'sector_name' => $sectorName,
-            'dimensions' => $dimensions,
-            'yi_largo' => $yiLargo,
-            'xi_ancho' => $xiAncho,
-            'area_m2' => $areaM2,
-            'activities' => $activities,
-            'fire_equipments' => $fireEquipments,
-            'qs_mj_m2' => $qsMjM2,
-            'qs_mcal_m2' => $qsMcalM2,
-            'risk_level' => $riskLevel,
-            'risk_color' => $riskColor,
-            'ra_value' => $raValue,
-            'image_path' => $uploadedImages[0] ?? ($measurement ? $measurement->image_path : null),
-            'images' => !empty($uploadedImages) ? $uploadedImages : ($measurement ? $measurement->images : null),
-            'location' => $locationRaw,
-            'latitude' => $latitude !== null ? (float) $latitude : null,
-            'longitude' => $longitude !== null ? (float) $longitude : null,
-            'utm_zone' => $utmZone,
-            'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
-            'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
-            'registered_by' => $registeredByName,
-            'staff_id' => $staffId,
-        ];
-
-        if ($measurement) {
-            $measurement->update($data);
-            $statusCode = 200;
-        } else {
-            $measurement = $module->fireActivityMeasurements()->create($data);
-            $statusCode = 201;
-        }
-
-        $module->points_completed = $module->fireActivityMeasurements()->count();
-        $module->save();
-
-        $finalImages = $measurement->images ?? $uploadedImages;
-        if (is_string($finalImages)) {
-            $finalImages = json_decode($finalImages, true) ?: [];
-        }
-        $formattedUrls = [];
-        if (is_array($finalImages)) {
-            foreach ($finalImages as $img) {
-                if (!empty($img)) {
-                    $formattedUrls[] = str_starts_with($img, 'http') ? $img : asset($img);
+            // Deduplicación para sync offline concurrente (mismo sector y macroárea en los últimos 15 min)
+            if (!$measurement && !empty($sectorName)) {
+                $candidate = $module->fireActivityMeasurements()
+                    ->lockForUpdate()
+                    ->where('sector_name', $sectorName)
+                    ->where('macroarea', $macroarea)
+                    ->where('measurement_date', $measurementDate)
+                    ->where('created_at', '>=', Carbon::now()->subMinutes(15))
+                    ->latest('id')
+                    ->first();
+                if ($candidate) {
+                    $measurement = $candidate;
+                    if (!empty($localUuid) && empty($candidate->local_uuid)) {
+                        $candidate->local_uuid = $localUuid;
+                        $candidate->save();
+                    }
                 }
             }
-        }
 
-        return response()->json([
-            'success' => true,
-            'message' => "Sector de Carga de Fuego por Actividad #{$measurement->point_number} guardado exitosamente.",
-            'id' => $measurement->id,
-            'remote_id' => (string) $measurement->id,
-            'point_number' => $measurement->point_number,
-            'qs_mj_m2' => $measurement->qs_mj_m2,
-            'risk_level' => $measurement->risk_level,
-            'points_completed' => $module->points_completed,
-            'images' => $formattedUrls,
-            'image_urls' => $formattedUrls,
-        ], $statusCode);
+            if ($measurement) {
+                $pointNumber = $measurement->point_number;
+            } else {
+                $reqPoint = $request->input('point_number');
+                if (!empty($reqPoint) && !$module->fireActivityMeasurements()->where('point_number', $reqPoint)->exists()) {
+                    $pointNumber = $reqPoint;
+                } else {
+                    $idx = $module->fireActivityMeasurements()->count() + 1;
+                    while ($module->fireActivityMeasurements()->where('point_number', str_pad($idx, 2, '0', STR_PAD_LEFT))->exists()) {
+                        $idx++;
+                    }
+                    $pointNumber = str_pad($idx, 2, '0', STR_PAD_LEFT);
+                }
+            }
+
+            $data = [
+                'point_number' => $pointNumber,
+                'measurement_date' => $measurementDate,
+                'measurement_time' => $measurementTime,
+                'macroarea' => $macroarea,
+                'sector_name' => $sectorName,
+                'dimensions' => $dimensions,
+                'yi_largo' => $yiLargo,
+                'xi_ancho' => $xiAncho,
+                'area_m2' => $areaM2,
+                'activities' => $activities,
+                'fire_equipments' => $fireEquipments,
+                'qs_mj_m2' => $qsMjM2,
+                'qs_mcal_m2' => $qsMcalM2,
+                'risk_level' => $riskLevel,
+                'risk_color' => $riskColor,
+                'ra_value' => $raValue,
+                'image_path' => $uploadedImages[0] ?? ($measurement ? $measurement->image_path : null),
+                'images' => !empty($uploadedImages) ? $uploadedImages : ($measurement ? $measurement->images : null),
+                'location' => $locationRaw,
+                'latitude' => $latitude !== null ? (float) $latitude : null,
+                'longitude' => $longitude !== null ? (float) $longitude : null,
+                'utm_zone' => $utmZone,
+                'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
+                'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
+                'registered_by' => $registeredByName,
+                'staff_id' => $staffId,
+                'local_uuid' => $localUuid ?: ($measurement ? $measurement->local_uuid : null),
+            ];
+
+            if ($measurement) {
+                $measurement->update($data);
+                $statusCode = 200;
+            } else {
+                $measurement = $module->fireActivityMeasurements()->create($data);
+                $statusCode = 201;
+            }
+
+            $module->points_completed = $module->fireActivityMeasurements()->count();
+            $module->save();
+
+            $finalImages = $measurement->images ?? $uploadedImages;
+            if (is_string($finalImages)) {
+                $finalImages = json_decode($finalImages, true) ?: [];
+            }
+            $formattedUrls = [];
+            if (is_array($finalImages)) {
+                foreach ($finalImages as $img) {
+                    if (!empty($img)) {
+                        $formattedUrls[] = str_starts_with($img, 'http') ? $img : asset($img);
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Sector de Carga de Fuego por Actividad #{$measurement->point_number} guardado exitosamente.",
+                'id' => $measurement->id,
+                'remote_id' => (string) $measurement->id,
+                'point_number' => $measurement->point_number,
+                'local_uuid' => $measurement->local_uuid,
+                'qs_mj_m2' => $measurement->qs_mj_m2,
+                'risk_level' => $measurement->risk_level,
+                'points_completed' => $module->points_completed,
+                'images' => $formattedUrls,
+                'image_urls' => $formattedUrls,
+            ], $statusCode);
+        });
     }
 
     /**
@@ -3655,85 +3736,126 @@ class MobileApiController extends Controller
         }
 
         $measurementId = $request->input('id') ?? $request->input('remote_id');
-        $measurement = null;
-        if (!empty($measurementId)) {
-            $measurement = $module->fireWeightMeasurements()->find($measurementId);
-        }
-        if (!$measurement && $request->filled('point_number')) {
-            $measurement = $module->fireWeightMeasurements()->where('point_number', $request->input('point_number'))->first();
-        }
-        if (!$measurement && $request->filled('sector_name')) {
-            $measurement = $module->fireWeightMeasurements()->where('sector_name', $request->input('sector_name'))->first();
-        }
+        $localUuid = $request->input('local_uuid');
 
-        $existingCount = $module->fireWeightMeasurements()->count();
-        $pointNumber = $request->input('point_number') ?? str_pad($existingCount + 1, 2, '0', STR_PAD_LEFT);
+        return DB::transaction(function () use (
+            $module, $request, $measurementId, $localUuid, $measurementDate,
+            $measurementTime, $macroarea, $sectorName, $dimensions,
+            $yiLargo, $xiAncho, $areaM2, $materials, $fireEquipments,
+            $qsMjM2, $qsMcalM2, $riskLevel, $riskColor, $raValue,
+            $uploadedImages, $locationRaw, $latitude, $longitude,
+            $utmZone, $utmEasting, $utmNorthing, $registeredByName, $staffId
+        ) {
+            $measurement = null;
+            if (!empty($measurementId)) {
+                $measurement = $module->fireWeightMeasurements()->lockForUpdate()->find($measurementId);
+            }
+            if (!$measurement && !empty($localUuid)) {
+                $measurement = $module->fireWeightMeasurements()->lockForUpdate()->where('local_uuid', $localUuid)->first();
+            }
 
-        $data = [
-            'point_number' => $measurement ? $measurement->point_number : $pointNumber,
-            'measurement_date' => $measurementDate,
-            'measurement_time' => $measurementTime,
-            'macroarea' => $macroarea,
-            'sector_name' => $sectorName,
-            'dimensions' => $dimensions,
-            'yi_largo' => $yiLargo,
-            'xi_ancho' => $xiAncho,
-            'area_m2' => $areaM2,
-            'materials' => $materials,
-            'fire_equipments' => $fireEquipments,
-            'qs_mj_m2' => $qsMjM2,
-            'qs_mcal_m2' => $qsMcalM2,
-            'risk_level' => $riskLevel,
-            'risk_color' => $riskColor,
-            'ra_value' => $raValue,
-            'image_path' => $uploadedImages[0] ?? ($measurement ? $measurement->image_path : null),
-            'images' => !empty($uploadedImages) ? $uploadedImages : ($measurement ? $measurement->images : null),
-            'location' => $locationRaw,
-            'latitude' => $latitude !== null ? (float) $latitude : null,
-            'longitude' => $longitude !== null ? (float) $longitude : null,
-            'utm_zone' => $utmZone,
-            'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
-            'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
-            'registered_by' => $registeredByName,
-            'staff_id' => $staffId,
-        ];
-
-        if ($measurement) {
-            $measurement->update($data);
-            $statusCode = 200;
-        } else {
-            $measurement = $module->fireWeightMeasurements()->create($data);
-            $statusCode = 201;
-        }
-
-        $module->points_completed = $module->fireWeightMeasurements()->count();
-        $module->save();
-
-        $finalImages = $measurement->images ?? $uploadedImages;
-        if (is_string($finalImages)) {
-            $finalImages = json_decode($finalImages, true) ?: [];
-        }
-        $formattedUrls = [];
-        if (is_array($finalImages)) {
-            foreach ($finalImages as $img) {
-                if (!empty($img)) {
-                    $formattedUrls[] = str_starts_with($img, 'http') ? $img : asset($img);
+            // Deduplicación para sync offline concurrente (mismo sector y macroárea en los últimos 15 min)
+            if (!$measurement && !empty($sectorName)) {
+                $candidate = $module->fireWeightMeasurements()
+                    ->lockForUpdate()
+                    ->where('sector_name', $sectorName)
+                    ->where('macroarea', $macroarea)
+                    ->where('measurement_date', $measurementDate)
+                    ->where('created_at', '>=', Carbon::now()->subMinutes(15))
+                    ->latest('id')
+                    ->first();
+                if ($candidate) {
+                    $measurement = $candidate;
+                    if (!empty($localUuid) && empty($candidate->local_uuid)) {
+                        $candidate->local_uuid = $localUuid;
+                        $candidate->save();
+                    }
                 }
             }
-        }
 
-        return response()->json([
-            'success' => true,
-            'message' => "Sector de Carga de Fuego por Peso #{$measurement->point_number} guardado exitosamente.",
-            'id' => $measurement->id,
-            'remote_id' => (string) $measurement->id,
-            'point_number' => $measurement->point_number,
-            'qs_mj_m2' => $measurement->qs_mj_m2,
-            'risk_level' => $measurement->risk_level,
-            'points_completed' => $module->points_completed,
-            'images' => $formattedUrls,
-            'image_urls' => $formattedUrls,
-        ], $statusCode);
+            if ($measurement) {
+                $pointNumber = $measurement->point_number;
+            } else {
+                $reqPoint = $request->input('point_number');
+                if (!empty($reqPoint) && !$module->fireWeightMeasurements()->where('point_number', $reqPoint)->exists()) {
+                    $pointNumber = $reqPoint;
+                } else {
+                    $idx = $module->fireWeightMeasurements()->count() + 1;
+                    while ($module->fireWeightMeasurements()->where('point_number', str_pad($idx, 2, '0', STR_PAD_LEFT))->exists()) {
+                        $idx++;
+                    }
+                    $pointNumber = str_pad($idx, 2, '0', STR_PAD_LEFT);
+                }
+            }
+
+            $data = [
+                'point_number' => $pointNumber,
+                'measurement_date' => $measurementDate,
+                'measurement_time' => $measurementTime,
+                'macroarea' => $macroarea,
+                'sector_name' => $sectorName,
+                'dimensions' => $dimensions,
+                'yi_largo' => $yiLargo,
+                'xi_ancho' => $xiAncho,
+                'area_m2' => $areaM2,
+                'materials' => $materials,
+                'fire_equipments' => $fireEquipments,
+                'qs_mj_m2' => $qsMjM2,
+                'qs_mcal_m2' => $qsMcalM2,
+                'risk_level' => $riskLevel,
+                'risk_color' => $riskColor,
+                'ra_value' => $raValue,
+                'image_path' => $uploadedImages[0] ?? ($measurement ? $measurement->image_path : null),
+                'images' => !empty($uploadedImages) ? $uploadedImages : ($measurement ? $measurement->images : null),
+                'location' => $locationRaw,
+                'latitude' => $latitude !== null ? (float) $latitude : null,
+                'longitude' => $longitude !== null ? (float) $longitude : null,
+                'utm_zone' => $utmZone,
+                'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
+                'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
+                'registered_by' => $registeredByName,
+                'staff_id' => $staffId,
+                'local_uuid' => $localUuid ?: ($measurement ? $measurement->local_uuid : null),
+            ];
+
+            if ($measurement) {
+                $measurement->update($data);
+                $statusCode = 200;
+            } else {
+                $measurement = $module->fireWeightMeasurements()->create($data);
+                $statusCode = 201;
+            }
+
+            $module->points_completed = $module->fireWeightMeasurements()->count();
+            $module->save();
+
+            $finalImages = $measurement->images ?? $uploadedImages;
+            if (is_string($finalImages)) {
+                $finalImages = json_decode($finalImages, true) ?: [];
+            }
+            $formattedUrls = [];
+            if (is_array($finalImages)) {
+                foreach ($finalImages as $img) {
+                    if (!empty($img)) {
+                        $formattedUrls[] = str_starts_with($img, 'http') ? $img : asset($img);
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Sector de Carga de Fuego por Peso #{$measurement->point_number} guardado exitosamente.",
+                'id' => $measurement->id,
+                'remote_id' => (string) $measurement->id,
+                'point_number' => $measurement->point_number,
+                'local_uuid' => $measurement->local_uuid,
+                'qs_mj_m2' => $measurement->qs_mj_m2,
+                'risk_level' => $measurement->risk_level,
+                'points_completed' => $module->points_completed,
+                'images' => $formattedUrls,
+                'image_urls' => $formattedUrls,
+            ], $statusCode);
+        });
     }
 
     /**
@@ -6518,6 +6640,8 @@ class MobileApiController extends Controller
             'observaciones' => 'nullable|string',
             'registered_by' => 'nullable|string|max:255',
             'created_by' => 'nullable|string|max:255',
+            'autor' => 'nullable|string|max:255',
+            'tecnico_id' => 'nullable',
             'staff_id' => 'nullable',
             'image_urls' => 'nullable',
             'images.*' => 'nullable|image|max:30720',
@@ -6623,6 +6747,34 @@ class MobileApiController extends Controller
             return asset($p);
         }, $finalUrls)));
 
+        $resolvedRegisteredBy = $validated['registered_by'] ?? ($validated['created_by'] ?? null);
+        if (empty($resolvedRegisteredBy) || $resolvedRegisteredBy === 'App Móvil') {
+            if ($measurement && !empty($measurement->registered_by) && $measurement->registered_by !== 'App Móvil') {
+                $resolvedRegisteredBy = $measurement->registered_by;
+            } else {
+                $resolvedStaffId = $validated['staff_id'] ?? null;
+                if (empty($resolvedStaffId)) {
+                    $authHeader = $request->header('Authorization');
+                    if ($authHeader && preg_match('/Bearer\s+mtoken_([a-zA-Z0-9+\/=]+)/i', $authHeader, $matches)) {
+                        $decodedToken = base64_decode($matches[1]);
+                        $tokenParts = explode(':', $decodedToken);
+                        if (!empty($tokenParts[0]) && is_numeric($tokenParts[0])) {
+                            $resolvedStaffId = (int) $tokenParts[0];
+                        }
+                    }
+                }
+                if (!empty($resolvedStaffId)) {
+                    $staffObj = \App\Models\Staff::find($resolvedStaffId) ?? \App\Models\User::find($resolvedStaffId);
+                    if ($staffObj) {
+                        $resolvedRegisteredBy = $staffObj->name ?? ($staffObj->full_name ?? ($staffObj->email ?? 'App Móvil'));
+                    }
+                }
+            }
+        }
+        if (empty($resolvedRegisteredBy)) {
+            $resolvedRegisteredBy = 'App Móvil';
+        }
+
         $data = [
             'module_id' => $module->id,
             'point_number' => $pointNum,
@@ -6657,8 +6809,8 @@ class MobileApiController extends Controller
             'images' => $finalUrls,
             'image_urls' => $finalUrls,
             'observations' => $validated['observations'] ?? ($validated['observaciones'] ?? null),
-            'registered_by' => $validated['registered_by'] ?? ($validated['created_by'] ?? 'App Móvil'),
-            'created_by' => $validated['created_by'] ?? 'App Móvil',
+            'registered_by' => $resolvedRegisteredBy,
+            'created_by' => $measurement ? ($measurement->created_by ?? $resolvedRegisteredBy) : $resolvedRegisteredBy,
             'staff_id' => $validated['staff_id'] ?? null,
             'local_uuid' => $localUuid,
         ];
@@ -6817,6 +6969,8 @@ class MobileApiController extends Controller
             'observaciones' => 'nullable|string',
             'registered_by' => 'nullable|string|max:255',
             'created_by' => 'nullable|string|max:255',
+            'autor' => 'nullable|string|max:255',
+            'tecnico_id' => 'nullable',
             'staff_id' => 'nullable',
             'image_urls' => 'nullable',
             'images.*' => 'nullable|image|max:30720',
@@ -6912,6 +7066,34 @@ class MobileApiController extends Controller
             $locationVal = json_encode($locationVal);
         }
 
+        $resolvedRegisteredBy = $validated['registered_by'] ?? ($validated['created_by'] ?? ($request->input('autor') ?? null));
+        if (empty($resolvedRegisteredBy) || $resolvedRegisteredBy === 'Técnico') {
+            if ($measurement && !empty($measurement->registered_by) && $measurement->registered_by !== 'Técnico') {
+                $resolvedRegisteredBy = $measurement->registered_by;
+            } else {
+                $resolvedStaffId = $validated['staff_id'] ?? ($request->input('tecnico_id') ?? null);
+                if (empty($resolvedStaffId)) {
+                    $authHeader = $request->header('Authorization');
+                    if ($authHeader && preg_match('/Bearer\s+mtoken_([a-zA-Z0-9+\/=]+)/i', $authHeader, $matches)) {
+                        $decodedToken = base64_decode($matches[1]);
+                        $tokenParts = explode(':', $decodedToken);
+                        if (!empty($tokenParts[0]) && is_numeric($tokenParts[0])) {
+                            $resolvedStaffId = (int) $tokenParts[0];
+                        }
+                    }
+                }
+                if (!empty($resolvedStaffId)) {
+                    $staffObj = \App\Models\Staff::find($resolvedStaffId) ?? \App\Models\User::find($resolvedStaffId);
+                    if ($staffObj) {
+                        $resolvedRegisteredBy = $staffObj->name ?? ($staffObj->full_name ?? ($staffObj->email ?? 'Técnico'));
+                    }
+                }
+            }
+        }
+        if (empty($resolvedRegisteredBy)) {
+            $resolvedRegisteredBy = 'Técnico';
+        }
+
         $data = [
             'point_number' => $pointNum,
             'codigo' => $pointNum,
@@ -6939,8 +7121,8 @@ class MobileApiController extends Controller
             'images' => $finalUrls,
             'image_path' => !empty($finalUrls) ? $finalUrls[0] : null,
             'observations' => $observaciones,
-            'registered_by' => $validated['registered_by'] ?? ($validated['created_by'] ?? 'Técnico'),
-            'created_by' => $validated['created_by'] ?? ($validated['registered_by'] ?? 'Técnico'),
+            'registered_by' => $resolvedRegisteredBy,
+            'created_by' => $measurement ? ($measurement->created_by ?? $resolvedRegisteredBy) : $resolvedRegisteredBy,
             'staff_id' => $validated['staff_id'] ?? null,
             'local_uuid' => $localUuid,
         ];

@@ -14,6 +14,7 @@ class FireWeightMeasurement extends Model
 
     protected $fillable = [
         'module_id',
+        'local_uuid',
         'point_number',
         'measurement_date',
         'measurement_time',
