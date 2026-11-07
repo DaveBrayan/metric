@@ -3135,10 +3135,19 @@ class MobileApiController extends Controller
 
             $activities = is_array($item->activities) ? $item->activities : (json_decode($item->activities, true) ?: []);
             $fireEquipments = is_array($item->fire_equipments) ? $item->fire_equipments : (json_decode($item->fire_equipments, true) ?: []);
+            foreach ($fireEquipments as &$feq) {
+                if (!empty($feq['photos']) && is_array($feq['photos'])) {
+                    $feq['photos'] = array_values(array_filter(array_map(function ($p) {
+                        return $p ? (str_starts_with($p, 'http') ? $p : asset($p)) : null;
+                    }, $feq['photos'])));
+                }
+            }
+            unset($feq);
 
             return [
                 'id' => $item->id,
                 'remote_id' => (string) $item->id,
+                'local_uuid' => $item->local_uuid,
                 'point_number' => $item->point_number ?: str_pad($index + 1, 2, '0', STR_PAD_LEFT),
                 'num' => $item->point_number ?: str_pad($index + 1, 2, '0', STR_PAD_LEFT),
                 'measurement_date' => $item->measurement_date ? $item->measurement_date->format('Y-m-d') : null,
@@ -3359,6 +3368,36 @@ class MobileApiController extends Controller
             $locationRaw = "Zona {$utmZone} E: {$eF} N: {$nF}";
         }
 
+        // Vincular fotos subidas a los equipos contra incendios correspondientes
+        if (!empty($fireEquipments) && is_array($fireEquipments)) {
+            $uploadedMap = [];
+            $allFiles = array_merge(
+                $request->hasFile('images') ? $request->file('images') : [],
+                $request->hasFile('photos') ? $request->file('photos') : []
+            );
+            foreach ($allFiles as $fIdx => $fFile) {
+                if ($fFile && $fFile->isValid() && isset($uploadedImages[$fIdx])) {
+                    $uploadedMap[basename($fFile->getClientOriginalName())] = $uploadedImages[$fIdx];
+                }
+            }
+
+            foreach ($fireEquipments as &$eq) {
+                if (!empty($eq['photos']) && is_array($eq['photos'])) {
+                    $newEqPhotos = [];
+                    foreach ($eq['photos'] as $p) {
+                        $baseP = basename($p);
+                        if (isset($uploadedMap[$baseP])) {
+                            $newEqPhotos[] = $uploadedMap[$baseP];
+                        } elseif (str_starts_with($p, 'http') || str_starts_with($p, 'uploads/') || str_starts_with($p, '/uploads/')) {
+                            $newEqPhotos[] = $p;
+                        }
+                    }
+                    $eq['photos'] = $newEqPhotos;
+                }
+            }
+            unset($eq);
+        }
+
         $measurementId = $request->input('id') ?? $request->input('remote_id');
         $localUuid = $request->input('local_uuid');
 
@@ -3378,22 +3417,19 @@ class MobileApiController extends Controller
                 $measurement = $module->fireActivityMeasurements()->lockForUpdate()->where('local_uuid', $localUuid)->first();
             }
 
-            // Deduplicación para sync offline concurrente (mismo sector y macroárea en los últimos 15 min)
-            if (!$measurement && !empty($sectorName)) {
+            // Deduplicación para sync offline: solo si NO se envió local_uuid para no sobreescribir otros registros
+            if (!$measurement && empty($localUuid) && !empty($sectorName)) {
                 $candidate = $module->fireActivityMeasurements()
                     ->lockForUpdate()
                     ->where('sector_name', $sectorName)
                     ->where('macroarea', $macroarea)
                     ->where('measurement_date', $measurementDate)
                     ->where('created_at', '>=', Carbon::now()->subMinutes(15))
+                    ->whereNull('local_uuid')
                     ->latest('id')
                     ->first();
                 if ($candidate) {
                     $measurement = $candidate;
-                    if (!empty($localUuid) && empty($candidate->local_uuid)) {
-                        $candidate->local_uuid = $localUuid;
-                        $candidate->save();
-                    }
                 }
             }
 
@@ -3530,10 +3566,19 @@ class MobileApiController extends Controller
 
             $materials = is_array($item->materials) ? $item->materials : (json_decode($item->materials, true) ?: []);
             $fireEquipments = is_array($item->fire_equipments) ? $item->fire_equipments : (json_decode($item->fire_equipments, true) ?: []);
+            foreach ($fireEquipments as &$feq) {
+                if (!empty($feq['photos']) && is_array($feq['photos'])) {
+                    $feq['photos'] = array_values(array_filter(array_map(function ($p) {
+                        return $p ? (str_starts_with($p, 'http') ? $p : asset($p)) : null;
+                    }, $feq['photos'])));
+                }
+            }
+            unset($feq);
 
             return [
                 'id' => $item->id,
                 'remote_id' => (string) $item->id,
+                'local_uuid' => $item->local_uuid,
                 'point_number' => $item->point_number ?: str_pad($index + 1, 2, '0', STR_PAD_LEFT),
                 'num' => $item->point_number ?: str_pad($index + 1, 2, '0', STR_PAD_LEFT),
                 'measurement_date' => $item->measurement_date ? $item->measurement_date->format('Y-m-d') : null,
@@ -3752,6 +3797,36 @@ class MobileApiController extends Controller
             $locationRaw = "Zona {$utmZone} E: {$eF} N: {$nF}";
         }
 
+        // Vincular fotos subidas a los equipos contra incendios correspondientes
+        if (!empty($fireEquipments) && is_array($fireEquipments)) {
+            $uploadedMap = [];
+            $allFiles = array_merge(
+                $request->hasFile('images') ? $request->file('images') : [],
+                $request->hasFile('photos') ? $request->file('photos') : []
+            );
+            foreach ($allFiles as $fIdx => $fFile) {
+                if ($fFile && $fFile->isValid() && isset($uploadedImages[$fIdx])) {
+                    $uploadedMap[basename($fFile->getClientOriginalName())] = $uploadedImages[$fIdx];
+                }
+            }
+
+            foreach ($fireEquipments as &$eq) {
+                if (!empty($eq['photos']) && is_array($eq['photos'])) {
+                    $newEqPhotos = [];
+                    foreach ($eq['photos'] as $p) {
+                        $baseP = basename($p);
+                        if (isset($uploadedMap[$baseP])) {
+                            $newEqPhotos[] = $uploadedMap[$baseP];
+                        } elseif (str_starts_with($p, 'http') || str_starts_with($p, 'uploads/') || str_starts_with($p, '/uploads/')) {
+                            $newEqPhotos[] = $p;
+                        }
+                    }
+                    $eq['photos'] = $newEqPhotos;
+                }
+            }
+            unset($eq);
+        }
+
         $measurementId = $request->input('id') ?? $request->input('remote_id');
         $localUuid = $request->input('local_uuid');
 
@@ -3771,22 +3846,19 @@ class MobileApiController extends Controller
                 $measurement = $module->fireWeightMeasurements()->lockForUpdate()->where('local_uuid', $localUuid)->first();
             }
 
-            // Deduplicación para sync offline concurrente (mismo sector y macroárea en los últimos 15 min)
-            if (!$measurement && !empty($sectorName)) {
+            // Deduplicación para sync offline: solo si NO se envió local_uuid para no sobreescribir otros registros
+            if (!$measurement && empty($localUuid) && !empty($sectorName)) {
                 $candidate = $module->fireWeightMeasurements()
                     ->lockForUpdate()
                     ->where('sector_name', $sectorName)
                     ->where('macroarea', $macroarea)
                     ->where('measurement_date', $measurementDate)
                     ->where('created_at', '>=', Carbon::now()->subMinutes(15))
+                    ->whereNull('local_uuid')
                     ->latest('id')
                     ->first();
                 if ($candidate) {
                     $measurement = $candidate;
-                    if (!empty($localUuid) && empty($candidate->local_uuid)) {
-                        $candidate->local_uuid = $localUuid;
-                        $candidate->save();
-                    }
                 }
             }
 

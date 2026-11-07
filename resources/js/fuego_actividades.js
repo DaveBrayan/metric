@@ -614,7 +614,7 @@ document.addEventListener('click', function (e) {
     }
 });
 
-function addFireEquipmentRow(mode, type = 'EXTINTOR', qty = 1, obs = '') {
+function addFireEquipmentRow(mode, type = 'EXTINTOR', qty = 1, obs = '', photos = []) {
     const container = document.getElementById(`${mode}_fire_equipments_container`);
     if (!container) return;
 
@@ -630,6 +630,7 @@ function addFireEquipmentRow(mode, type = 'EXTINTOR', qty = 1, obs = '') {
     });
 
     const isDisabled = (mode === 'edit' && !isEditUnlocked);
+    const safePhotosJson = JSON.stringify(photos || []).replace(/"/g, '&quot;');
 
     row.innerHTML = `
         <select name="equipment_types[]" class="custom-form-select" style="width: 130px; height: 32px; font-size: 11px;" ${isDisabled ? 'disabled' : ''}>
@@ -637,7 +638,7 @@ function addFireEquipmentRow(mode, type = 'EXTINTOR', qty = 1, obs = '') {
         </select>
         <input type="number" name="equipment_quantities[]" value="${qty}" min="1" class="custom-form-input" style="width: 55px; height: 32px; font-size: 11px; text-align: center;" placeholder="Cant" ${isDisabled ? 'disabled' : ''}>
         <input type="text" name="equipment_observations[]" value="${obs || ''}" class="custom-form-input" style="flex: 1; height: 32px; font-size: 11px;" placeholder="Tipo / Observación..." ${isDisabled ? 'disabled' : ''}>
-        <button type="button" class="btn-eq-photo-action" title="Ver fotografía de la tarjeta de inspección" onclick="viewEquipmentPhoto('${mode}', '${type}')">
+        <button type="button" class="btn-eq-photo-action" title="Ver fotografía de la tarjeta de inspección" onclick="viewEquipmentPhoto('${mode}', '${type}', ${safePhotosJson})">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
                 <circle cx="12" cy="13" r="4"/>
@@ -650,13 +651,28 @@ function addFireEquipmentRow(mode, type = 'EXTINTOR', qty = 1, obs = '') {
 }
 window.addFireEquipmentRow = addFireEquipmentRow;
 
-function viewEquipmentPhoto(mode = 'edit', type = 'Extintor') {
-    const allPhotos = window.activeMeasurementAllPhotos || modalPhotos[mode] || [];
-    // Si hay más de 1 foto, la segunda foto corresponde a la tarjeta del extintor tomada en la app.
-    // Si solo hay 1 foto general, mostramos esa foto.
-    const targetPhoto = allPhotos.length > 1 ? allPhotos[1] : (allPhotos[0] || null);
-    if (targetPhoto) {
-        openPhotoViewer(targetPhoto, `Tarjeta de Inspección / Extintor — ${type}`);
+function viewEquipmentPhoto(mode = 'edit', type = 'Extintor', customPhotos = null) {
+    let photosToView = null;
+    if (customPhotos) {
+        if (Array.isArray(customPhotos) && customPhotos.length > 0) {
+            photosToView = customPhotos;
+        } else if (typeof customPhotos === 'string' && customPhotos.trim() !== '') {
+            try {
+                const parsed = JSON.parse(customPhotos);
+                if (Array.isArray(parsed) && parsed.length > 0) photosToView = parsed;
+                else photosToView = [customPhotos];
+            } catch (_) {
+                photosToView = [customPhotos];
+            }
+        }
+    }
+    if (!photosToView || photosToView.length === 0) {
+        const allPhotos = window.activeMeasurementAllPhotos || modalPhotos[mode] || [];
+        photosToView = allPhotos.length > 1 ? allPhotos.slice(1) : (allPhotos.length === 1 ? [allPhotos[0]] : null);
+    }
+
+    if (photosToView && photosToView.length > 0) {
+        openPhotoViewer(photosToView, `Tarjeta de Inspección / Extintor — ${type}`);
     } else {
         if (typeof Swal !== 'undefined') {
             Swal.fire({
@@ -760,12 +776,12 @@ function openViewMeasurementModal(data) {
         : ((data.image_paths && Array.isArray(data.image_paths) && data.image_paths.length > 0) ? [...data.image_paths] : (data.image_path ? [data.image_path] : []));
 
     modalPhotos.edit = [];
-    if (data.image_path) {
-        modalPhotos.edit = [data.image_path];
-    } else if (data.images && Array.isArray(data.images) && data.images.length > 0) {
-        modalPhotos.edit = [data.images[0]];
+    if (data.images && Array.isArray(data.images) && data.images.length > 0) {
+        modalPhotos.edit = [...data.images];
     } else if (data.image_paths && Array.isArray(data.image_paths) && data.image_paths.length > 0) {
-        modalPhotos.edit = [data.image_paths[0]];
+        modalPhotos.edit = [...data.image_paths];
+    } else if (data.image_path) {
+        modalPhotos.edit = [data.image_path];
     }
     modalPhotoIndex.edit = 0;
     syncEditRemainingImages();
@@ -838,7 +854,7 @@ function openViewMeasurementModal(data) {
     if (eqContainer) {
         eqContainer.innerHTML = '';
         const eqs = (data.fire_equipments && Array.isArray(data.fire_equipments)) ? data.fire_equipments : [];
-        eqs.forEach(eq => addFireEquipmentRow('edit', eq.tipo, eq.cantidad, eq.observacion));
+        eqs.forEach(eq => addFireEquipmentRow('edit', eq.tipo, eq.cantidad, eq.observacion, eq.photos || eq.fotos || []));
     }
 
     // Iniciar SIEMPRE en Modo Consulta (Solo Lectura)
@@ -1019,8 +1035,8 @@ window.selectSliderPhoto = selectSliderPhoto;
 function expandCurrentModalPhoto(mode) {
     const list = modalPhotos[mode] || [];
     const idx = modalPhotoIndex[mode] || 0;
-    if (list[idx]) {
-        openPhotoViewer(list[idx], `Fotografía del Sector (${idx + 1}/${list.length})`);
+    if (list.length > 0) {
+        openPhotoViewer(list, `Fotografía del Sector (${idx + 1}/${list.length})`, idx);
     }
 }
 window.expandCurrentModalPhoto = expandCurrentModalPhoto;
@@ -1305,18 +1321,37 @@ window.getCurrentGpsPosition = getCurrentGpsPosition;
 // =============================================================================
 // VISOR DE FOTOGRAFÍAS AMPLIFICADAS (MODAL)
 // =============================================================================
-function openPhotoViewer(src, title = 'Fotografía del Sector') {
+function openPhotoViewer(src, title = 'Fotografía del Sector', startIndex = 0) {
+    if (typeof window.universalOpenPhotoViewer === 'function') {
+        window.universalOpenPhotoViewer(src, title, startIndex);
+        return;
+    }
     const modal = document.getElementById('photoViewerModal');
     const img = document.getElementById('photoViewerImg');
     const titleEl = document.getElementById('photoViewerTitle');
     if (modal && img) {
-        img.src = src;
+        let firstImg = src;
+        if (Array.isArray(src)) {
+            firstImg = src[startIndex] || src[0] || '';
+        } else if (typeof src === 'string' && src.startsWith('[')) {
+            try {
+                const parsed = JSON.parse(src);
+                if (Array.isArray(parsed)) firstImg = parsed[startIndex] || parsed[0] || '';
+            } catch (_) {}
+        }
+        img.src = firstImg;
         if (titleEl) titleEl.textContent = title;
-        modal.classList.add('open');
+        modal.classList.add('open', 'active');
+        modal.style.display = 'flex';
     }
 }
-window.openPhotoViewer = openPhotoViewer;
-window.openPhotoViewerModal = openPhotoViewer;
+if (typeof window.universalOpenPhotoViewer === 'function') {
+    window.openPhotoViewer = window.universalOpenPhotoViewer;
+    window.openPhotoViewerModal = window.universalOpenPhotoViewer;
+} else {
+    window.openPhotoViewer = openPhotoViewer;
+    window.openPhotoViewerModal = openPhotoViewer;
+}
 
 function closePhotoViewer() {
     if (typeof window.universalClosePhotoViewer === 'function') {

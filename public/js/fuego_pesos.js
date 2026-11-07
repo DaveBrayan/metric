@@ -453,7 +453,7 @@ window.recalcSectorArea = recalcSectorArea;
 // =============================================================================
 // 6. GESTIÓN DINÁMICA DE EQUIPOS CONTRA INCENDIO EN MODALES
 // =============================================================================
-function addFireEquipmentRow(prefix = 'create', tipo = 'EXTINTOR', cantidad = 1, observacion = '') {
+function addFireEquipmentRow(prefix = 'create', tipo = 'EXTINTOR', cantidad = 1, observacion = '', photos = []) {
     const container = document.getElementById(`${prefix}_fire_equipments_container`);
     if (!container) return;
 
@@ -463,6 +463,7 @@ function addFireEquipmentRow(prefix = 'create', tipo = 'EXTINTOR', cantidad = 1,
     row.style.cssText = 'display: grid; grid-template-columns: 120px 55px 1fr 32px 24px; gap: 6px; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px;';
 
     const options = FIRE_EQUIPMENT_TYPES.map(t => `<option value="${t}" ${t === tipo ? 'selected' : ''}>${t}</option>`).join('');
+    const safePhotosJson = JSON.stringify(photos || []).replace(/"/g, '&quot;');
 
     row.innerHTML = `
         <select name="fire_equipments_tipo[]" class="custom-form-select" style="height: 32px; font-size: 11.5px; padding: 0 6px;">
@@ -470,7 +471,7 @@ function addFireEquipmentRow(prefix = 'create', tipo = 'EXTINTOR', cantidad = 1,
         </select>
         <input type="number" min="1" max="99" name="fire_equipments_cantidad[]" value="${cantidad}" class="custom-form-input tech-val-mono" style="height: 32px; font-size: 12px; text-align: center;" placeholder="Cant">
         <input type="text" name="fire_equipments_obs[]" value="${observacion}" placeholder="Obs (ej. PQS 6kg, manómetro OK)" class="custom-form-input" style="height: 32px; font-size: 11.5px;">
-        <button type="button" class="btn-eq-photo-action" title="Ver fotografía de la tarjeta de inspección" onclick="viewEquipmentPhoto('${prefix}', '${tipo}')">
+        <button type="button" class="btn-eq-photo-action" title="Ver fotografía de la tarjeta de inspección" onclick="viewEquipmentPhoto('${prefix}', '${tipo}', ${safePhotosJson})">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
                 <circle cx="12" cy="13" r="4"/>
@@ -483,13 +484,28 @@ function addFireEquipmentRow(prefix = 'create', tipo = 'EXTINTOR', cantidad = 1,
 }
 window.addFireEquipmentRow = addFireEquipmentRow;
 
-function viewEquipmentPhoto(prefix = 'edit', type = 'Extintor') {
-    const allPhotos = window.activeMeasurementAllPhotos || modalPhotos[prefix] || [];
-    // Si hay más de 1 foto, la segunda foto corresponde a la tarjeta del extintor tomada en la app.
-    // Si solo hay 1 foto general, mostramos esa foto.
-    const targetPhoto = allPhotos.length > 1 ? allPhotos[1] : (allPhotos[0] || null);
-    if (targetPhoto) {
-        openPhotoViewer(targetPhoto, `Tarjeta de Inspección / Extintor — ${type}`);
+function viewEquipmentPhoto(prefix = 'edit', type = 'Extintor', customPhotos = null) {
+    let photosToView = null;
+    if (customPhotos) {
+        if (Array.isArray(customPhotos) && customPhotos.length > 0) {
+            photosToView = customPhotos;
+        } else if (typeof customPhotos === 'string' && customPhotos.trim() !== '') {
+            try {
+                const parsed = JSON.parse(customPhotos);
+                if (Array.isArray(parsed) && parsed.length > 0) photosToView = parsed;
+                else photosToView = [customPhotos];
+            } catch (_) {
+                photosToView = [customPhotos];
+            }
+        }
+    }
+    if (!photosToView || photosToView.length === 0) {
+        const allPhotos = window.activeMeasurementAllPhotos || modalPhotos[prefix] || [];
+        photosToView = allPhotos.length > 1 ? allPhotos.slice(1) : (allPhotos.length === 1 ? [allPhotos[0]] : null);
+    }
+
+    if (photosToView && photosToView.length > 0) {
+        openPhotoViewer(photosToView, `Tarjeta de Inspección / Extintor — ${type}`);
     } else {
         if (typeof Swal !== 'undefined') {
             Swal.fire({
@@ -687,7 +703,7 @@ function openViewMeasurementModal(data) {
     if (eqContainer) {
         eqContainer.innerHTML = '';
         const eqs = (data.fire_equipments && Array.isArray(data.fire_equipments)) ? data.fire_equipments : [];
-        eqs.forEach(eq => addFireEquipmentRow('edit', eq.tipo, eq.cantidad, eq.observacion));
+        eqs.forEach(eq => addFireEquipmentRow('edit', eq.tipo, eq.cantidad, eq.observacion, eq.photos || eq.fotos || []));
     }
 
     // Iniciar SIEMPRE en Modo Consulta (Solo Lectura)
@@ -1128,17 +1144,37 @@ function confirmDeleteMeasurement(id, num) {
 window.confirmDeleteMeasurement = confirmDeleteMeasurement;
 
 // Visor de fotos
-function openPhotoViewer(src, title = 'Fotografía del Sector') {
+function openPhotoViewer(src, title = 'Fotografía del Sector', startIndex = 0) {
+    if (typeof window.universalOpenPhotoViewer === 'function') {
+        window.universalOpenPhotoViewer(src, title, startIndex);
+        return;
+    }
     const modal = document.getElementById('photoViewerModal');
     const img = document.getElementById('photoViewerImg');
     const titleEl = document.getElementById('photoViewerTitle');
     if (modal && img) {
-        img.src = src;
+        let firstImg = src;
+        if (Array.isArray(src)) {
+            firstImg = src[startIndex] || src[0] || '';
+        } else if (typeof src === 'string' && src.startsWith('[')) {
+            try {
+                const parsed = JSON.parse(src);
+                if (Array.isArray(parsed)) firstImg = parsed[startIndex] || parsed[0] || '';
+            } catch (_) {}
+        }
+        img.src = firstImg;
         if (titleEl) titleEl.textContent = title;
-        modal.classList.add('open');
+        modal.classList.add('open', 'active');
+        modal.style.display = 'flex';
     }
 }
-window.openPhotoViewer = openPhotoViewer;
+if (typeof window.universalOpenPhotoViewer === 'function') {
+    window.openPhotoViewer = window.universalOpenPhotoViewer;
+    window.openPhotoViewerModal = window.universalOpenPhotoViewer;
+} else {
+    window.openPhotoViewer = openPhotoViewer;
+    window.openPhotoViewerModal = openPhotoViewer;
+}
 
 function closePhotoViewer() {
     if (typeof window.universalClosePhotoViewer === 'function') {
