@@ -220,6 +220,7 @@ class VentilationController extends Controller
                 'date' => $dateFormatted,
                 'raw_date' => $item->measurement_date ? $item->measurement_date->format('Y-m-d') : '',
                 'time' => $item->measurement_time ?: '—',
+                'area' => $item->area ?: ($item->local_trabajo ?: 'Área Principal'),
                 'local_trabajo' => $item->local_trabajo ?: 'Área Principal',
                 'tipo_local' => $item->tipo_local ?: 'Locales de trabajo en general',
                 'tipo_ventilacion' => $item->tipo_ventilacion ?: 'Natural',
@@ -332,6 +333,7 @@ class VentilationController extends Controller
             'point_number' => 'nullable|string|max:50',
             'measurement_date' => 'required|date',
             'measurement_time' => 'nullable|string|max:20',
+            'area' => 'nullable|string|max:255',
             'local_trabajo' => 'required|string|max:255',
             'tipo_local' => 'nullable|string|max:255',
             'tipo_ventilacion' => 'required|string|in:Natural,Mecánica',
@@ -431,6 +433,7 @@ class VentilationController extends Controller
 
         $module->ventilationMeasurements()->create([
             'point_number' => $pointNumber,
+            'area' => $validated['area'] ?? ($validated['local_trabajo'] ?? 'Área Principal'),
             'measurement_date' => $validated['measurement_date'],
             'measurement_time' => $validated['measurement_time'] ?? Carbon::now()->format('H:i'),
             'local_trabajo' => $validated['local_trabajo'],
@@ -486,6 +489,7 @@ class VentilationController extends Controller
             'point_number' => 'nullable|string|max:50',
             'measurement_date' => 'required|date',
             'measurement_time' => 'nullable|string|max:20',
+            'area' => 'nullable|string|max:255',
             'local_trabajo' => 'required|string|max:255',
             'tipo_local' => 'nullable|string|max:255',
             'tipo_ventilacion' => 'required|string|in:Natural,Mecánica',
@@ -617,6 +621,7 @@ class VentilationController extends Controller
 
         $measurement->update([
             'point_number' => $validated['point_number'] ?? $measurement->point_number,
+            'area' => $validated['area'] ?? ($measurement->area ?? ($validated['local_trabajo'] ?? 'Área Principal')),
             'measurement_date' => $validated['measurement_date'],
             'measurement_time' => $validated['measurement_time'] ?? $measurement->measurement_time,
             'local_trabajo' => $validated['local_trabajo'],
@@ -1038,6 +1043,7 @@ class VentilationController extends Controller
                 $measurementsList[] = [
                     'id' => $item->id,
                     'num' => $item->point_number ?: ($index + 1),
+                    'area' => $item->area ?: ($item->local_trabajo ?: 'Área Operativa'),
                     'local_trabajo' => $item->local_trabajo ?: 'Área Operativa',
                     'tipo_ventilacion' => $item->tipo_ventilacion ?: 'Natural',
                     'elemento_ventilacion' => $item->elemento_ventilacion ?: 'Ventana',

@@ -242,7 +242,8 @@ class RuidoOcupacionalController extends Controller
             'area' => 'required|string|max:255',
             'punto_medicion' => 'required|string|max:255',
             'tipo_ruido' => 'required|string|max:100',
-            'actividad' => 'required|string|max:255',
+            'actividad' => 'nullable|string|max:255',
+            'maquinaria_equipo' => 'nullable|string|max:255',
 
             // Parámetros del sonómetro
             'ponderacion' => 'nullable|string|max:10',
@@ -260,6 +261,9 @@ class RuidoOcupacionalController extends Controller
             // Ubicación y documentación
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
+            'utm_zone' => 'nullable|string|max:10',
+            'utm_easting' => 'nullable|numeric',
+            'utm_northing' => 'nullable|numeric',
             'location' => 'nullable|string',
             'observations' => 'nullable|string',
             'staff_id' => 'nullable|exists:staff,id',
@@ -307,7 +311,8 @@ class RuidoOcupacionalController extends Controller
         $m->area = $validated['area'];
         $m->punto_medicion = $validated['punto_medicion'];
         $m->tipo_ruido = $validated['tipo_ruido'];
-        $m->actividad = $validated['actividad'];
+        $m->actividad = $validated['actividad'] ?? 'General';
+        $m->maquinaria_equipo = $validated['maquinaria_equipo'] ?? null;
 
         $m->ponderacion = $validated['ponderacion'] ?? 'A';
         $m->respuesta = $validated['respuesta'] ?? 'Lento';
@@ -324,6 +329,9 @@ class RuidoOcupacionalController extends Controller
 
         $m->latitude = $validated['latitude'] ?? null;
         $m->longitude = $validated['longitude'] ?? null;
+        $m->utm_zone = $validated['utm_zone'] ?? '19K';
+        $m->utm_easting = isset($validated['utm_easting']) && is_numeric($validated['utm_easting']) ? (float)$validated['utm_easting'] : null;
+        $m->utm_northing = isset($validated['utm_northing']) && is_numeric($validated['utm_northing']) ? (float)$validated['utm_northing'] : null;
         $m->location = $validated['location'] ?? null;
 
         if (!empty($uploadedImages)) {
@@ -405,20 +413,21 @@ class RuidoOcupacionalController extends Controller
         $cumple = ($dosis !== null) ? ($dosis <= 1.0) : ($leq !== null ? $leq <= 85.0 : true);
 
         // Gestión de imágenes existentes (permanecen)
-        $remainingRaw = $request->input('remaining_images') ?: $request->input('keep_images');
+        $remainingRaw = $request->input('remaining_images') ?? $request->input('keep_images');
         $currentImages = [];
-        if (!empty($remainingRaw)) {
-            $decodedRemaining = json_decode($remainingRaw, true);
+        if ($remainingRaw !== null) {
+            $decodedRemaining = is_string($remainingRaw) ? json_decode($remainingRaw, true) : $remainingRaw;
             if (is_array($decodedRemaining)) {
                 $currentImages = array_values(array_filter(array_map(function($path) {
                     if (!$path) return null;
-                    return str_replace(url('/') . '/', '', parse_url($path, PHP_URL_PATH) ?: $path);
+                    $p = parse_url($path, PHP_URL_PATH) ?: $path;
+                    return ltrim($p, '/');
                 }, $decodedRemaining)));
             }
         } elseif (is_array($m->images) && !empty($m->images)) {
-            $currentImages = $m->images;
+            $currentImages = array_values(array_filter(array_map(fn($p) => ltrim(parse_url($p, PHP_URL_PATH) ?: $p, '/'), $m->images)));
         } elseif (!empty($m->image_path)) {
-            $currentImages = [$m->image_path];
+            $currentImages = [ltrim(parse_url($m->image_path, PHP_URL_PATH) ?: $m->image_path, '/')];
         }
 
         // Subida de nuevas imágenes
@@ -445,8 +454,8 @@ class RuidoOcupacionalController extends Controller
 
         $m->area = $validated['area'];
         $m->punto_medicion = $validated['punto_medicion'];
-        $m->actividad = $validated['actividad'] ?? $m->actividad;
-        $m->maquinaria_equipo = $validated['maquinaria_equipo'] ?? $m->maquinaria_equipo;
+        $m->actividad = $validated['actividad'] ?? ($m->actividad ?: 'General');
+        $m->maquinaria_equipo = $validated['maquinaria_equipo'] ?? ($m->maquinaria_equipo ?: '');
         $m->tipo_ruido = $validated['tipo_ruido'];
         $m->tiempo_expos_h = $tpe;
         $m->ponderacion = $validated['ponderacion'] ?? 'A';

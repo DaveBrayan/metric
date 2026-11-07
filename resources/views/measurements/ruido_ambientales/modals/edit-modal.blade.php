@@ -1,18 +1,48 @@
-<div class="modal-backdrop-custom" id="editMeasurementModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
-    <div class="modal-dialog-ruido">
+<!-- ==========================================================================
+     MODAL: DETALLE / EDICIÓN DE MEDICIÓN RUIDO AMBIENTAL (MODO CONSULTA CON BOTÓN EDITAR)
+     ========================================================================== -->
+<div class="modal-backdrop-custom" id="editMeasurementModal" role="dialog" aria-modal="true"
+    aria-labelledby="editMeasModalTitle">
+    <div class="modal-dialog-ruido modal-dialog-lg">
         <div class="modal-header-custom">
-            <div>
-                <h2 id="editModalTitle" style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 800; color: var(--ink); margin: 0 0 2px 0;">
-                    Editar Punto de Medición — Ruido Ambiental
-                </h2>
-                <p style="font-size: 12.5px; color: #64748b; margin: 0;">
-                    Actualización de mediciones perimetrales, linderos y parámetros acústicos Leq.
-                </p>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.4"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                    <circle cx="12" cy="12" r="3" />
+                </svg>
+                <h2 id="editMeasModalTitle">Detalle del Punto de Medición</h2>
+                <span id="modalModeStatusBadge" class="modal-badge-view">Solo Lectura</span>
+                <!-- Personal Registrado al lado de Solo Lectura -->
+                <div style="display: inline-flex; align-items: center; gap: 6px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 9999px; padding: 3px 10px; font-size: 11.5px; font-weight: 700; color: #334155;"
+                    title="Personal Registrador">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    <span id="edit_modal_registered_by">{{ $registeredByHeader ?? 'Técnico de Campo' }}</span>
+                </div>
             </div>
-            <button type="button" class="btn-close-modal" onclick="closeEditMeasurementModal()" aria-label="Cerrar">✕</button>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <!-- Botón para activar/desactivar la edición -->
+                <button type="button" class="btn-modal-edit-action" id="btnToggleEditMode"
+                    onclick="toggleModalEditMode()">
+                    <span id="btnToggleEditModeIcon" style="display: inline-flex; align-items: center;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                            <path d="m15 5 4 4" />
+                        </svg>
+                    </span>
+                    <span id="btnToggleEditModeText">Editar</span>
+                </button>
+                <button type="button" class="btn-close-modal" onclick="closeEditMeasurementModal()"
+                    aria-label="Cerrar">✕</button>
+            </div>
         </div>
 
-        <form id="editMeasurementForm" action="" method="POST" enctype="multipart/form-data">
+        <form id="editMeasurementForm" action="" method="POST" enctype="multipart/form-data" class="modal-view-mode">
             @csrf
             @method('PUT')
             <div class="modal-body-custom">
@@ -26,7 +56,7 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px;">
                         <div class="form-field-group">
                             <label class="form-field-label">Normativa Aplicable <span class="req">*</span></label>
-                            <select name="normativa" id="edit_normativa" class="custom-form-select" required onchange="handleNormativaChange('edit')">
+                            <select name="normativa" id="edit_normativa" class="custom-form-select" required disabled onchange="handleNormativaChange('edit')">
                                 <option value="">Seleccione normativa...</option>
                                 <option value="RASIM - ANEXO 12-C">RASIM - ANEXO 12-C</option>
                                 <option value="RMCA - ANEXO 6">RMCA - ANEXO 6</option>
@@ -35,7 +65,7 @@
 
                         <div class="form-field-group">
                             <label class="form-field-label">Tipo de Zona <span class="req">*</span></label>
-                            <select name="tipo_zona" id="edit_tipo_zona" class="custom-form-select" required onchange="handleTipoZonaChange('edit')">
+                            <select name="tipo_zona" id="edit_tipo_zona" class="custom-form-select" required disabled onchange="handleTipoZonaChange('edit')">
                                 <option value="">Primero seleccione normativa...</option>
                             </select>
                         </div>
@@ -44,12 +74,12 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
                         <div class="form-field-group">
                             <label class="form-field-label">Horario de Medición</label>
-                            <input type="text" name="horario" id="edit_horario" class="custom-form-input" placeholder="ej. 08:00 a 22:00">
+                            <input type="text" name="horario" id="edit_horario" class="custom-form-input" placeholder="ej. 08:00 a 22:00" disabled>
                         </div>
 
                         <div class="form-field-group">
                             <label class="form-field-label">Límite según Normativa (LMP dBA) <span class="req">*</span></label>
-                            <input type="number" step="0.1" name="limite_normativa" id="edit_limite_normativa" class="custom-form-input" required placeholder="ej. 68.0" oninput="recalcRuidoAmbiental('edit')">
+                            <input type="number" step="0.1" name="limite_normativa" id="edit_limite_normativa" class="custom-form-input" required placeholder="ej. 68.0" disabled oninput="recalcRuidoAmbiental('edit')">
                         </div>
                     </div>
                 </div>
@@ -61,7 +91,7 @@
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
                             <span>2. Georreferenciación & Colindancias Perimetrales</span>
                         </div>
-                        <button type="button" class="btn-secondary-subtle" onclick="captureCoordinatesGPS('edit')" style="padding: 6px 14px; font-size: 12px;">
+                        <button type="button" class="btn-secondary-subtle" id="edit_btn_gps_capture" onclick="captureCoordinatesGPS('edit')" style="padding: 6px 14px; font-size: 12px; display: none;">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.4"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>
                             <span>Capturar Coordenadas GPS</span>
                         </button>
@@ -70,15 +100,15 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px;">
                         <div class="form-field-group">
                             <label class="form-field-label">Zona y Banda</label>
-                            <input type="text" name="zona_banda" id="edit_zona_banda" class="custom-form-input">
+                            <input type="text" name="zona_banda" id="edit_zona_banda" class="custom-form-input" disabled>
                         </div>
                         <div class="form-field-group">
                             <label class="form-field-label">Fecha de Medición</label>
-                            <input type="date" name="measurement_date" id="edit_measurement_date" class="custom-form-input" required>
+                            <input type="date" name="measurement_date" id="edit_measurement_date" class="custom-form-input" required disabled>
                         </div>
                         <div class="form-field-group">
                             <label class="form-field-label">Hora General</label>
-                            <input type="time" name="measurement_time" id="edit_measurement_time" class="custom-form-input">
+                            <input type="time" name="measurement_time" id="edit_measurement_time" class="custom-form-input" disabled>
                         </div>
                     </div>
 
@@ -86,27 +116,27 @@
                     <div style="display: flex; flex-direction: column; gap: 10px;">
                         <!-- Norte -->
                         <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 10px;">
-                            <input type="text" name="norte_colindancia" id="edit_norte_colindancia" class="custom-form-input" placeholder="Colindancia Norte">
-                            <input type="text" name="norte_x" id="edit_norte_x" class="custom-form-input" placeholder="X (Este)">
-                            <input type="text" name="norte_y" id="edit_norte_y" class="custom-form-input" placeholder="Y (Norte)">
+                            <input type="text" name="norte_colindancia" id="edit_norte_colindancia" class="custom-form-input" placeholder="Colindancia Norte" disabled>
+                            <input type="text" name="norte_x" id="edit_norte_x" class="custom-form-input" placeholder="X (Este)" disabled>
+                            <input type="text" name="norte_y" id="edit_norte_y" class="custom-form-input" placeholder="Y (Norte)" disabled>
                         </div>
                         <!-- Sur -->
                         <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 10px;">
-                            <input type="text" name="sur_colindancia" id="edit_sur_colindancia" class="custom-form-input" placeholder="Colindancia Sur">
-                            <input type="text" name="sur_x" id="edit_sur_x" class="custom-form-input" placeholder="X (Este)">
-                            <input type="text" name="sur_y" id="edit_sur_y" class="custom-form-input" placeholder="Y (Norte)">
+                            <input type="text" name="sur_colindancia" id="edit_sur_colindancia" class="custom-form-input" placeholder="Colindancia Sur" disabled>
+                            <input type="text" name="sur_x" id="edit_sur_x" class="custom-form-input" placeholder="X (Este)" disabled>
+                            <input type="text" name="sur_y" id="edit_sur_y" class="custom-form-input" placeholder="Y (Norte)" disabled>
                         </div>
                         <!-- Este -->
                         <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 10px;">
-                            <input type="text" name="este_colindancia" id="edit_este_colindancia" class="custom-form-input" placeholder="Colindancia Este">
-                            <input type="text" name="este_x" id="edit_este_x" class="custom-form-input" placeholder="X (Este)">
-                            <input type="text" name="este_y" id="edit_este_y" class="custom-form-input" placeholder="Y (Norte)">
+                            <input type="text" name="este_colindancia" id="edit_este_colindancia" class="custom-form-input" placeholder="Colindancia Este" disabled>
+                            <input type="text" name="este_x" id="edit_este_x" class="custom-form-input" placeholder="X (Este)" disabled>
+                            <input type="text" name="este_y" id="edit_este_y" class="custom-form-input" placeholder="Y (Norte)" disabled>
                         </div>
                         <!-- Oeste -->
                         <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 10px;">
-                            <input type="text" name="oeste_colindancia" id="edit_oeste_colindancia" class="custom-form-input" placeholder="Colindancia Oeste">
-                            <input type="text" name="oeste_x" id="edit_oeste_x" class="custom-form-input" placeholder="X (Este)">
-                            <input type="text" name="oeste_y" id="edit_oeste_y" class="custom-form-input" placeholder="Y (Norte)">
+                            <input type="text" name="oeste_colindancia" id="edit_oeste_colindancia" class="custom-form-input" placeholder="Colindancia Oeste" disabled>
+                            <input type="text" name="oeste_x" id="edit_oeste_x" class="custom-form-input" placeholder="X (Este)" disabled>
+                            <input type="text" name="oeste_y" id="edit_oeste_y" class="custom-form-input" placeholder="Y (Norte)" disabled>
                         </div>
                     </div>
                 </div>
@@ -122,18 +152,18 @@
                     <div class="cardinal-section-card">
                         <div class="cardinal-section-header">
                             <span class="cardinal-badge-title">P1 — NORTE</span>
-                            <button type="button" class="btn-icon-add-point" onclick="addCardinalPointInput('edit', 'p1_norte')" title="Agregar medición">
+                            <button type="button" class="btn-icon-add-point" onclick="addCardinalPointInput('edit', 'p1_norte')" title="Agregar medición" style="display: none;">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                             </button>
                         </div>
                         <div class="cardinal-inputs-grid">
                             <div>
                                 <label class="form-field-label">Hora Inicio</label>
-                                <input type="time" name="p1_norte_inicio" id="edit_p1_norte_inicio" class="custom-form-input">
+                                <input type="time" name="p1_norte_inicio" id="edit_p1_norte_inicio" class="custom-form-input" disabled>
                             </div>
                             <div>
                                 <label class="form-field-label">Hora Fin</label>
-                                <input type="time" name="p1_norte_fin" id="edit_p1_norte_fin" class="custom-form-input">
+                                <input type="time" name="p1_norte_fin" id="edit_p1_norte_fin" class="custom-form-input" disabled>
                             </div>
                             <div>
                                 <label class="form-field-label">Mediciones (dBA)</label>
@@ -147,18 +177,18 @@
                     <div class="cardinal-section-card">
                         <div class="cardinal-section-header">
                             <span class="cardinal-badge-title">P2 — SUR</span>
-                            <button type="button" class="btn-icon-add-point" onclick="addCardinalPointInput('edit', 'p2_sur')" title="Agregar medición">
+                            <button type="button" class="btn-icon-add-point" onclick="addCardinalPointInput('edit', 'p2_sur')" title="Agregar medición" style="display: none;">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                             </button>
                         </div>
                         <div class="cardinal-inputs-grid">
                             <div>
                                 <label class="form-field-label">Hora Inicio</label>
-                                <input type="time" name="p2_sur_inicio" id="edit_p2_sur_inicio" class="custom-form-input">
+                                <input type="time" name="p2_sur_inicio" id="edit_p2_sur_inicio" class="custom-form-input" disabled>
                             </div>
                             <div>
                                 <label class="form-field-label">Hora Fin</label>
-                                <input type="time" name="p2_sur_fin" id="edit_p2_sur_fin" class="custom-form-input">
+                                <input type="time" name="p2_sur_fin" id="edit_p2_sur_fin" class="custom-form-input" disabled>
                             </div>
                             <div>
                                 <label class="form-field-label">Mediciones (dBA)</label>
@@ -172,18 +202,18 @@
                     <div class="cardinal-section-card">
                         <div class="cardinal-section-header">
                             <span class="cardinal-badge-title">P3 — ESTE</span>
-                            <button type="button" class="btn-icon-add-point" onclick="addCardinalPointInput('edit', 'p3_este')" title="Agregar medición">
+                            <button type="button" class="btn-icon-add-point" onclick="addCardinalPointInput('edit', 'p3_este')" title="Agregar medición" style="display: none;">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                             </button>
                         </div>
                         <div class="cardinal-inputs-grid">
                             <div>
                                 <label class="form-field-label">Hora Inicio</label>
-                                <input type="time" name="p3_este_inicio" id="edit_p3_este_inicio" class="custom-form-input">
+                                <input type="time" name="p3_este_inicio" id="edit_p3_este_inicio" class="custom-form-input" disabled>
                             </div>
                             <div>
                                 <label class="form-field-label">Hora Fin</label>
-                                <input type="time" name="p3_este_fin" id="edit_p3_este_fin" class="custom-form-input">
+                                <input type="time" name="p3_este_fin" id="edit_p3_este_fin" class="custom-form-input" disabled>
                             </div>
                             <div>
                                 <label class="form-field-label">Mediciones (dBA)</label>
@@ -197,18 +227,18 @@
                     <div class="cardinal-section-card">
                         <div class="cardinal-section-header">
                             <span class="cardinal-badge-title">P4 — OESTE</span>
-                            <button type="button" class="btn-icon-add-point" onclick="addCardinalPointInput('edit', 'p4_oeste')" title="Agregar medición">
+                            <button type="button" class="btn-icon-add-point" onclick="addCardinalPointInput('edit', 'p4_oeste')" title="Agregar medición" style="display: none;">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                             </button>
                         </div>
                         <div class="cardinal-inputs-grid">
                             <div>
                                 <label class="form-field-label">Hora Inicio</label>
-                                <input type="time" name="p4_oeste_inicio" id="edit_p4_oeste_inicio" class="custom-form-input">
+                                <input type="time" name="p4_oeste_inicio" id="edit_p4_oeste_inicio" class="custom-form-input" disabled>
                             </div>
                             <div>
                                 <label class="form-field-label">Hora Fin</label>
-                                <input type="time" name="p4_oeste_fin" id="edit_p4_oeste_fin" class="custom-form-input">
+                                <input type="time" name="p4_oeste_fin" id="edit_p4_oeste_fin" class="custom-form-input" disabled>
                             </div>
                             <div>
                                 <label class="form-field-label">Mediciones (dBA)</label>
@@ -223,12 +253,13 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px;">
                     <div class="form-field-group">
                         <label class="form-field-label">Evidencia Fotográfica Adicional</label>
-                        <input type="file" name="photos[]" multiple accept="image/*" class="custom-form-input" style="padding: 8px;">
+                        <input type="file" name="photos[]" id="edit_photos_input" multiple accept="image/*" class="custom-form-input" style="padding: 8px;" disabled>
                     </div>
 
                     <div class="form-field-group">
                         <label class="form-field-label">Personal Registrador</label>
-                        <select name="staff_id" id="edit_staff_id" class="custom-form-select">
+                        <select name="staff_id" id="edit_staff_id" class="custom-form-select" disabled
+                            onchange="if(document.getElementById('edit_modal_registered_by') && this.selectedIndex >= 0) document.getElementById('edit_modal_registered_by').textContent = this.options[this.selectedIndex].text.split('(')[0].trim();">
                             @foreach($staffList as $stf)
                                 <option value="{{ $stf->id }}">{{ $stf->name }} ({{ $stf->position ?? 'Técnico' }})</option>
                             @endforeach
@@ -238,11 +269,11 @@
 
                 <div class="form-field-group">
                     <label class="form-field-label">Observaciones Perimetrales</label>
-                    <textarea name="observations" id="edit_observations" rows="2" class="custom-form-input" placeholder="Detalles de fuentes emisoras..."></textarea>
+                    <textarea name="observations" id="edit_observations" rows="2" class="custom-form-input" placeholder="Detalles de fuentes emisoras..." disabled></textarea>
                 </div>
 
                 <!-- Resumen Acústico en Vivo -->
-                <div style="display: flex; align-items: center; justify-content: space-between; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px 16px; border-radius: 12px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px 16px; border-radius: 12px; margin-top: 14px;">
                     <div>
                         <div style="font-size: 11px; font-weight: 700; color: #16a34a; text-transform: uppercase;">Resumen Leq Estimado</div>
                         <div style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 800; color: #065f46;" id="edit_leq_display">— dBA</div>
@@ -260,8 +291,8 @@
             </div>
 
             <div class="modal-footer-custom">
-                <button type="button" class="btn-secondary-subtle" onclick="closeEditMeasurementModal()">Cancelar</button>
-                <button type="submit" class="btn-primary-hero-action">Actualizar</button>
+                <button type="button" class="btn-secondary-subtle" onclick="closeEditMeasurementModal()">Cerrar</button>
+                <button type="submit" class="btn-primary-hero-action" id="edit_modal_submit_btn" style="display: none;">Guardar Cambios</button>
             </div>
         </form>
     </div>

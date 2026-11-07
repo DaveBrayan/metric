@@ -299,20 +299,44 @@ window.captureCoordinatesGPS = function (prefix) {
    ========================================================================== */
 window.openCreateMeasurementModal = function () {
     const m = document.getElementById('createMeasurementModal');
-    if (m) m.classList.add('open');
+    if (!m) return;
+
+    // Reset lecturas de ruido para creación
+    noiseReadingsStore.create = [];
+    renderNoiseReadings('create');
+
+    // Reset carrusel fotográfico para creación
+    sliderState.create = { photos: [], currentIndex: 0, removedUrls: [] };
+    renderPhotoSlider('create');
+    const fileInput = document.getElementById('create_images_input');
+    if (fileInput) fileInput.value = '';
+
+    m.classList.add('open');
+    m.style.display = 'flex';
+
+    setTimeout(() => {
+        initModalMiniMap('create', -16.5, -68.15);
+    }, 150);
 };
 
 window.closeCreateMeasurementModal = function () {
     const m = document.getElementById('createMeasurementModal');
-    if (m) m.classList.remove('open');
+    if (m) {
+        m.classList.remove('open');
+        m.style.display = 'none';
+    }
 };
 
-let editNoiseReadingsList = [];
+const noiseReadingsStore = {
+    create: [],
+    edit: []
+};
 let isEditUnlocked = false;
-let editModalMiniMap = null;
-let editModalMarker = null;
+const modalMiniMaps = { create: null, edit: null };
+const modalMarkers = { create: null, edit: null };
 
 const sliderState = {
+    create: { photos: [], currentIndex: 0, removedUrls: [] },
     edit: { photos: [], currentIndex: 0, removedUrls: [] }
 };
 
@@ -335,11 +359,47 @@ window.openViewMeasurementModal = function (item) {
     setVal('edit_measurement_time', item.raw_time || item.time || '08:00');
     setVal('edit_area', item.area || '');
     setVal('edit_punto_medicion', item.punto_medicion || '');
-    setVal('edit_actividad', item.actividad || '');
-    setVal('edit_tipo_ruido', item.tipo_ruido || 'Continuo');
+    setVal('edit_actividad', item.actividad || 'General');
+    setVal('edit_maquinaria_equipo', item.maquinaria_equipo || '');
+
+    // Normalizar y preseleccionar Tipo de Ruido con tolerancia a mayúsculas y variantes
+    const rawTipo = (item.tipo_ruido || 'Estable').trim();
+    const selTipo = document.getElementById('edit_tipo_ruido');
+    if (selTipo) {
+        let matched = false;
+        for (let i = 0; i < selTipo.options.length; i++) {
+            if (selTipo.options[i].value.toLowerCase() === rawTipo.toLowerCase()) {
+                selTipo.selectedIndex = i;
+                matched = true;
+                break;
+            }
+        }
+        if (!matched) {
+            const lower = rawTipo.toLowerCase();
+            if (lower.includes('estab') || lower.includes('contin')) selTipo.value = 'Estable';
+            else if (lower.includes('fluct') || lower.includes('interm')) selTipo.value = 'Fluctuante';
+            else if (lower.includes('impac') || lower.includes('impul')) selTipo.value = 'Impacto';
+            else {
+                const opt = new Option(rawTipo, rawTipo, true, true);
+                selTipo.add(opt);
+                selTipo.value = rawTipo;
+            }
+        }
+    }
+
+    // Normalizar y preseleccionar Respuesta del Sonómetro
+    const rawResp = (item.respuesta || 'Lento').trim().toLowerCase();
+    const selResp = document.getElementById('edit_respuesta');
+    if (selResp) {
+        if (rawResp.startsWith('rap') || rawResp === 'f' || rawResp === 'fast') {
+            selResp.value = 'Rápido';
+        } else {
+            selResp.value = 'Lento';
+        }
+    }
+
     setVal('edit_tiempo_expos_h', item.tiempo_expos_h || 8.0);
     setVal('edit_ponderacion', item.ponderacion || 'A');
-    setVal('edit_respuesta', item.respuesta || 'Lenta');
     setVal('edit_uso_protectores', item.uso_protectores ? '1' : '0');
     setVal('edit_tipo_protector', item.tipo_protector || '');
     setVal('edit_nrr_db', item.nrr_db || '');
@@ -368,9 +428,9 @@ window.openViewMeasurementModal = function (item) {
     }
 
     // Lecturas del Sonómetro (dBA)
-    editNoiseReadingsList = [];
+    noiseReadingsStore.edit = [];
     if (item.mediciones_db && Array.isArray(item.mediciones_db) && item.mediciones_db.length > 0) {
-        editNoiseReadingsList = [...item.mediciones_db];
+        noiseReadingsStore.edit = [...item.mediciones_db];
     }
     renderNoiseReadings('edit');
 
@@ -467,8 +527,8 @@ function applyEditModeState(isEditing) {
             el.disabled = false;
         });
 
-        if (editModalMarker && editModalMarker.dragging) {
-            editModalMarker.dragging.enable();
+        if (modalMarkers.edit && modalMarkers.edit.dragging) {
+            modalMarkers.edit.dragging.enable();
         }
     } else {
         form.classList.add('modal-view-mode');
@@ -492,12 +552,13 @@ function applyEditModeState(isEditing) {
             el.disabled = true;
         });
 
-        if (editModalMarker && editModalMarker.dragging) {
-            editModalMarker.dragging.disable();
+        if (modalMarkers.edit && modalMarkers.edit.dragging) {
+            modalMarkers.edit.dragging.disable();
         }
     }
 
     renderNoiseReadings('edit');
+    renderPhotoSlider('edit');
 }
 
 window.addNoiseReadingPoint = function (prefix) {
@@ -510,7 +571,8 @@ window.addNoiseReadingPoint = function (prefix) {
         input.focus();
         return;
     }
-    editNoiseReadingsList.push(val);
+    if (!noiseReadingsStore[prefix]) noiseReadingsStore[prefix] = [];
+    noiseReadingsStore[prefix].push(val);
     input.value = '';
     input.focus();
     renderNoiseReadings(prefix);
@@ -518,29 +580,31 @@ window.addNoiseReadingPoint = function (prefix) {
 
 window.removeNoiseReadingPoint = function (prefix, index) {
     if (prefix === 'edit' && !isEditUnlocked) return;
-    editNoiseReadingsList.splice(index, 1);
+    if (!noiseReadingsStore[prefix]) return;
+    noiseReadingsStore[prefix].splice(index, 1);
     renderNoiseReadings(prefix);
 };
 
 function renderNoiseReadings(prefix) {
+    const list = noiseReadingsStore[prefix] || [];
     const container = document.getElementById(`${prefix}_readings_badges_container`);
     const countBadge = document.getElementById(`${prefix}_readings_count_badge`);
     const hiddenJson = document.getElementById(`${prefix}_mediciones_db_json`);
 
     if (!container) return;
 
-    if (countBadge) countBadge.textContent = `${editNoiseReadingsList.length} ${editNoiseReadingsList.length === 1 ? 'lectura' : 'lecturas'}`;
-    if (hiddenJson) hiddenJson.value = JSON.stringify(editNoiseReadingsList);
+    if (countBadge) countBadge.textContent = `${list.length} ${list.length === 1 ? 'lectura' : 'lecturas'}`;
+    if (hiddenJson) hiddenJson.value = JSON.stringify(list);
 
-    if (editNoiseReadingsList.length === 0) {
+    if (list.length === 0) {
         container.innerHTML = `<span style="font-size: 11.5px; color: #94a3b8; font-style: italic;">Sin lecturas registradas.</span>`;
         updateNoiseSummaryStrip(prefix, null);
         return;
     }
 
-    const canDelete = isEditUnlocked;
+    const canDelete = (prefix === 'create') || (prefix === 'edit' && isEditUnlocked);
     let badgesHtml = '';
-    editNoiseReadingsList.forEach((val, idx) => {
+    list.forEach((val, idx) => {
         badgesHtml += `
             <span class="lux-reading-badge" style="font-size: 12px; font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 3px 8px; border-radius: 6px; border: 1px solid #bae6fd; display: inline-flex; align-items: center; gap: 4px;">
                 <span>#${idx + 1}: <strong>${val.toFixed(1)} dB</strong></span>
@@ -554,7 +618,7 @@ function renderNoiseReadings(prefix) {
 }
 
 window.recalculateRuidoModal = function (prefix) {
-    const list = editNoiseReadingsList.map(v => parseFloat(v)).filter(v => !isNaN(v) && v > 0);
+    const list = (noiseReadingsStore[prefix] || []).map(v => parseFloat(v)).filter(v => !isNaN(v) && v > 0);
     const leq = calculateAcousticLeq(list);
     const tpeInput = document.getElementById(`${prefix}_tiempo_expos_h`);
     const tpe = tpeInput ? (parseFloat(tpeInput.value) || 8.0) : 8.0;
@@ -627,6 +691,8 @@ function renderPhotoSlider(mode) {
         countIndicator.textContent = count === 1 ? '1 foto' : `${count} fotos`;
     }
 
+    const canDelete = (mode === 'create') || (mode === 'edit' && isEditUnlocked);
+
     if (count === 0) {
         if (counter) counter.style.display = 'none';
         if (btnPrev) btnPrev.style.display = 'none';
@@ -654,7 +720,7 @@ function renderPhotoSlider(mode) {
     if (placeholder) placeholder.style.display = 'none';
 
     if (btnDel) {
-        btnDel.style.display = isEditUnlocked ? 'inline-flex' : 'none';
+        btnDel.style.display = canDelete ? 'inline-flex' : 'none';
     }
 
     if (thumbsStrip) {
@@ -664,8 +730,9 @@ function renderPhotoSlider(mode) {
                 <div class="slider-thumb-item ${idx === state.currentIndex ? 'active' : ''}"
                      onclick="selectSlidePhoto('${mode}', ${idx})"
                      title="Ver foto ${idx + 1}"
-                     style="width: 48px; height: 48px; border-radius: 6px; overflow: hidden; cursor: pointer; border: 2px solid ${idx === state.currentIndex ? '#0284c7' : '#cbd5e1'}; flex-shrink: 0;">
-                    <img src="${src}" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                     style="position: relative; width: 48px; height: 48px; border-radius: 6px; cursor: pointer; border: 2px solid ${idx === state.currentIndex ? '#0284c7' : '#cbd5e1'}; flex-shrink: 0;">
+                    <img src="${src}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px; display: block;">
+                    ${canDelete ? `<button type="button" class="thumb-del-badge" onclick="event.stopPropagation(); deleteActivePhoto('${mode}', ${idx})" title="Eliminar foto #${idx + 1}">✕</button>` : ''}
                 </div>
             `).join('');
         } else {
@@ -689,21 +756,24 @@ window.selectSlidePhoto = function (mode, index) {
     renderPhotoSlider(mode);
 };
 
-window.deleteActivePhoto = function (mode) {
-    if (!isEditUnlocked) return;
+window.deleteActivePhoto = function (mode, targetIndex = null) {
+    if (mode === 'edit' && !isEditUnlocked) return;
     const state = sliderState[mode];
     if (!state || state.photos.length === 0) return;
 
-    if (!confirm('¿Deseas remover esta fotografía del punto de medición?')) return;
+    const idxToRemove = targetIndex !== null ? targetIndex : state.currentIndex;
+    if (idxToRemove < 0 || idxToRemove >= state.photos.length) return;
 
-    const removedUrl = state.photos.splice(state.currentIndex, 1)[0];
+    const removedUrl = state.photos.splice(idxToRemove, 1)[0];
     if (removedUrl && !removedUrl.startsWith('data:')) {
         state.removedUrls.push(removedUrl);
     }
     if (state.currentIndex >= state.photos.length) {
         state.currentIndex = Math.max(0, state.photos.length - 1);
     }
-    syncEditRemainingImages();
+    if (mode === 'edit') {
+        syncEditRemainingImages();
+    }
     renderPhotoSlider(mode);
 };
 
@@ -724,7 +794,7 @@ window.handleMultipleImagesSelected = function (input, mode) {
         reader.onload = function (e) {
             state.photos.push(e.target.result);
             renderPhotoSlider(mode);
-            syncEditRemainingImages();
+            if (mode === 'edit') syncEditRemainingImages();
         };
         reader.readAsDataURL(file);
     });
@@ -735,13 +805,13 @@ function initModalMiniMap(mode, lat, lng) {
     const mapEl = document.getElementById(`${mode}_modal_map`);
     if (!mapEl || typeof L === 'undefined') return;
 
-    if (editModalMiniMap) {
-        editModalMiniMap.remove();
-        editModalMiniMap = null;
-        editModalMarker = null;
+    if (modalMiniMaps[mode]) {
+        modalMiniMaps[mode].remove();
+        modalMiniMaps[mode] = null;
+        modalMarkers[mode] = null;
     }
 
-    editModalMiniMap = L.map(mapEl, {
+    modalMiniMaps[mode] = L.map(mapEl, {
         center: [lat, lng],
         zoom: 16,
         attributionControl: false
@@ -749,19 +819,20 @@ function initModalMiniMap(mode, lat, lng) {
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19
-    }).addTo(editModalMiniMap);
+    }).addTo(modalMiniMaps[mode]);
 
-    editModalMarker = L.marker([lat, lng], {
-        draggable: isEditUnlocked
-    }).addTo(editModalMiniMap);
+    const isDraggable = (mode === 'create') || isEditUnlocked;
+    modalMarkers[mode] = L.marker([lat, lng], {
+        draggable: isDraggable
+    }).addTo(modalMiniMaps[mode]);
 
-    editModalMarker.on('dragend', function (e) {
+    modalMarkers[mode].on('dragend', function (e) {
         const pos = e.target.getLatLng();
         updateUtmFromLatLng(pos.lat, pos.lng, mode);
     });
 
     setTimeout(() => {
-        if (editModalMiniMap) editModalMiniMap.invalidateSize();
+        if (modalMiniMaps[mode]) modalMiniMaps[mode].invalidateSize();
     }, 200);
 }
 
@@ -810,9 +881,9 @@ window.syncUtmToMap = function (mode) {
     if (disp) disp.textContent = formatted;
     if (locInput) locInput.value = formatted;
 
-    if (editModalMarker && editModalMiniMap) {
-        editModalMarker.setLatLng([pos.lat, pos.lng]);
-        editModalMiniMap.panTo([pos.lat, pos.lng]);
+    if (modalMarkers[mode] && modalMiniMaps[mode]) {
+        modalMarkers[mode].setLatLng([pos.lat, pos.lng]);
+        modalMiniMaps[mode].panTo([pos.lat, pos.lng]);
     }
 };
 
@@ -826,9 +897,9 @@ window.getCurrentGpsPosition = function (latId, lngId, mode) {
             const lat = pos.coords.latitude;
             const lng = pos.coords.longitude;
             updateUtmFromLatLng(lat, lng, mode);
-            if (editModalMarker && editModalMiniMap) {
-                editModalMarker.setLatLng([lat, lng]);
-                editModalMiniMap.panTo([lat, lng]);
+            if (modalMarkers[mode] && modalMiniMaps[mode]) {
+                modalMarkers[mode].setLatLng([lat, lng]);
+                modalMiniMaps[mode].panTo([lat, lng]);
             }
         },
         function (err) {

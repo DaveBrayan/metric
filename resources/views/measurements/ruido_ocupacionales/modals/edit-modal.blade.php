@@ -100,21 +100,23 @@
                             </div>
                         </div>
 
-                        <!-- Actividad / Maquinaria y Tipo de Ruido -->
-                        <div class="form-grid-two-cols">
-                            <div class="form-field-group">
-                                <label class="form-field-label" for="edit_actividad">Actividad / Maquinaria <span class="req">*</span></label>
-                                <input type="text" name="actividad" id="edit_actividad" class="custom-form-input" required disabled>
-                            </div>
-                            <div class="form-field-group">
-                                <label class="form-field-label" for="edit_tipo_ruido">Tipo de Ruido <span class="req">*</span></label>
-                                <select name="tipo_ruido" id="edit_tipo_ruido" class="custom-form-select" required disabled>
-                                    <option value="Continuo">Continuo</option>
-                                    <option value="Intermitente">Intermitente</option>
-                                    <option value="Impulsivo">Impulsivo</option>
-                                    <option value="Mixto">Mixto</option>
-                                </select>
-                            </div>
+                        <!-- Oculto: Actividad y Maquinaria (requerido por especificación) -->
+                        <input type="hidden" name="actividad" id="edit_actividad" value="General">
+                        <input type="hidden" name="maquinaria_equipo" id="edit_maquinaria_equipo" value="">
+
+                        <!-- Tipo de Ruido (Opciones App & Normativa) -->
+                        <div class="form-field-group">
+                            <label class="form-field-label" for="edit_tipo_ruido">Tipo de Ruido <span class="req">*</span></label>
+                            <select name="tipo_ruido" id="edit_tipo_ruido" class="custom-form-select" required disabled>
+                                <option value="Estable">Estable (Continuo)</option>
+                                <option value="Fluctuante">Fluctuante (Intermitente)</option>
+                                <option value="Estable escalonado">Estable escalonado</option>
+                                <option value="Impacto">Impacto (Impulsivo)</option>
+                                <option value="Continuo">Continuo</option>
+                                <option value="Intermitente">Intermitente</option>
+                                <option value="Impulsivo">Impulsivo</option>
+                                <option value="Mixto">Mixto</option>
+                            </select>
                         </div>
 
                         <!-- Parámetros del Sonómetro: TPE, Ponderación, Respuesta -->
@@ -134,8 +136,8 @@
                             <div class="form-field-group">
                                 <label class="form-field-label" for="edit_respuesta">Resp. <span class="req">*</span></label>
                                 <select name="respuesta" id="edit_respuesta" class="custom-form-select" required disabled>
-                                    <option value="Lenta">Lenta (Slow)</option>
-                                    <option value="Rápida">Rápida (Fast)</option>
+                                    <option value="Lento">Lento / Lenta (Slow - S)</option>
+                                    <option value="Rápido">Rápido / Rápida (Fast - F)</option>
                                 </select>
                             </div>
                         </div>

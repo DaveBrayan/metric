@@ -550,6 +550,8 @@ function openViewMeasurementModal(data) {
     document.getElementById('edit_point_number').value = data.num || '01';
     document.getElementById('edit_measurement_date').value = data.raw_date || '';
     document.getElementById('edit_measurement_time').value = data.time !== '—' ? data.time : '';
+    const editAreaEl = document.getElementById('edit_area');
+    if (editAreaEl) editAreaEl.value = data.area || data.local_trabajo || '';
     document.getElementById('edit_local_trabajo').value = data.local_trabajo || '';
     
     const tipoLocalSelect = document.getElementById('edit_tipo_local');
@@ -643,7 +645,7 @@ function setModalReadOnlyMode(isReadOnly) {
     const delPhotoBtn = document.getElementById('edit_slider_del_btn');
 
     const fields = [
-        'edit_measurement_date', 'edit_measurement_time', 'edit_staff_id', 'edit_local_trabajo',
+        'edit_measurement_date', 'edit_measurement_time', 'edit_staff_id', 'edit_area', 'edit_local_trabajo',
         'edit_tipo_local', 'edit_tipo_ventilacion', 'edit_elemento_ventilacion', 'edit_temperatura_seca_c',
         'edit_vel_aire_ms', 'edit_area_largo_m', 'edit_area_ancho_m', 'edit_area_diametro_m',
         'edit_vol_largo_m', 'edit_vol_ancho_m', 'edit_vol_alto_m', 'edit_utm_easting',

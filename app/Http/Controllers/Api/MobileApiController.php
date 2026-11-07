@@ -249,14 +249,17 @@ class MobileApiController extends Controller
             }
         }
 
-        $inputUrls = $request->input('image_urls') ?? [];
-        if (is_string($inputUrls)) {
-            $inputUrls = json_decode($inputUrls, true);
-        }
-        if (is_array($inputUrls)) {
-            foreach ($inputUrls as $u) {
-                if (is_string($u) && !in_array($u, $uploadedImages)) {
-                    $uploadedImages[] = $u;
+        $hasUploadedFiles = $request->hasFile('images') || $request->hasFile('photos') || $request->hasFile('image') || $request->hasFile('photo');
+        if (!$hasUploadedFiles) {
+            $inputUrls = $request->input('image_urls') ?? [];
+            if (is_string($inputUrls)) {
+                $inputUrls = json_decode($inputUrls, true);
+            }
+            if (is_array($inputUrls)) {
+                foreach ($inputUrls as $u) {
+                    if (is_string($u) && !in_array($u, $uploadedImages)) {
+                        $uploadedImages[] = $u;
+                    }
                 }
             }
         }
@@ -1528,68 +1531,107 @@ class MobileApiController extends Controller
         }
 
         $measurementId = $request->input('id') ?? $request->input('remote_id');
-        $measurement = null;
-        if (!empty($measurementId)) {
-            $measurement = $module->ventilationMeasurements()->find($measurementId);
-        }
+        $localUuid = $request->input('local_uuid');
+        $area = $request->input('area');
 
-        $data = [
-            'point_number' => $measurement ? $measurement->point_number : $pointNumber,
-            'measurement_date' => $measurementDate,
-            'measurement_time' => $measurementTime,
-            'local_trabajo' => $localTrabajo,
-            'tipo_local' => $tipoLocal,
-            'tipo_ventilacion' => $tipoVentilacion,
-            'elemento_ventilacion' => $elementoVentilacion,
-            'temperatura_seca_c' => $request->input('temperatura_seca_c'),
-            'vel_aire_ms' => $velMs,
-            'vel_aire_mh' => $velMh,
-            'area_largo_m' => $largo,
-            'area_ancho_m' => $ancho,
-            'area_diametro_m' => $diametro,
-            'area_ventilacion_m2' => $areaM2,
-            'caudal_m3h' => $caudalM3h,
-            'vol_largo_m' => $volLargo,
-            'vol_ancho_m' => $volAncho,
-            'vol_alto_m' => $volAlto,
-            'volumen_m3' => $volumenM3,
-            'renovaciones_h' => $renovH,
-            'renovaciones_min' => $renovMin,
-            'renovaciones_max' => $renovMax,
-            'renovaciones_intervalo' => $intervalo,
-            'cumple' => $cumple,
-            'image_path' => $imagePath,
-            'images' => !empty($uploadedImages) ? $uploadedImages : null,
-            'location' => $locationRaw,
-            'latitude' => $latitude !== null ? (float) $latitude : null,
-            'longitude' => $longitude !== null ? (float) $longitude : null,
-            'utm_zone' => $utmZone,
-            'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
-            'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
-            'observations' => $request->input('observations') ?? $request->input('observaciones'),
-            'registered_by' => $registeredByName,
-            'staff_id' => $staffId,
-        ];
+        return DB::transaction(function () use (
+            $module, $request, $measurementId, $localUuid, $pointNumber,
+            $measurementDate, $measurementTime, $area, $localTrabajo, $tipoLocal,
+            $tipoVentilacion, $elementoVentilacion, $velMs, $velMh, $largo,
+            $ancho, $diametro, $areaM2, $caudalM3h, $volLargo, $volAncho,
+            $volAlto, $volumenM3, $renovH, $renovMin, $renovMax, $intervalo,
+            $cumple, $imagePath, $uploadedImages, $locationRaw, $latitude,
+            $longitude, $utmZone, $utmEasting, $utmNorthing, $registeredByName,
+            $staffId
+        ) {
+            $measurement = null;
+            if (!empty($measurementId)) {
+                $measurement = $module->ventilationMeasurements()->lockForUpdate()->find($measurementId);
+            }
+            if (!$measurement && !empty($localUuid)) {
+                $measurement = $module->ventilationMeasurements()->lockForUpdate()->where('local_uuid', $localUuid)->first();
+            }
 
-        if ($measurement) {
-            $measurement->update($data);
-            $statusCode = 200;
-        } else {
-            $measurement = $module->ventilationMeasurements()->create($data);
-            $statusCode = 201;
-        }
+            // Deduplicación inteligente para sync offline concurrente
+            if (!$measurement) {
+                $candidateQuery = $module->ventilationMeasurements()
+                    ->lockForUpdate()
+                    ->where('local_trabajo', $localTrabajo)
+                    ->where('tipo_local', $tipoLocal)
+                    ->where('measurement_date', $measurementDate)
+                    ->where('tipo_ventilacion', $tipoVentilacion)
+                    ->where('created_at', '>=', Carbon::now()->subMinutes(15));
 
-        $module->points_completed = $module->ventilationMeasurements()->count();
-        $module->save();
+                $candidate = $candidateQuery->latest('id')->first();
+                if ($candidate) {
+                    $measurement = $candidate;
+                    if (!empty($localUuid) && empty($candidate->local_uuid)) {
+                        $candidate->local_uuid = $localUuid;
+                        $candidate->save();
+                    }
+                }
+            }
 
-        return response()->json([
-            'success' => true,
-            'message' => "Punto de medición de ventilación #{$measurement->point_number} registrado exitosamente.",
-            'id' => $measurement->id,
-            'remote_id' => (string) $measurement->id,
-            'point_number' => $measurement->point_number,
-            'points_completed' => $module->points_completed,
-        ], $statusCode);
+            $data = [
+                'point_number' => $measurement ? $measurement->point_number : $pointNumber,
+                'area' => $area ?: ($measurement ? $measurement->area : null),
+                'local_uuid' => $localUuid ?: ($measurement ? $measurement->local_uuid : null),
+                'measurement_date' => $measurementDate,
+                'measurement_time' => $measurementTime,
+                'local_trabajo' => $localTrabajo,
+                'tipo_local' => $tipoLocal,
+                'tipo_ventilacion' => $tipoVentilacion,
+                'elemento_ventilacion' => $elementoVentilacion,
+                'temperatura_seca_c' => $request->input('temperatura_seca_c'),
+                'vel_aire_ms' => $velMs,
+                'vel_aire_mh' => $velMh,
+                'area_largo_m' => $largo,
+                'area_ancho_m' => $ancho,
+                'area_diametro_m' => $diametro,
+                'area_ventilacion_m2' => $areaM2,
+                'caudal_m3h' => $caudalM3h,
+                'vol_largo_m' => $volLargo,
+                'vol_ancho_m' => $volAncho,
+                'vol_alto_m' => $volAlto,
+                'volumen_m3' => $volumenM3,
+                'renovaciones_h' => $renovH,
+                'renovaciones_min' => $renovMin,
+                'renovaciones_max' => $renovMax,
+                'renovaciones_intervalo' => $intervalo,
+                'cumple' => $cumple,
+                'image_path' => $imagePath ?: ($measurement ? $measurement->image_path : null),
+                'images' => !empty($uploadedImages) ? $uploadedImages : ($measurement ? $measurement->images : null),
+                'location' => $locationRaw,
+                'latitude' => $latitude !== null ? (float) $latitude : null,
+                'longitude' => $longitude !== null ? (float) $longitude : null,
+                'utm_zone' => $utmZone,
+                'utm_easting' => $utmEasting !== null ? (float) $utmEasting : null,
+                'utm_northing' => $utmNorthing !== null ? (float) $utmNorthing : null,
+                'observations' => $request->input('observations') ?? $request->input('observaciones'),
+                'registered_by' => $registeredByName,
+                'staff_id' => $staffId,
+            ];
+
+            if ($measurement) {
+                $measurement->update($data);
+                $statusCode = 200;
+            } else {
+                $measurement = $module->ventilationMeasurements()->create($data);
+                $statusCode = 201;
+            }
+
+            $module->points_completed = $module->ventilationMeasurements()->count();
+            $module->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Punto de medición de ventilación #{$measurement->point_number} registrado exitosamente.",
+                'id' => $measurement->id,
+                'remote_id' => (string) $measurement->id,
+                'point_number' => $measurement->point_number,
+                'points_completed' => $module->points_completed,
+            ], $statusCode);
+        });
     }
 
     /**
@@ -4318,14 +4360,59 @@ class MobileApiController extends Controller
         $oesteX = $request->input('oeste_x');
         $oesteY = $request->input('oeste_y');
 
-        // Procesar puntos cardinales y lecturas
+        // Procesar puntos cardinales y lecturas con parser ultra robusto
         $parsePoints = function ($val) {
+            if (empty($val) && $val !== 0 && $val !== '0') {
+                return [];
+            }
             if (is_array($val)) {
-                return array_values(array_filter(array_map('floatval', $val), 'is_numeric'));
-            } elseif (is_string($val) && (str_starts_with(trim($val), '[') || str_starts_with(trim($val), '{'))) {
-                $decoded = json_decode($val, true);
-                if (is_array($decoded)) {
-                    return array_values(array_filter(array_map('floatval', $decoded), 'is_numeric'));
+                $res = [];
+                foreach ($val as $v) {
+                    if (is_numeric($v)) {
+                        $f = (float) $v;
+                        if ($f > 0) $res[] = $f;
+                    }
+                }
+                return array_values($res);
+            }
+            if (is_numeric($val)) {
+                $f = (float) $val;
+                return $f > 0 ? [$f] : [];
+            }
+            if (is_string($val)) {
+                $trimmed = trim($val);
+                // Strip outer quotes if double encoded/quoted
+                if ((str_starts_with($trimmed, '"') && str_ends_with($trimmed, '"')) ||
+                    (str_starts_with($trimmed, "'") && str_ends_with($trimmed, "'"))) {
+                    $trimmed = trim(substr($trimmed, 1, -1));
+                }
+                $trimmed = stripslashes($trimmed);
+                if (str_starts_with($trimmed, '[') || str_starts_with($trimmed, '{')) {
+                    $decoded = json_decode($trimmed, true);
+                    if (is_string($decoded)) {
+                        $decoded = json_decode($decoded, true);
+                    }
+                    if (is_array($decoded)) {
+                        $res = [];
+                        foreach ($decoded as $v) {
+                            if (is_numeric($v)) {
+                                $f = (float) $v;
+                                if ($f > 0) $res[] = $f;
+                            }
+                        }
+                        return array_values($res);
+                    }
+                }
+                if (str_contains($trimmed, ',') || str_contains($trimmed, ';') || str_contains($trimmed, ' ')) {
+                    $parts = preg_split('/[,;\s]+/', $trimmed);
+                    $res = [];
+                    foreach ($parts as $p) {
+                        if (is_numeric($p)) {
+                            $f = (float) $p;
+                            if ($f > 0) $res[] = $f;
+                        }
+                    }
+                    if (!empty($res)) return array_values($res);
                 }
             }
             return [];
@@ -4338,7 +4425,11 @@ class MobileApiController extends Controller
         $allPoints = array_merge($p1, $p2, $p3, $p4);
 
         if (empty($allPoints)) {
-            $allPoints = $parsePoints($request->input('mediciones_db'));
+            $medicionesDb = $parsePoints($request->input('mediciones_db'));
+            if (!empty($medicionesDb)) {
+                $allPoints = $medicionesDb;
+                if (empty($p1)) $p1 = $medicionesDb;
+            }
         }
 
         $leq = RuidoAmbientalController::calculateLeq($allPoints);
@@ -4449,27 +4540,30 @@ class MobileApiController extends Controller
             }
         }
 
-        $inputUrls = $request->input('image_urls') ?? $request->input('images');
-        if (is_string($inputUrls)) {
-            $inputUrls = json_decode($inputUrls, true);
-        }
-        if (is_array($inputUrls)) {
-            foreach ($inputUrls as $u) {
-                if (is_string($u) && trim($u) !== '') {
-                    $cleanU = preg_replace('#^https?://[^/]+/#', '', trim($u));
-                    $cleanU = ltrim($cleanU, '/');
-                    $baseU = basename($cleanU);
-                    $exists = false;
-                    foreach ($uploadedImages as $existing) {
-                        $cleanExisting = preg_replace('#^https?://[^/]+/#', '', trim($existing));
-                        $cleanExisting = ltrim($cleanExisting, '/');
-                        if ($cleanU === $cleanExisting || $baseU === basename($cleanExisting)) {
-                            $exists = true;
-                            break;
+        $hasUploadedFiles = $request->hasFile('photos') || $request->hasFile('images') || $request->hasFile('image');
+        if (!$hasUploadedFiles) {
+            $inputUrls = $request->input('image_urls') ?? $request->input('images');
+            if (is_string($inputUrls)) {
+                $inputUrls = json_decode($inputUrls, true);
+            }
+            if (is_array($inputUrls)) {
+                foreach ($inputUrls as $u) {
+                    if (is_string($u) && trim($u) !== '') {
+                        $cleanU = preg_replace('#^https?://[^/]+/#', '', trim($u));
+                        $cleanU = ltrim($cleanU, '/');
+                        $baseU = basename($cleanU);
+                        $exists = false;
+                        foreach ($uploadedImages as $existing) {
+                            $cleanExisting = preg_replace('#^https?://[^/]+/#', '', trim($existing));
+                            $cleanExisting = ltrim($cleanExisting, '/');
+                            if ($cleanU === $cleanExisting || $baseU === basename($cleanExisting)) {
+                                $exists = true;
+                                break;
+                            }
                         }
-                    }
-                    if (!$exists) {
-                        $uploadedImages[] = $cleanU;
+                        if (!$exists) {
+                            $uploadedImages[] = $cleanU;
+                        }
                     }
                 }
             }
@@ -4510,10 +4604,14 @@ class MobileApiController extends Controller
         }
 
         $measurementId = $request->input('id') ?? $request->input('remote_id');
+        $localUuid = $request->input('local_uuid');
         $measurement = null;
 
         if ($measurementId) {
             $measurement = $module->ruidoAmbientalMeasurements()->find($measurementId);
+        }
+        if (!$measurement && !empty($localUuid)) {
+            $measurement = $module->ruidoAmbientalMeasurements()->where('local_uuid', $localUuid)->first();
         }
 
         if ($measurement) {
@@ -4527,6 +4625,8 @@ class MobileApiController extends Controller
             $measurement->project_id = $module->project_id;
             $statusCode = 201;
         }
+
+        $measurement->local_uuid = $localUuid ?: ($measurement->local_uuid ?? null);
 
         $measurement->staff_id = $staffId ?: ($module->field_staff_id ?? null);
         $measurement->point_number = $pointNumber;

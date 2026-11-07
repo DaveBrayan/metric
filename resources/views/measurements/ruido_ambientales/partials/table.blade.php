@@ -146,25 +146,13 @@
                         <!-- 10. Acciones -->
                         <td style="text-align: right;">
                             <div class="admin-actions-cell" style="justify-content: flex-end; gap: 8px;">
-                                <!-- Botón Mapa GPS -->
-                                @if($m['latitude'] && $m['longitude'])
-                                    <button type="button" class="btn-admin-icon-action theme-cyan"
-                                        onclick="openMapModal({{ $m['latitude'] }}, {{ $m['longitude'] }}, 'Punto {{ $m['num'] }}', {{ $m['is_compliant'] ? 'true' : 'false' }}, 'UTM: {{ $m['norte_x'] }}, {{ $m['norte_y'] }}')"
-                                        title="Ver Mapa GPS del Punto" aria-label="Ver Mapa">
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                                            <circle cx="12" cy="10" r="3" />
-                                        </svg>
-                                    </button>
-                                @endif
-
-                                <!-- Botón Editar -->
+                                <!-- Botón Ver y Editar Detalle (Ojo) -->
                                 <button type="button" class="btn-admin-icon-action theme-cyan"
-                                    onclick='openEditMeasurementModal(@json($m))'
-                                    title="Editar Punto de Medición" aria-label="Editar">
+                                    onclick='openViewMeasurementModal(@json($m))'
+                                    title="Ver y editar detalle del punto" aria-label="Ver y editar">
                                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                                        <path d="m15 5 4 4" />
+                                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                        <circle cx="12" cy="12" r="3" />
                                     </svg>
                                 </button>
 

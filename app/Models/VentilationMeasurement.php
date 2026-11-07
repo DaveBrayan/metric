@@ -15,6 +15,7 @@ class VentilationMeasurement extends Model
     protected $fillable = [
         'module_id',
         'point_number',
+        'area',
         'measurement_date',
         'measurement_time',
         'local_trabajo',

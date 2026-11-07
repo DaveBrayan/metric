@@ -64,11 +64,18 @@
                                 </select>
                             </div>
 
-                            <!-- Local de Trabajo -->
-                            <div class="form-field-group">
-                                <label class="form-field-label" for="create_local_trabajo">Local de Trabajo <span class="req">*</span></label>
-                                <input type="text" name="local_trabajo" id="create_local_trabajo" class="custom-form-input" required
-                                    placeholder="Ej: Taller Central, Oficina Contabilidad, Cocina...">
+                            <!-- Área y Local de Trabajo -->
+                            <div class="form-grid-two-cols">
+                                <div class="form-field-group">
+                                    <label class="form-field-label" for="create_area">Área <span class="req">*</span></label>
+                                    <input type="text" name="area" id="create_area" class="custom-form-input" required
+                                        placeholder="Ej: Planta Baja, Galpón 2...">
+                                </div>
+                                <div class="form-field-group">
+                                    <label class="form-field-label" for="create_local_trabajo">Local de Trabajo <span class="req">*</span></label>
+                                    <input type="text" name="local_trabajo" id="create_local_trabajo" class="custom-form-input" required
+                                        placeholder="Ej: Taller Central, Oficina Contabilidad, Cocina...">
+                                </div>
                             </div>
 
                             <!-- Tipo de Local (44 Opciones Normativas) -->

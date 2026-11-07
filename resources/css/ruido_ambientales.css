@@ -768,3 +768,65 @@ textarea.custom-form-input {
     box-shadow: 0 4px 14px rgba(16, 185, 223, 0.12);
     transform: translateY(-1px);
 }
+
+/* ==========================================================================
+   MODO CONSULTA VS MODO EDICIÓN (ESTRUCTURA Y DISEÑO IDÉNTICO A ILUMINACIÓN)
+   ========================================================================== */
+.modal-badge-view {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+}
+
+.modal-badge-edit {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+}
+
+.btn-modal-edit-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 8px;
+    border: 1.5px solid #0284c7;
+    background: #ffffff;
+    color: #0284c7;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-modal-edit-action:hover {
+    background: #0284c7;
+    color: #ffffff;
+}
+
+.btn-modal-edit-action.active-editing {
+    background: #059669;
+    border-color: #059669;
+    color: #ffffff;
+}
+
+.modal-view-mode .custom-form-input:disabled,
+.modal-view-mode .custom-form-select:disabled,
+.modal-view-mode .custom-form-textarea:disabled {
+    background: #f8fafc !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    color: #1e293b !important;
+    cursor: default !important;
+    opacity: 0.95 !important;
+}
+

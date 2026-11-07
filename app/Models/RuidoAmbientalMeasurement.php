@@ -12,6 +12,7 @@ class RuidoAmbientalMeasurement extends Model
     protected $table = 'ruido_ambiental_measurements';
 
     protected $fillable = [
+        'local_uuid',
         'module_id',
         'project_id',
         'staff_id',

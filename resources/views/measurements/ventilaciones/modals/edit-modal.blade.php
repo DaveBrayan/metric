@@ -89,10 +89,16 @@
                                 </select>
                             </div>
 
-                            <!-- Local de Trabajo -->
-                            <div class="form-field-group">
-                                <label class="form-field-label" for="edit_local_trabajo">Local de Trabajo <span class="req">*</span></label>
-                                <input type="text" name="local_trabajo" id="edit_local_trabajo" class="custom-form-input" required disabled>
+                            <!-- Área y Local de Trabajo -->
+                            <div class="form-grid-two-cols">
+                                <div class="form-field-group">
+                                    <label class="form-field-label" for="edit_area">Área <span class="req">*</span></label>
+                                    <input type="text" name="area" id="edit_area" class="custom-form-input" required disabled>
+                                </div>
+                                <div class="form-field-group">
+                                    <label class="form-field-label" for="edit_local_trabajo">Local de Trabajo <span class="req">*</span></label>
+                                    <input type="text" name="local_trabajo" id="edit_local_trabajo" class="custom-form-input" required disabled>
+                                </div>
                             </div>
 
                             <!-- Tipo de Local (44 Opciones Normativas) -->

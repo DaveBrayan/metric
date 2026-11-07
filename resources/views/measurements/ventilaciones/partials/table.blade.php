@@ -21,7 +21,7 @@
                     <tr>
                         <th style="width: 45px; text-align: center;">N°</th>
                         <th style="width: 105px;">Fecha / Hora</th>
-                        <th style="width: 170px;">Local / Tipo Local</th>
+                        <th style="width: 170px;">Área / Local</th>
                         <th style="width: 120px;">Tipo / Elemento</th>
                         <th style="width: 110px;">Vel. Aire</th>
                         <th style="width: 130px;">Caudal & Vol.</th>
@@ -37,7 +37,7 @@
                         <tr class="ventilation-data-row"
                             data-compliant="{{ $m['is_compliant'] ? 'compliant' : 'non-compliant' }}"
                             data-type="{{ $m['tipo_ventilacion'] }}"
-                            data-search="{{ strtolower($m['num'] . ' ' . $m['local_trabajo'] . ' ' . $m['tipo_local'] . ' ' . $m['tipo_ventilacion'] . ' ' . $m['elemento_ventilacion'] . ' ' . $m['location'] . ' ' . $m['registered_by']) }}">
+                            data-search="{{ strtolower($m['num'] . ' ' . ($m['area'] ?? '') . ' ' . $m['local_trabajo'] . ' ' . $m['tipo_local'] . ' ' . $m['tipo_ventilacion'] . ' ' . $m['elemento_ventilacion'] . ' ' . $m['location'] . ' ' . $m['registered_by']) }}">
 
                             <!-- 1. N° -->
                             <td
@@ -60,12 +60,12 @@
                                 </div>
                             </td>
 
-                            <!-- 3. Local de Trabajo / Tipo de Local -->
+                            <!-- 3. Área / Local de Trabajo -->
                             <td>
                                 <div style="display: flex; flex-direction: column; gap: 2px;">
-                                    <span style="font-weight: 700; color: var(--ink); font-size: 13px;" title="{{ $m['local_trabajo'] }}">{{ $m['local_trabajo'] }}</span>
+                                    <span style="font-weight: 700; color: var(--ink); font-size: 13px;" title="{{ $m['area'] ?? $m['local_trabajo'] }}">{{ $m['area'] ?? $m['local_trabajo'] }}</span>
                                     <span style="font-size: 11px; color: #0284c7; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;"
-                                        title="{{ $m['tipo_local'] }}">{{ $m['tipo_local'] }}</span>
+                                        title="{{ $m['local_trabajo'] }}">{{ $m['local_trabajo'] }}</span>
                                 </div>
                             </td>
 
