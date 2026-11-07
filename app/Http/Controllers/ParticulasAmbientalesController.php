@@ -141,7 +141,7 @@ class ParticulasAmbientalesController extends Controller
                 'point_number' => $pointNum,
                 'date' => $dateFormatted,
                 'raw_date' => $fechaInicioStr,
-                'time' => $item->hora_inicio ?: ($item->measurement_time ?: '08:00'),
+                'time' => $item->measurement_time ?: ($item->created_at ? Carbon::parse($item->created_at)->format('H:i') : ($item->hora_inicio ?: '08:00')),
                 'fecha_inicio' => $fechaInicioStr,
                 'hora_inicio' => $item->hora_inicio ?: '08:00',
                 'fecha_fin' => $fechaFinStr,

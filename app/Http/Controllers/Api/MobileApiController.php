@@ -1143,8 +1143,22 @@ class MobileApiController extends Controller
         }
         if (is_array($inputUrls)) {
             foreach ($inputUrls as $u) {
-                if (is_string($u) && !in_array($u, $uploadedImages)) {
-                    $uploadedImages[] = $u;
+                if (is_string($u) && trim($u) !== '') {
+                    $cleanU = preg_replace('#^https?://[^/]+/#', '', trim($u));
+                    $cleanU = ltrim($cleanU, '/');
+                    $baseU = basename($cleanU);
+                    $exists = false;
+                    foreach ($uploadedImages as $existing) {
+                        $cleanExisting = preg_replace('#^https?://[^/]+/#', '', trim($existing));
+                        $cleanExisting = ltrim($cleanExisting, '/');
+                        if ($cleanU === $cleanExisting || $baseU === basename($cleanExisting)) {
+                            $exists = true;
+                            break;
+                        }
+                    }
+                    if (!$exists) {
+                        $uploadedImages[] = $cleanU;
+                    }
                 }
             }
         }
@@ -1472,8 +1486,22 @@ class MobileApiController extends Controller
         }
         if (is_array($inputUrls)) {
             foreach ($inputUrls as $u) {
-                if (is_string($u) && !in_array($u, $uploadedImages)) {
-                    $uploadedImages[] = $u;
+                if (is_string($u) && trim($u) !== '') {
+                    $cleanU = preg_replace('#^https?://[^/]+/#', '', trim($u));
+                    $cleanU = ltrim($cleanU, '/');
+                    $baseU = basename($cleanU);
+                    $exists = false;
+                    foreach ($uploadedImages as $existing) {
+                        $cleanExisting = preg_replace('#^https?://[^/]+/#', '', trim($existing));
+                        $cleanExisting = ltrim($cleanExisting, '/');
+                        if ($cleanU === $cleanExisting || $baseU === basename($cleanExisting)) {
+                            $exists = true;
+                            break;
+                        }
+                    }
+                    if (!$exists) {
+                        $uploadedImages[] = $cleanU;
+                    }
                 }
             }
         }
@@ -2430,8 +2458,22 @@ class MobileApiController extends Controller
         }
         if (is_array($inputUrls)) {
             foreach ($inputUrls as $u) {
-                if (is_string($u) && !in_array($u, $uploadedImages)) {
-                    $uploadedImages[] = $u;
+                if (is_string($u) && trim($u) !== '') {
+                    $cleanU = preg_replace('#^https?://[^/]+/#', '', trim($u));
+                    $cleanU = ltrim($cleanU, '/');
+                    $baseU = basename($cleanU);
+                    $exists = false;
+                    foreach ($uploadedImages as $existing) {
+                        $cleanExisting = preg_replace('#^https?://[^/]+/#', '', trim($existing));
+                        $cleanExisting = ltrim($cleanExisting, '/');
+                        if ($cleanU === $cleanExisting || $baseU === basename($cleanExisting)) {
+                            $exists = true;
+                            break;
+                        }
+                    }
+                    if (!$exists) {
+                        $uploadedImages[] = $cleanU;
+                    }
                 }
             }
         }
@@ -2788,8 +2830,22 @@ class MobileApiController extends Controller
         }
         if (is_array($inputUrls)) {
             foreach ($inputUrls as $u) {
-                if (is_string($u) && !in_array($u, $uploadedImages)) {
-                    $uploadedImages[] = $u;
+                if (is_string($u) && trim($u) !== '') {
+                    $cleanU = preg_replace('#^https?://[^/]+/#', '', trim($u));
+                    $cleanU = ltrim($cleanU, '/');
+                    $baseU = basename($cleanU);
+                    $exists = false;
+                    foreach ($uploadedImages as $existing) {
+                        $cleanExisting = preg_replace('#^https?://[^/]+/#', '', trim($existing));
+                        $cleanExisting = ltrim($cleanExisting, '/');
+                        if ($cleanU === $cleanExisting || $baseU === basename($cleanExisting)) {
+                            $exists = true;
+                            break;
+                        }
+                    }
+                    if (!$exists) {
+                        $uploadedImages[] = $cleanU;
+                    }
                 }
             }
         }
@@ -3164,8 +3220,22 @@ class MobileApiController extends Controller
         }
         if (is_array($inputUrls)) {
             foreach ($inputUrls as $u) {
-                if (is_string($u) && !in_array($u, $uploadedImages)) {
-                    $uploadedImages[] = $u;
+                if (is_string($u) && trim($u) !== '') {
+                    $cleanU = preg_replace('#^https?://[^/]+/#', '', trim($u));
+                    $cleanU = ltrim($cleanU, '/');
+                    $baseU = basename($cleanU);
+                    $exists = false;
+                    foreach ($uploadedImages as $existing) {
+                        $cleanExisting = preg_replace('#^https?://[^/]+/#', '', trim($existing));
+                        $cleanExisting = ltrim($cleanExisting, '/');
+                        if ($cleanU === $cleanExisting || $baseU === basename($cleanExisting)) {
+                            $exists = true;
+                            break;
+                        }
+                    }
+                    if (!$exists) {
+                        $uploadedImages[] = $cleanU;
+                    }
                 }
             }
         }
@@ -3502,8 +3572,22 @@ class MobileApiController extends Controller
         }
         if (is_array($inputUrls)) {
             foreach ($inputUrls as $u) {
-                if (is_string($u) && !in_array($u, $uploadedImages)) {
-                    $uploadedImages[] = $u;
+                if (is_string($u) && trim($u) !== '') {
+                    $cleanU = preg_replace('#^https?://[^/]+/#', '', trim($u));
+                    $cleanU = ltrim($cleanU, '/');
+                    $baseU = basename($cleanU);
+                    $exists = false;
+                    foreach ($uploadedImages as $existing) {
+                        $cleanExisting = preg_replace('#^https?://[^/]+/#', '', trim($existing));
+                        $cleanExisting = ltrim($cleanExisting, '/');
+                        if ($cleanU === $cleanExisting || $baseU === basename($cleanExisting)) {
+                            $exists = true;
+                            break;
+                        }
+                    }
+                    if (!$exists) {
+                        $uploadedImages[] = $cleanU;
+                    }
                 }
             }
         }
@@ -3870,8 +3954,22 @@ class MobileApiController extends Controller
         }
         if (is_array($inputUrls)) {
             foreach ($inputUrls as $u) {
-                if (is_string($u) && !in_array($u, $uploadedImages)) {
-                    $uploadedImages[] = $u;
+                if (is_string($u) && trim($u) !== '') {
+                    $cleanU = preg_replace('#^https?://[^/]+/#', '', trim($u));
+                    $cleanU = ltrim($cleanU, '/');
+                    $baseU = basename($cleanU);
+                    $exists = false;
+                    foreach ($uploadedImages as $existing) {
+                        $cleanExisting = preg_replace('#^https?://[^/]+/#', '', trim($existing));
+                        $cleanExisting = ltrim($cleanExisting, '/');
+                        if ($cleanU === $cleanExisting || $baseU === basename($cleanExisting)) {
+                            $exists = true;
+                            break;
+                        }
+                    }
+                    if (!$exists) {
+                        $uploadedImages[] = $cleanU;
+                    }
                 }
             }
         }
@@ -4357,8 +4455,22 @@ class MobileApiController extends Controller
         }
         if (is_array($inputUrls)) {
             foreach ($inputUrls as $u) {
-                if (is_string($u) && !in_array($u, $uploadedImages)) {
-                    $uploadedImages[] = $u;
+                if (is_string($u) && trim($u) !== '') {
+                    $cleanU = preg_replace('#^https?://[^/]+/#', '', trim($u));
+                    $cleanU = ltrim($cleanU, '/');
+                    $baseU = basename($cleanU);
+                    $exists = false;
+                    foreach ($uploadedImages as $existing) {
+                        $cleanExisting = preg_replace('#^https?://[^/]+/#', '', trim($existing));
+                        $cleanExisting = ltrim($cleanExisting, '/');
+                        if ($cleanU === $cleanExisting || $baseU === basename($cleanExisting)) {
+                            $exists = true;
+                            break;
+                        }
+                    }
+                    if (!$exists) {
+                        $uploadedImages[] = $cleanU;
+                    }
                 }
             }
         }
@@ -5575,9 +5687,6 @@ class MobileApiController extends Controller
         if (!$measurement && !empty($id)) {
             $measurement = $module->particulasMeasurements()->find($id);
         }
-        if (!$measurement && $request->filled('point_number')) {
-            $measurement = $module->particulasMeasurements()->where('point_number', $request->input('point_number'))->first();
-        }
 
         $date = $request->input('measurement_date') ?? $request->input('date') ?? $request->input('measured_at') ?? Carbon::now()->format('Y-m-d');
         if (str_contains($date, 'T')) {
@@ -5590,9 +5699,19 @@ class MobileApiController extends Controller
         $puntoMedicion = $request->input('punto_medicion') ?? $request->input('puesto_trabajo') ?? $request->input('workstation') ?? 'Punto de Medición';
 
         $pointNumber = $request->input('point_number');
-        if (empty($pointNumber)) {
+        if (!$measurement) {
             $count = $module->particulasMeasurements()->count();
-            $pointNumber = str_pad($count + 1, 2, '0', STR_PAD_LEFT);
+            if (empty($pointNumber) || $module->particulasMeasurements()->where('point_number', $pointNumber)->exists()) {
+                $idx = $count + 1;
+                while ($module->particulasMeasurements()->where('point_number', str_pad($idx, 2, '0', STR_PAD_LEFT))->exists()) {
+                    $idx++;
+                }
+                $pointNumber = str_pad($idx, 2, '0', STR_PAD_LEFT);
+            }
+        } else {
+            if (empty($pointNumber)) {
+                $pointNumber = $measurement->point_number;
+            }
         }
 
         $temp = $request->filled('temperatura') ? (float) $request->input('temperatura') : ($request->filled('temperatura_c') ? (float) $request->input('temperatura_c') : null);
@@ -5887,26 +6006,41 @@ class MobileApiController extends Controller
         if (!$measurement && !empty($id)) {
             $measurement = $module->particulasAmbientalesMeasurements()->find($id);
         }
-        if (!$measurement && $request->filled('point_number')) {
-            $measurement = $module->particulasAmbientalesMeasurements()->where('point_number', $request->input('point_number'))->first();
-        }
 
         $date = $request->input('measurement_date') ?? $request->input('date') ?? $request->input('fecha_inicio') ?? $request->input('measured_at') ?? Carbon::now()->format('Y-m-d');
         if (str_contains($date, 'T')) {
             $date = explode('T', $date)[0];
         }
 
-        $time = $request->input('measurement_time') ?? $request->input('time') ?? $request->input('hora_inicio') ?? Carbon::now()->format('H:i');
+        $time = $request->input('measurement_time') ?? $request->input('time');
+        if (!$time && $request->filled('measured_at')) {
+            try {
+                $time = Carbon::parse($request->input('measured_at'))->format('H:i');
+            } catch (\Throwable $e) {}
+        }
+        if (!$time) {
+            $time = $request->input('hora_inicio') ?? Carbon::now()->format('H:i');
+        }
 
         $area = $request->input('area') ?? 'Área Ambiental';
         $puntoMedicion = $request->input('punto_medicion') ?? $request->input('puesto_trabajo') ?? $request->input('workstation') ?? 'Estación de Muestreo';
 
         $pointNumber = $request->input('point_number');
-        if (empty($pointNumber)) {
+        if (!$measurement) {
             $count = $module->particulasAmbientalesMeasurements()->count();
-            $pointNumber = 'PA-' . ($count + 1);
-        } elseif (!str_starts_with(strtoupper($pointNumber), 'PA-')) {
-            $pointNumber = 'PA-' . ltrim($pointNumber, '0');
+            if (empty($pointNumber) || $module->particulasAmbientalesMeasurements()->where('point_number', $pointNumber)->exists()) {
+                $idx = $count + 1;
+                while ($module->particulasAmbientalesMeasurements()->where('point_number', 'PA-' . $idx)->exists()) {
+                    $idx++;
+                }
+                $pointNumber = 'PA-' . $idx;
+            } elseif (!str_starts_with(strtoupper($pointNumber), 'PA-')) {
+                $pointNumber = 'PA-' . ltrim($pointNumber, '0');
+            }
+        } else {
+            if (empty($pointNumber)) {
+                $pointNumber = $measurement->point_number;
+            }
         }
 
         // Fechas y Horas

@@ -45,13 +45,13 @@
                             <td>
                                 <div style="display: flex; flex-direction: column; gap: 3px;">
                                     <span style="font-size: 12.5px; font-weight: 700; color: var(--ink);">{{ $m['date'] }}</span>
-                                    <span class="table-time-pill" title="Período: {{ $m['hora_inicio'] }} a {{ $m['hora_fin'] }} ({{ $m['diferencia_horas'] }} hrs)">
+                                    <span class="table-time-pill" title="Hora de registro • Período: {{ $m['hora_inicio'] }} - {{ $m['hora_fin'] }} ({{ $m['diferencia_horas'] }}h)">
                                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                             stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                                             <circle cx="12" cy="12" r="10" />
                                             <polyline points="12 6 12 12 16 14" />
                                         </svg>
-                                        <span>{{ $m['hora_inicio'] }} - {{ $m['hora_fin'] }} ({{ $m['diferencia_horas'] }}h)</span>
+                                        <span>{{ $m['time'] }}</span>
                                     </span>
                                 </div>
                             </td>
