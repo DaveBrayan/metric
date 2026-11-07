@@ -949,6 +949,7 @@ class MobileApiController extends Controller
                     'punto_medicion' => $item->measurement_point,
                     'measurement_date' => $item->measurement_date ? $item->measurement_date->format('Y-m-d') : null,
                     'measurement_time' => $item->measurement_time,
+                    'measured_at' => $item->measurement_date ? ($item->measurement_date->format('Y-m-d') . ' ' . ($item->measurement_time ?: '00:00:00')) : null,
                     'measured_at' => $item->measurement_date
                         ? ($item->measurement_date->format('Y-m-d') . ' ' . ($item->measurement_time ?: '00:00:00'))
                         : null,
@@ -1781,6 +1782,7 @@ class MobileApiController extends Controller
                     'point_number' => $item->point_number ?: ('C-' . str_pad($index + 1, 2, '0', STR_PAD_LEFT)),
                     'measurement_date' => $item->measurement_date ? $item->measurement_date->format('Y-m-d') : null,
                     'measurement_time' => $item->measurement_time,
+                    'measured_at' => $item->measurement_date ? ($item->measurement_date->format('Y-m-d') . ' ' . ($item->measurement_time ?: '00:00:00')) : null,
                     'measured_at' => $item->measurement_date
                         ? ($item->measurement_date->format('Y-m-d') . ' ' . ($item->measurement_time ?: '00:00:00'))
                         : null,
@@ -2095,6 +2097,7 @@ class MobileApiController extends Controller
                     'point_number' => $item->point_number ?: ('F-' . str_pad($index + 1, 2, '0', STR_PAD_LEFT)),
                     'measurement_date' => $item->measurement_date ? $item->measurement_date->format('Y-m-d') : null,
                     'measurement_time' => $item->measurement_time,
+                    'measured_at' => $item->measurement_date ? ($item->measurement_date->format('Y-m-d') . ' ' . ($item->measurement_time ?: '00:00:00')) : null,
                     'measured_at' => $item->measurement_date
                         ? ($item->measurement_date->format('Y-m-d') . ' ' . ($item->measurement_time ?: '00:00:00'))
                         : null,
@@ -3936,6 +3939,7 @@ class MobileApiController extends Controller
                     'num' => $item->point_number ?: str_pad($index + 1, 2, '0', STR_PAD_LEFT),
                     'measurement_date' => $item->measurement_date ? $item->measurement_date->format('Y-m-d') : null,
                     'measurement_time' => $item->measurement_time,
+                    'measured_at' => $item->measurement_date ? ($item->measurement_date->format('Y-m-d') . ' ' . ($item->measurement_time ?: '00:00:00')) : null,
                     'measured_at' => $item->measurement_date
                         ? ($item->measurement_date->format('Y-m-d') . ' ' . ($item->measurement_time ?: '00:00:00'))
                         : null,
@@ -4399,6 +4403,7 @@ class MobileApiController extends Controller
                     'num' => $item->point_number ?: str_pad($index + 1, 2, '0', STR_PAD_LEFT),
                     'measurement_date' => $item->measurement_date ? $item->measurement_date->format('Y-m-d') : null,
                     'measurement_time' => $item->measurement_time,
+                    'measured_at' => $item->measurement_date ? ($item->measurement_date->format('Y-m-d') . ' ' . ($item->measurement_time ?: '00:00:00')) : null,
                     'measured_at' => $item->measurement_date
                         ? ($item->measurement_date->format('Y-m-d') . ' ' . ($item->measurement_time ?: '00:00:00'))
                         : null,
@@ -6191,6 +6196,7 @@ class MobileApiController extends Controller
                     'point_number' => $item->point_number,
                     'measurement_date' => $item->measurement_date ? $item->measurement_date->format('Y-m-d') : null,
                     'measurement_time' => $item->measurement_time,
+                    'measured_at' => $item->measurement_date ? ($item->measurement_date->format('Y-m-d') . ' ' . ($item->measurement_time ?: '00:00:00')) : null,
                     'area' => $item->area,
                     'punto_medicion' => $item->punto_medicion ?: $item->workstation,
                     'workstation' => $item->punto_medicion ?: $item->workstation,
@@ -6577,6 +6583,7 @@ class MobileApiController extends Controller
                     'punto_medicion' => $item->punto_medicion ?? $item->point_number,
                     'measurement_date' => $item->measurement_date ? $item->measurement_date->format('Y-m-d') : null,
                     'measurement_time' => $item->measurement_time,
+                    'measured_at' => $item->measurement_date ? ($item->measurement_date->format('Y-m-d') . ' ' . ($item->measurement_time ?: '00:00:00')) : null,
                     'area' => $item->area,
                     'area_trabajo' => $item->area,
                     'puesto_trabajo' => $item->puesto_trabajo ?: $item->workstation,
@@ -6715,15 +6722,23 @@ class MobileApiController extends Controller
         // Determinar fecha y hora
         $measDate = $validated['measurement_date'] ?? null;
         $measTime = $validated['measurement_time'] ?? null;
-        if (empty($measDate) && !empty($validated['measured_at'])) {
-            try {
-                $dt = Carbon::parse($validated['measured_at']);
-                $measDate = $dt->toDateString();
-                if (empty($measTime)) {
-                    $measTime = $dt->format('H:i');
+        if ((empty($measDate) || empty($measTime)) && !empty($validated['measured_at'])) {
+            if (empty($measDate) && preg_match('/(\d{4}-\d{2}-\d{2})/', $validated['measured_at'], $mDate)) {
+                $measDate = $mDate[1];
+            }
+            if (empty($measTime) && preg_match('/(\d{2}:\d{2})/', $validated['measured_at'], $mTime)) {
+                $measTime = $mTime[1];
+            }
+            if (empty($measDate)) {
+                try {
+                    $dt = Carbon::parse($validated['measured_at']);
+                    $measDate = $dt->toDateString();
+                    if (empty($measTime)) {
+                        $measTime = $dt->format('H:i');
+                    }
+                } catch (\Exception $e) {
+                    $measDate = now()->toDateString();
                 }
-            } catch (\Exception $e) {
-                $measDate = now()->toDateString();
             }
         }
         if (empty($measDate))
@@ -7050,15 +7065,23 @@ class MobileApiController extends Controller
         // Determinar fecha y hora
         $measDate = $validated['measurement_date'] ?? null;
         $measTime = $validated['measurement_time'] ?? null;
-        if (empty($measDate) && !empty($validated['measured_at'])) {
-            try {
-                $dt = Carbon::parse($validated['measured_at']);
-                $measDate = $dt->toDateString();
-                if (empty($measTime)) {
-                    $measTime = $dt->format('H:i');
+        if ((empty($measDate) || empty($measTime)) && !empty($validated['measured_at'])) {
+            if (empty($measDate) && preg_match('/(\d{4}-\d{2}-\d{2})/', $validated['measured_at'], $mDate)) {
+                $measDate = $mDate[1];
+            }
+            if (empty($measTime) && preg_match('/(\d{2}:\d{2})/', $validated['measured_at'], $mTime)) {
+                $measTime = $mTime[1];
+            }
+            if (empty($measDate)) {
+                try {
+                    $dt = Carbon::parse($validated['measured_at']);
+                    $measDate = $dt->toDateString();
+                    if (empty($measTime)) {
+                        $measTime = $dt->format('H:i');
+                    }
+                } catch (\Exception $e) {
+                    $measDate = now()->toDateString();
                 }
-            } catch (\Exception $e) {
-                $measDate = now()->toDateString();
             }
         }
         if (empty($measDate))
