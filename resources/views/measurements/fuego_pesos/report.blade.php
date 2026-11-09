@@ -2130,7 +2130,7 @@
             PLANILLA OFICIAL — MATRIZ DE CARGA DE FUEGO PONDERADA POR PESO
         </div>
         <div style="font-size: 8.5pt; font-weight: bold; color: #334155; margin-top: 2px;">
-            EVALUACIÓN SEGÚN NORMA BOLIVIANA NB 58005 Y NTP 453 \${installation ? '• ' + escapeHtml(installation) : ''}
+            EVALUACIÓN SEGÚN NORMA BOLIVIANA NB 58005 Y NTP 453 ${installation ? '• ' + escapeHtml(installation) : ''}
         </div>
     </div>
 
@@ -2142,7 +2142,7 @@
                 <div style="margin-bottom: 8px;">
                     <span style="font-weight: bold; font-size: 8.5pt;">MACRO AREA: </span>
                     <span style="border: 1.5px solid #000000; padding: 2px 8px; font-weight: bold; font-size: 8.5pt; text-transform: uppercase;">
-                        \${escapeHtml(macroAreaName)}
+                        ${escapeHtml(macroAreaName)}
                     </span>
                 </div>
                 <div>
@@ -2150,11 +2150,11 @@
                     <table style="border: 1.5px solid #000000; width: 170px; font-size: 7.5pt;">
                         <tr>
                             <td style="border: 1px solid #000000; padding: 3px 6px; font-weight: bold; width: 70px; background-color: #f8fafc; background: #f8fafc;">LT (m)</td>
-                            <td style="border: 1px solid #000000; padding: 3px 6px; text-align: center; font-weight: bold;">\${ltVal ? parseFloat(ltVal).toFixed(2) : '—'}</td>
+                            <td style="border: 1px solid #000000; padding: 3px 6px; text-align: center; font-weight: bold;">${ltVal ? parseFloat(ltVal).toFixed(2) : '—'}</td>
                         </tr>
                         <tr>
                             <td style="border: 1px solid #000000; padding: 3px 6px; font-weight: bold; background-color: #f8fafc; background: #f8fafc;">At (m)</td>
-                            <td style="border: 1px solid #000000; padding: 3px 6px; text-align: center; font-weight: bold;">\${atVal ? parseFloat(atVal).toFixed(2) : '—'}</td>
+                            <td style="border: 1px solid #000000; padding: 3px 6px; text-align: center; font-weight: bold;">${atVal ? parseFloat(atVal).toFixed(2) : '—'}</td>
                         </tr>
                     </table>
                 </div>
@@ -2175,7 +2175,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        \${equipmentsRows}
+                        ${equipmentsRows}
                     </tbody>
                 </table>
             </td>
@@ -2209,7 +2209,7 @@
             </tr>
         </thead>
         <tbody>
-            \${matrixRows}
+            ${matrixRows}
         </tbody>
     </table>
 
@@ -2218,12 +2218,12 @@
 </html>
         `;
 
-        const blob = new Blob(['\\ufeff', wordHtml], { type: 'application/msword;charset=utf-8' });
+        const blob = new Blob(['\ufeff', wordHtml], { type: 'application/msword;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         const sanitized = (macroAreaName || 'Matriz_Carga_Fuego_Peso').replace(/[^a-zA-Z0-9_-]/g, '_');
-        a.download = `Matriz_Carga_Fuego_Peso_\${sanitized}.doc`;
+        a.download = `Matriz_Carga_Fuego_Peso_${sanitized}.doc`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

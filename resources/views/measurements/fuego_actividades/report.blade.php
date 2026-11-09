@@ -1985,12 +1985,27 @@
      */
     function downloadStep1WordDoc() {
         const installation = window.FIRE_REPORT_CONFIG.installationName || '';
-        const macroAreaName = localData.macroarea || 'PLANTA BAJA';
+        const macroAreaName = document.getElementById('macroAreaInput')?.value || localData.macroarea || 'PLANTA BAJA';
         const dims = localData.dimensions || {};
-        const ltVal = (dims.lt !== undefined && dims.lt !== null && dims.lt !== '') ? dims.lt : '';
-        const atVal = (dims.at !== undefined && dims.at !== null && dims.at !== '') ? dims.at : '';
+        const ltVal = document.getElementById('macroLtInput')?.value || (dims.lt !== undefined && dims.lt !== null && dims.lt !== '' ? dims.lt : '');
+        const atVal = document.getElementById('macroAtInput')?.value || (dims.at !== undefined && dims.at !== null && dims.at !== '' ? dims.at : '');
         const eqList = localData.fire_equipments || [];
         const sectors = localData.sectors || [];
+
+        // Asegurar que todos los sectores estén calculados con valores frescos
+        if (Array.isArray(sectors)) {
+            sectors.forEach((sec, sIdx) => {
+                if (sec.items && Array.isArray(sec.items)) {
+                    sec.items.forEach(item => {
+                        const norm = lookupNormativeValues(item.actividad, item.tipo);
+                        item.qxi = (item.qxi !== undefined && item.qxi !== '') ? item.qxi : norm.qxi;
+                        item.ci = (item.ci !== undefined && item.ci !== '') ? item.ci : norm.ci;
+                        item.ra = (item.ra !== undefined && item.ra !== '' && item.ra !== null) ? item.ra : norm.ra;
+                    });
+                }
+                recalculateSectorQp(sIdx);
+            });
+        }
 
         let equipmentsRows = '';
         if (eqList.length === 0) {
@@ -2039,19 +2054,19 @@
 
                 if (items.length === 0) {
                     matrixRows += `
-                        <tr style="background-color: ${rowBgColor}; background: ${rowBgColor};">
-                            <td style="border: 1px solid #000000; padding: 3px 4px; font-weight: bold; text-align: center; vertical-align: middle; text-transform: uppercase;">
+                        <tr style="background-color: ${rowBgColor}; background: ${rowBgColor};" bgcolor="${rowBgColor}">
+                            <td style="border: 1px solid #000000; padding: 4px 3px; font-weight: bold; text-align: center; vertical-align: middle; text-transform: uppercase;">
                                 ${escapeHtml(sec.name || `SECTOR ${secIdx + 1}`)}
                             </td>
-                            <td colspan="6" style="border: 1px solid #000000; padding: 3px 4px; text-align: center; color: #64748b;">—</td>
-                            <td style="border: 1px solid #000000; padding: 3px 4px; text-align: center; font-weight: bold;">${formatDimensionNumber(sec.lt)}</td>
-                            <td style="border: 1px solid #000000; padding: 3px 4px; text-align: center; font-weight: bold;">${formatDimensionNumber(sec.at)}</td>
-                            <td style="border: 1px solid #000000; padding: 3px 4px; text-align: center; font-weight: bold;">${sec.area_m2 ? formatDecimal(sec.area_m2, 2) : '—'}</td>
-                            <td colspan="4" style="border: 1px solid #000000; padding: 3px 4px; text-align: center; color: #64748b;">—</td>
-                            <td style="border: 1px solid #000000; padding: 3px 4px; text-align: center; font-weight: 800;">${sec.qp ? formatDecimal(sec.qp, 2) : '—'}</td>
-                            <td style="border: 1px solid #000000; padding: 3px 4px; text-align: center; font-weight: 800;">${sec.risk_level || 'BAJO'}</td>
-                            <td style="border: 1px solid #000000; padding: 3px 4px; text-align: center; font-weight: bold;">${sec.level_num || 1}</td>
-                            <td colspan="2" style="border: 1px solid #000000; padding: 3px 4px; text-align: center; color: #64748b;">—</td>
+                            <td colspan="6" style="border: 1px solid #000000; padding: 4px 3px; text-align: center; color: #64748b;">—</td>
+                            <td style="border: 1px solid #000000; padding: 4px 3px; text-align: center; font-weight: bold;">${formatDimensionNumber(sec.lt)}</td>
+                            <td style="border: 1px solid #000000; padding: 4px 3px; text-align: center; font-weight: bold;">${formatDimensionNumber(sec.at)}</td>
+                            <td style="border: 1px solid #000000; padding: 4px 3px; text-align: center; font-weight: bold;">${sec.area_m2 ? formatDecimal(sec.area_m2, 2) : '—'}</td>
+                            <td colspan="4" style="border: 1px solid #000000; padding: 4px 3px; text-align: center; color: #64748b;">—</td>
+                            <td style="border: 1px solid #000000; padding: 4px 3px; text-align: center; font-weight: 800;">${sec.qp ? formatDecimal(sec.qp, 2) : '—'}</td>
+                            <td style="border: 1px solid #000000; padding: 4px 3px; text-align: center; font-weight: 800;">${sec.risk_level || 'BAJO'}</td>
+                            <td style="border: 1px solid #000000; padding: 4px 3px; text-align: center; font-weight: bold;">${sec.level_num || 1}</td>
+                            <td colspan="2" style="border: 1px solid #000000; padding: 4px 3px; text-align: center; color: #64748b;">—</td>
                         </tr>
                     `;
                     return;
@@ -2081,12 +2096,12 @@
 
                     const raDisplay = hasRa ? formatDecimal(raNum, 1) : '';
 
-                    matrixRows += `<tr style="background-color: ${rowBgColor}; background: ${rowBgColor};">`;
+                    matrixRows += `<tr style="background-color: ${rowBgColor}; background: ${rowBgColor};" bgcolor="${rowBgColor}">`;
 
                     // Columna 1: ÁREA O SECTOR
                     if (isFirst) {
                         matrixRows += `
-                            <td rowspan="${rowCount}" style="border: 1px solid #000000; padding: 3px 4px; font-weight: bold; text-align: center; vertical-align: middle; text-transform: uppercase;">
+                            <td rowspan="${rowCount}" style="border: 1px solid #000000; padding: 4px 3px; font-weight: bold; text-align: center; vertical-align: middle; text-transform: uppercase;">
                                 ${escapeHtml(sec.name || `SECTOR ${secIdx + 1}`)}
                             </td>
                         `;
@@ -2094,42 +2109,42 @@
 
                     // Columna 2: ACTIVIDAD
                     matrixRows += `
-                        <td style="border: 1px solid #000000; padding: 3px 5px; text-align: left;">
+                        <td style="border: 1px solid #000000; padding: 4px 5px; text-align: left;">
                             ${escapeHtml(item.actividad || '—')}
                         </td>
                     `;
 
                     // Columna 3: TIPO
                     matrixRows += `
-                        <td style="border: 1px solid #000000; padding: 3px 4px; text-align: center;">
+                        <td style="border: 1px solid #000000; padding: 4px 3px; text-align: center;">
                             ${escapeHtml(item.tipo || 'Producción')}
                         </td>
                     `;
 
                     // Columna 4: DESCRIPCIÓN
                     matrixRows += `
-                        <td style="border: 1px solid #000000; padding: 3px 5px; text-align: left;">
+                        <td style="border: 1px solid #000000; padding: 4px 5px; text-align: left;">
                             ${escapeHtml(item.descripcion || '—')}
                         </td>
                     `;
 
                     // Columna 5: Yi (m)
                     matrixRows += `
-                        <td style="border: 1px solid #000000; padding: 3px 4px; text-align: center;">
+                        <td style="border: 1px solid #000000; padding: 4px 3px; text-align: center;">
                             ${formatDimensionNumber(item.yi)}
                         </td>
                     `;
 
                     // Columna 6: Xi (m)
                     matrixRows += `
-                        <td style="border: 1px solid #000000; padding: 3px 4px; text-align: center;">
+                        <td style="border: 1px solid #000000; padding: 4px 3px; text-align: center;">
                             ${formatDimensionNumber(item.xi)}
                         </td>
                     `;
 
                     // Columna 7: hi (m)
                     matrixRows += `
-                        <td style="border: 1px solid #000000; padding: 3px 4px; text-align: center;">
+                        <td style="border: 1px solid #000000; padding: 4px 3px; text-align: center;">
                             ${formatDimensionNumber(item.hi)}
                         </td>
                     `;
@@ -2137,13 +2152,13 @@
                     // Columnas 8, 9, 10: Lt (m), At (m), Area x (m2)
                     if (isFirst) {
                         matrixRows += `
-                            <td rowspan="${rowCount}" style="border: 1px solid #000000; padding: 3px 4px; text-align: center; vertical-align: middle; font-weight: bold;">
+                            <td rowspan="${rowCount}" style="border: 1px solid #000000; padding: 4px 3px; text-align: center; vertical-align: middle; font-weight: bold;">
                                 ${formatDimensionNumber(sec.lt)}
                             </td>
-                            <td rowspan="${rowCount}" style="border: 1px solid #000000; padding: 3px 4px; text-align: center; vertical-align: middle; font-weight: bold;">
+                            <td rowspan="${rowCount}" style="border: 1px solid #000000; padding: 4px 3px; text-align: center; vertical-align: middle; font-weight: bold;">
                                 ${formatDimensionNumber(sec.at)}
                             </td>
-                            <td rowspan="${rowCount}" style="border: 1px solid #000000; padding: 3px 4px; text-align: center; vertical-align: middle; font-weight: bold;">
+                            <td rowspan="${rowCount}" style="border: 1px solid #000000; padding: 4px 3px; text-align: center; vertical-align: middle; font-weight: bold;">
                                 ${sec.area_m2 ? formatDecimal(sec.area_m2, 2) : '—'}
                             </td>
                         `;
@@ -2151,28 +2166,28 @@
 
                     // Columna 11: qxi (Mcal/m3)
                     matrixRows += `
-                        <td style="border: 1px solid #000000; padding: 3px 4px; text-align: center; font-weight: bold;">
+                        <td style="border: 1px solid #000000; padding: 4px 3px; text-align: center; font-weight: bold;">
                             ${qxi !== undefined && qxi !== '' ? qxi : '0'}
                         </td>
                     `;
 
                     // Columna 12: Ai (m2)
                     matrixRows += `
-                        <td style="border: 1px solid #000000; padding: 3px 4px; text-align: center; font-weight: bold;">
+                        <td style="border: 1px solid #000000; padding: 4px 3px; text-align: center; font-weight: bold;">
                             ${aiVal ? formatDecimal(aiVal, 2) : '—'}
                         </td>
                     `;
 
                     // Columna 13: Ci
                     matrixRows += `
-                        <td style="border: 1px solid #000000; padding: 3px 4px; text-align: center; font-weight: bold;">
+                        <td style="border: 1px solid #000000; padding: 4px 3px; text-align: center; font-weight: bold;">
                             ${ci !== undefined && ci !== '' ? formatDecimal(ci, 1) : '1,0'}
                         </td>
                     `;
 
                     // Columna 14: Ra
                     matrixRows += `
-                        <td style="border: 1px solid #000000; padding: 3px 4px; text-align: center; font-weight: bold;">
+                        <td style="border: 1px solid #000000; padding: 4px 3px; text-align: center; font-weight: bold;">
                             ${raDisplay}
                         </td>
                     `;
@@ -2180,13 +2195,13 @@
                     // Columnas 15, 16, 17: Qp (Mcal/m2), Nivel de riesgo, N°
                     if (isFirst) {
                         matrixRows += `
-                            <td rowspan="${rowCount}" style="border: 1px solid #000000; padding: 3px 4px; text-align: center; vertical-align: middle; font-weight: 800;">
+                            <td rowspan="${rowCount}" style="border: 1px solid #000000; padding: 4px 3px; text-align: center; vertical-align: middle; font-weight: 800;">
                                 ${sec.qp ? formatDecimal(sec.qp, 2) : '—'}
                             </td>
-                            <td rowspan="${rowCount}" style="border: 1px solid #000000; padding: 3px 4px; text-align: center; vertical-align: middle; font-weight: 800;">
+                            <td rowspan="${rowCount}" style="border: 1px solid #000000; padding: 4px 3px; text-align: center; vertical-align: middle; font-weight: 800;">
                                 ${sec.risk_level || 'BAJO'}
                             </td>
-                            <td rowspan="${rowCount}" style="border: 1px solid #000000; padding: 3px 4px; text-align: center; vertical-align: middle; font-weight: bold;">
+                            <td rowspan="${rowCount}" style="border: 1px solid #000000; padding: 4px 3px; text-align: center; vertical-align: middle; font-weight: bold;">
                                 ${sec.level_num || 1}
                             </td>
                         `;
@@ -2194,14 +2209,14 @@
 
                     // Columna 18: Mult_1
                     matrixRows += `
-                        <td style="border: 1px solid #000000; padding: 3px 4px; text-align: center; font-weight: bold;">
+                        <td style="border: 1px solid #000000; padding: 4px 3px; text-align: center; font-weight: bold;">
                             ${formatDecimal(mult1, 2)}
                         </td>
                     `;
 
                     // Columna 19: Aux_2
                     matrixRows += `
-                        <td style="border: 1px solid #000000; padding: 3px 4px; text-align: center; font-weight: bold;">
+                        <td style="border: 1px solid #000000; padding: 4px 3px; text-align: center; font-weight: bold;">
                             ${formatDecimal(aux2, 2)}
                         </td>
                     `;
@@ -2264,7 +2279,7 @@
             PLANILLA OFICIAL — MATRIZ DE CARGA DE FUEGO PONDERADA POR ACTIVIDAD
         </div>
         <div style="font-size: 8.5pt; font-weight: bold; color: #334155; margin-top: 2px;">
-            EVALUACIÓN SEGÚN NORMA BOLIVIANA NB 58005 Y NTP 453 \${installation ? '• ' + escapeHtml(installation) : ''}
+            EVALUACIÓN SEGÚN NORMA BOLIVIANA NB 58005 Y NTP 453 ${installation ? '• ' + escapeHtml(installation) : ''}
         </div>
     </div>
 
@@ -2275,20 +2290,20 @@
             <td style="width: 35%; vertical-align: top; border: none; padding-right: 15px;">
                 <div style="margin-bottom: 8px;">
                     <span style="font-weight: bold; font-size: 8.5pt;">MACRO AREA: </span>
-                    <span style="border: 1.5px solid #000000; padding: 2px 8px; font-weight: bold; font-size: 8.5pt; text-transform: uppercase;">
-                        \${escapeHtml(macroAreaName)}
+                    <span style="border: 1.5px solid #000000; padding: 2px 8px; font-weight: bold; font-size: 8.5pt; text-transform: uppercase; background-color: #ffffff;">
+                        ${escapeHtml(macroAreaName)}
                     </span>
                 </div>
                 <div>
                     <span style="font-weight: bold; font-size: 8pt; display: block; margin-bottom: 4px;">DIMENSIONES:</span>
                     <table style="border: 1.5px solid #000000; width: 170px; font-size: 7.5pt;">
                         <tr>
-                            <td style="border: 1px solid #000000; padding: 3px 6px; font-weight: bold; width: 70px; background-color: #f8fafc; background: #f8fafc;">LT (m)</td>
-                            <td style="border: 1px solid #000000; padding: 3px 6px; text-align: center; font-weight: bold;">\${formatDimensionNumber(ltVal)}</td>
+                            <td style="border: 1px solid #000000; padding: 3px 6px; font-weight: bold; width: 70px; background-color: #f8fafc; background: #f8fafc;" bgcolor="#f8fafc">LT (m)</td>
+                            <td style="border: 1px solid #000000; padding: 3px 6px; text-align: center; font-weight: bold;">${formatDimensionNumber(ltVal)}</td>
                         </tr>
                         <tr>
-                            <td style="border: 1px solid #000000; padding: 3px 6px; font-weight: bold; background-color: #f8fafc; background: #f8fafc;">At (m)</td>
-                            <td style="border: 1px solid #000000; padding: 3px 6px; text-align: center; font-weight: bold;">\${formatDimensionNumber(atVal)}</td>
+                            <td style="border: 1px solid #000000; padding: 3px 6px; font-weight: bold; background-color: #f8fafc; background: #f8fafc;" bgcolor="#f8fafc">At (m)</td>
+                            <td style="border: 1px solid #000000; padding: 3px 6px; text-align: center; font-weight: bold;">${formatDimensionNumber(atVal)}</td>
                         </tr>
                     </table>
                 </div>
@@ -2299,7 +2314,7 @@
                 <div style="font-weight: bold; font-size: 8pt; text-transform: uppercase; margin-bottom: 4px;">
                     EQUIPOS CONTRA INCENDIOS
                 </div>
-                <table style="border: 1.5px solid #000000; font-size: 7.5pt;">
+                <table style="border: 1.5px solid #000000; font-size: 7.5pt; width: 100%;">
                     <thead>
                         <tr style="background-color: #ffffff; background: #ffffff;">
                             <th style="border: 1px solid #000000; padding: 3px 5px; text-align: left; font-size: 7.5pt; width: 30%;">UBICACIÓN</th>
@@ -2309,7 +2324,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        \${equipmentsRows}
+                        ${equipmentsRows}
                     </tbody>
                 </table>
             </td>
@@ -2322,7 +2337,7 @@
     </div>
     <table style="border: 1.5px solid #000000; font-size: 7pt; width: 100%;">
         <thead>
-            <tr style="background-color: #f28b82; background: #f28b82; color: #ffffff;">
+            <tr style="background-color: #f28b82; background: #f28b82; color: #ffffff;" bgcolor="#f28b82">
                 <th style="border: 1px solid #000000; padding: 4px 2px; text-align: center; font-size: 7pt; width: 9%;">ÁREA O SECTOR</th>
                 <th style="border: 1px solid #000000; padding: 4px 2px; text-align: center; font-size: 7pt; width: 11%;">ACTIVIDAD</th>
                 <th style="border: 1px solid #000000; padding: 4px 2px; text-align: center; font-size: 7pt; width: 6%;">TIPO</th>
@@ -2345,7 +2360,7 @@
             </tr>
         </thead>
         <tbody>
-            \${matrixRows}
+            ${matrixRows}
         </tbody>
     </table>
 
@@ -2354,12 +2369,12 @@
 </html>
         `;
 
-        const blob = new Blob(['\\ufeff', wordHtml], { type: 'application/msword;charset=utf-8' });
+        const blob = new Blob(['\ufeff', wordHtml], { type: 'application/msword;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         const sanitized = (macroAreaName || 'Matriz_Carga_Fuego').replace(/[^a-zA-Z0-9_-]/g, '_');
-        a.download = `Matriz_Carga_Fuego_Actividad_\${sanitized}.doc`;
+        a.download = `Matriz_Carga_Fuego_Actividad_${sanitized}.doc`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
