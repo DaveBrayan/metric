@@ -177,6 +177,10 @@
             flex-wrap: wrap;
         }
 
+        .fire-step1-toolbar {
+            max-width: 100% !important;
+        }
+
         .btn-toolbar-download-word {
             display: inline-flex;
             align-items: center;
@@ -589,6 +593,34 @@
         {{-- PASO 1: MATRIZ DE CARGA DE FUEGO POR PESO (DINÁMICA SEGÚN REGISTROS)       --}}
         {{-- ========================================================================= --}}
         <div class="step-pane active" id="pane_step_1">
+            
+            <!-- Barra de Herramientas del Paso 1 -->
+            <div class="fire-sheet-toolbar fire-step1-toolbar">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 12px; font-weight: 800; color: #0f172a; text-transform: uppercase;">
+                        Matriz de Carga de Fuego por Peso — Formato Carta Horizontal
+                    </span>
+                    <span id="step1AutoSaveBadge" class="fire-auto-save-badge">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        <span>Guardado</span>
+                    </span>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button type="button" class="btn-toolbar-download-word" onclick="downloadStep1WordDoc()"
+                        title="Descargar documento compatible con Microsoft Word (.doc) en formato horizontal y tamaño carta">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="16" x2="12" y2="3" />
+                        </svg>
+                        <span>Descargar Word (.doc)</span>
+                    </button>
+                </div>
+            </div>
+
             <div class="fire-matrix-card">
 
                 <!-- Bloque Superior: Macro Área, Dimensiones y Equipos Contra Incendios -->
@@ -1793,6 +1825,7 @@
     function updateAutoSaveBadges(state, text) {
         const badges = [
             document.getElementById('globalAutoSaveBadge'),
+            document.getElementById('step1AutoSaveBadge'),
             document.getElementById('step2AutoSaveBadge'),
             document.getElementById('step3AutoSaveBadge')
         ];
@@ -1829,6 +1862,372 @@
             console.error('Error saving report:', err);
             updateAutoSaveBadges('error', 'Error de red');
         });
+    }
+
+    /**
+     * Exportación de Paso 1 a Microsoft Word (.doc) en formato Horizontal (Landscape)
+     */
+    function downloadStep1WordDoc() {
+        const installation = window.FIRE_REPORT_CONFIG.installationName || '';
+        const macroAreaName = localData.macroarea || 'PLANTA BAJA';
+        const dims = localData.dimensions || {};
+        const ltVal = (dims.lt !== undefined && dims.lt !== null && dims.lt !== '') ? dims.lt : '';
+        const atVal = (dims.at !== undefined && dims.at !== null && dims.at !== '') ? dims.at : '';
+        const eqList = localData.fire_equipments || [];
+        const sectors = localData.sectors || [];
+
+        let equipmentsRows = '';
+        if (eqList.length === 0) {
+            equipmentsRows = `
+                <tr>
+                    <td colspan="4" style="border: 1px solid #000000; padding: 4px 6px; text-align: center; color: #64748b; font-style: italic;">
+                        No hay equipos contra incendios registrados en los sectores.
+                    </td>
+                </tr>
+            `;
+        } else {
+            eqList.forEach(eq => {
+                equipmentsRows += `
+                    <tr>
+                        <td style="border: 1px solid #000000; padding: 3px 6px; font-weight: bold; text-transform: uppercase;">
+                            ${escapeHtml(eq.ubicacion || 'Sector')}
+                        </td>
+                        <td style="border: 1px solid #000000; padding: 3px 6px;">
+                            ${escapeHtml(eq.tipo || 'EXTINTOR')}
+                        </td>
+                        <td style="border: 1px solid #000000; padding: 3px 6px; text-align: center; font-weight: bold;">
+                            ${eq.cantidad || eq.cant || 1}
+                        </td>
+                        <td style="border: 1px solid #000000; padding: 3px 6px; color: #334155;">
+                            ${escapeHtml(eq.obs || eq.observacion || 'En servicio')}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        let matrixRows = '';
+        if (sectors.length === 0) {
+            matrixRows = `
+                <tr>
+                    <td colspan="17" style="border: 1px solid #000000; padding: 12px; text-align: center; color: #64748b; font-weight: bold;">
+                        No hay registros de sectores en este módulo.
+                    </td>
+                </tr>
+            `;
+        } else {
+            sectors.forEach((sec, sIdx) => {
+                const materials = (sec.materials && sec.materials.length > 0) 
+                    ? sec.materials 
+                    : [{ material: '—', descripcion: '—', peso_kg: 0, cantidad: 1, hi: 4, ci: 1, pixhixci: 0 }];
+                const rowCount = materials.length;
+
+                materials.forEach((mat, mIdx) => {
+                    const isFirst = (mIdx === 0);
+                    const pixhixci = ((parseFloat(mat.peso_kg || 0) * parseFloat(mat.cantidad || 1)) * parseFloat(mat.hi || 0) * parseFloat(mat.ci || 1));
+                    const formattedPix = isNaN(pixhixci) ? '0' : (pixhixci % 1 === 0 ? pixhixci.toFixed(0) : pixhixci.toFixed(1));
+
+                    matrixRows += `<tr>`;
+
+                    // 1. ÁREA / SECTOR
+                    if (isFirst) {
+                        matrixRows += `
+                            <td rowspan="${rowCount}" style="border: 1px solid #000000; background-color: #e2efda; background: #e2efda; font-weight: bold; text-align: center; vertical-align: middle; padding: 4px 5px; text-transform: uppercase;">
+                                ${escapeHtml(sec.name || '—')}
+                            </td>
+                        `;
+                    }
+
+                    // 2. MATERIAL
+                    matrixRows += `
+                        <td style="border: 1px solid #000000; background-color: #e2efda; background: #e2efda; font-weight: 600; padding: 3px 5px;">
+                            ${escapeHtml(mat.material || '—')}
+                        </td>
+                    `;
+
+                    // 3. DESCRIPCIÓN
+                    matrixRows += `
+                        <td style="border: 1px solid #000000; background-color: #e2efda; background: #e2efda; padding: 3px 5px;">
+                            ${escapeHtml(mat.descripcion || '—')}
+                        </td>
+                    `;
+
+                    // 4. Peso (Kg)
+                    matrixRows += `
+                        <td style="border: 1px solid #000000; background-color: #ffffff; background: #ffffff; text-align: right; padding: 3px 5px;">
+                            ${mat.peso_kg !== undefined && mat.peso_kg !== '' ? parseFloat(mat.peso_kg).toFixed(2) : '0.00'}
+                        </td>
+                    `;
+
+                    // 5. Cantidad
+                    matrixRows += `
+                        <td style="border: 1px solid #000000; background-color: #ffffff; background: #ffffff; text-align: right; padding: 3px 5px;">
+                            ${mat.cantidad !== undefined ? parseFloat(mat.cantidad).toFixed(0) : '1'}
+                        </td>
+                    `;
+
+                    // 6. Hi (Mcal/Kg)
+                    matrixRows += `
+                        <td style="border: 1px solid #000000; background-color: #f8cecc; background: #f8cecc; text-align: center; font-weight: bold; padding: 3px 5px;">
+                            ${parseFloat(mat.hi || 4).toFixed(2)}
+                        </td>
+                    `;
+
+                    // 7. Ci
+                    matrixRows += `
+                        <td style="border: 1px solid #000000; background-color: #f8cecc; background: #f8cecc; text-align: center; font-weight: bold; padding: 3px 5px;">
+                            ${parseFloat(mat.ci || 1.0).toFixed(2)}
+                        </td>
+                    `;
+
+                    // 8. ACTIVIDAD
+                    if (isFirst) {
+                        matrixRows += `
+                            <td rowspan="${rowCount}" style="border: 1px solid #000000; background-color: #fff2cc; background: #fff2cc; vertical-align: middle; padding: 3px 5px; font-weight: 600;">
+                                ${escapeHtml(sec.actividad || 'Almacenes - en general')}
+                            </td>
+                        `;
+                    }
+
+                    // 9. L(m)
+                    if (isFirst) {
+                        matrixRows += `
+                            <td rowspan="${rowCount}" style="border: 1px solid #000000; background-color: #ffffff; background: #ffffff; text-align: center; vertical-align: middle; font-weight: bold; padding: 3px 5px;">
+                                ${sec.lt !== undefined && sec.lt !== '' ? parseFloat(sec.lt).toFixed(2) : '—'}
+                            </td>
+                        `;
+                    }
+
+                    // 10. A(m)
+                    if (isFirst) {
+                        matrixRows += `
+                            <td rowspan="${rowCount}" style="border: 1px solid #000000; background-color: #ffffff; background: #ffffff; text-align: center; vertical-align: middle; font-weight: bold; padding: 3px 5px;">
+                                ${sec.at !== undefined && sec.at !== '' ? parseFloat(sec.at).toFixed(2) : '—'}
+                            </td>
+                        `;
+                    }
+
+                    // 11. PixHixCi
+                    matrixRows += `
+                        <td style="border: 1px solid #000000; background-color: #f8cecc; background: #f8cecc; text-align: right; font-weight: bold; padding: 3px 5px;">
+                            ${formattedPix}
+                        </td>
+                    `;
+
+                    // 12. Ra
+                    if (isFirst) {
+                        matrixRows += `
+                            <td rowspan="${rowCount}" style="border: 1px solid #000000; background-color: #ffffff; background: #ffffff; text-align: center; vertical-align: middle; font-weight: bold; padding: 3px 5px;">
+                                ${parseFloat(sec.ra || 1.0).toFixed(2)}
+                            </td>
+                        `;
+                    }
+
+                    // 13. Qp (Mcal/m2)
+                    if (isFirst) {
+                        matrixRows += `
+                            <td rowspan="${rowCount}" style="border: 1px solid #000000; background-color: #ffffff; background: #ffffff; text-align: center; vertical-align: middle; font-weight: 800; font-size: 8pt; padding: 3px 5px;">
+                                ${parseFloat(sec.qp || 0).toFixed(2)}
+                            </td>
+                        `;
+                    }
+
+                    // 14. Nivel de riesgo
+                    if (isFirst) {
+                        matrixRows += `
+                            <td rowspan="${rowCount}" style="border: 1px solid #000000; background-color: #f8cecc; background: #f8cecc; text-align: center; vertical-align: middle; font-weight: bold; padding: 3px 5px;">
+                                ${sec.risk_level || 'BAJO'}
+                            </td>
+                        `;
+                    }
+
+                    // 15. N°
+                    if (isFirst) {
+                        matrixRows += `
+                            <td rowspan="${rowCount}" style="border: 1px solid #000000; background-color: #f8cecc; background: #f8cecc; text-align: center; vertical-align: middle; font-weight: bold; padding: 3px 5px;">
+                                ${sec.level_num || 1}
+                            </td>
+                        `;
+                    }
+
+                    // 16. Mult_1
+                    matrixRows += `
+                        <td style="border: 1px solid #000000; background-color: #f1f5f9; background: #f1f5f9; text-align: right; padding: 3px 5px;">
+                            ${formattedPix}
+                        </td>
+                    `;
+
+                    // 17. Area
+                    if (isFirst) {
+                        matrixRows += `
+                            <td style="border: 1px solid #000000; background-color: #f1f5f9; background: #f1f5f9; text-align: center; font-weight: bold; padding: 3px 5px;">
+                                ${parseFloat(sec.area_m2 || 0).toFixed(0)}
+                            </td>
+                        `;
+                    } else {
+                        matrixRows += `
+                            <td style="border: 1px solid #000000; background-color: #f1f5f9; background: #f1f5f9; text-align: center; color: #94a3b8; padding: 3px 5px;">
+                                0
+                            </td>
+                        `;
+                    }
+
+                    matrixRows += `</tr>`;
+                });
+            });
+        }
+
+        const wordHtml = `
+<html xmlns:o='urn:schemas-microsoft-com:office:office' 
+      xmlns:w='urn:schemas-microsoft-com:office:word' 
+      xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+    <meta charset='utf-8'>
+    <title>Planilla Oficial — Matriz de Carga de Fuego por Peso</title>
+    <!--[if gte mso 9]>
+    <xml>
+        <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>100</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+    </xml>
+    <![endif]-->
+    <style>
+        @page Section1 {
+            size: 11.0in 8.5in;
+            margin: 0.3in 0.35in 0.3in 0.35in;
+            mso-header-margin: 0.2in;
+            mso-footer-margin: 0.2in;
+            mso-page-orientation: landscape;
+        }
+        div.Section1 {
+            page: Section1;
+        }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 7.5pt;
+            color: #000000;
+        }
+        table {
+            border-collapse: collapse;
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+            table-layout: fixed;
+            width: 100%;
+        }
+        th, td {
+            mso-line-height-rule: exactly;
+        }
+    </style>
+</head>
+<body lang='ES-BO'>
+<div class='Section1'>
+
+    <!-- ENCABEZADO -->
+    <div style="text-align: center; border-bottom: 2px solid #000000; padding-bottom: 6px; margin-bottom: 12px;">
+        <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">
+            PLANILLA OFICIAL — MATRIZ DE CARGA DE FUEGO PONDERADA POR PESO
+        </div>
+        <div style="font-size: 8.5pt; font-weight: bold; color: #334155; margin-top: 2px;">
+            EVALUACIÓN SEGÚN NORMA BOLIVIANA NB 58005 Y NTP 453 \${installation ? '• ' + escapeHtml(installation) : ''}
+        </div>
+    </div>
+
+    <!-- BLOQUE SUPERIOR: MACRO ÁREA, DIMENSIONES Y EQUIPOS -->
+    <table style="width: 100%; border: none; margin-bottom: 12px; font-size: 7.5pt;">
+        <tr>
+            <!-- Columna Izquierda: Macro Área y Dimensiones -->
+            <td style="width: 35%; vertical-align: top; border: none; padding-right: 15px;">
+                <div style="margin-bottom: 8px;">
+                    <span style="font-weight: bold; font-size: 8.5pt;">MACRO AREA: </span>
+                    <span style="border: 1.5px solid #000000; padding: 2px 8px; font-weight: bold; font-size: 8.5pt; text-transform: uppercase;">
+                        \${escapeHtml(macroAreaName)}
+                    </span>
+                </div>
+                <div>
+                    <span style="font-weight: bold; font-size: 8pt; display: block; margin-bottom: 4px;">DIMENSIONES:</span>
+                    <table style="border: 1.5px solid #000000; width: 170px; font-size: 7.5pt;">
+                        <tr>
+                            <td style="border: 1px solid #000000; padding: 3px 6px; font-weight: bold; width: 70px; background-color: #f8fafc; background: #f8fafc;">LT (m)</td>
+                            <td style="border: 1px solid #000000; padding: 3px 6px; text-align: center; font-weight: bold;">\${ltVal ? parseFloat(ltVal).toFixed(2) : '—'}</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000000; padding: 3px 6px; font-weight: bold; background-color: #f8fafc; background: #f8fafc;">At (m)</td>
+                            <td style="border: 1px solid #000000; padding: 3px 6px; text-align: center; font-weight: bold;">\${atVal ? parseFloat(atVal).toFixed(2) : '—'}</td>
+                        </tr>
+                    </table>
+                </div>
+            </td>
+
+            <!-- Columna Derecha: Equipos Contra Incendios -->
+            <td style="width: 65%; vertical-align: top; border: none;">
+                <div style="font-weight: bold; font-size: 8pt; text-transform: uppercase; margin-bottom: 4px;">
+                    EQUIPOS CONTRA INCENDIOS
+                </div>
+                <table style="border: 1.5px solid #000000; font-size: 7.5pt;">
+                    <thead>
+                        <tr style="background-color: #ffffff; background: #ffffff;">
+                            <th style="border: 1px solid #000000; padding: 3px 5px; text-align: left; font-size: 7.5pt; width: 30%;">UBICACIÓN</th>
+                            <th style="border: 1px solid #000000; padding: 3px 5px; text-align: left; font-size: 7.5pt; width: 35%;">TIPO</th>
+                            <th style="border: 1px solid #000000; padding: 3px 5px; text-align: center; font-size: 7.5pt; width: 12%;">CANTIDAD</th>
+                            <th style="border: 1px solid #000000; padding: 3px 5px; text-align: left; font-size: 7.5pt; width: 23%;">OBS.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        \${equipmentsRows}
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- MATRIZ DE CARGA DE FUEGO POR PESO -->
+    <div style="font-weight: bold; font-size: 8.5pt; text-transform: uppercase; margin-bottom: 5px;">
+        MATRIZ DE CARGA DE FUEGO POR SECTORES Y MATERIALES
+    </div>
+    <table style="border: 1.5px solid #000000; font-size: 7pt; width: 100%;">
+        <thead>
+            <tr style="background-color: #f28b82; background: #f28b82; color: #ffffff;">
+                <th style="border: 1px solid #000000; padding: 4px 2px; text-align: center; font-size: 7pt; width: 9%;">ÁREA</th>
+                <th style="border: 1px solid #000000; padding: 4px 2px; text-align: center; font-size: 7pt; width: 8%;">MATERIAL</th>
+                <th style="border: 1px solid #000000; padding: 4px 2px; text-align: center; font-size: 7pt; width: 11%;">DESCRIPCIÓN</th>
+                <th style="border: 1px solid #000000; padding: 4px 2px; text-align: center; font-size: 7pt; width: 5.5%;">Peso (Kg)</th>
+                <th style="border: 1px solid #000000; padding: 4px 2px; text-align: center; font-size: 7pt; width: 4%;">Cantidad</th>
+                <th style="border: 1px solid #000000; padding: 4px 2px; text-align: center; font-size: 7pt; width: 5.5%;">Hi<br>(Mcal/Kg)</th>
+                <th style="border: 1px solid #000000; padding: 4px 2px; text-align: center; font-size: 7pt; width: 3.5%;">Ci</th>
+                <th style="border: 1px solid #000000; padding: 4px 2px; text-align: center; font-size: 7pt; width: 10%;">ACTIVIDAD</th>
+                <th style="border: 1px solid #000000; padding: 4px 2px; text-align: center; font-size: 7pt; width: 4%;">L(m)</th>
+                <th style="border: 1px solid #000000; padding: 4px 2px; text-align: center; font-size: 7pt; width: 4%;">A(m)</th>
+                <th style="border: 1px solid #000000; padding: 4px 2px; text-align: center; font-size: 7pt; width: 6.5%;">PixHixCi</th>
+                <th style="border: 1px solid #000000; padding: 4px 2px; text-align: center; font-size: 7pt; width: 3.5%;">Ra</th>
+                <th style="border: 1px solid #000000; padding: 4px 2px; text-align: center; font-size: 7pt; width: 6.5%;">Qp<br>(Mcal/m2)</th>
+                <th style="border: 1px solid #000000; padding: 4px 2px; text-align: center; font-size: 7pt; width: 6%;">Nivel de<br>riesgo</th>
+                <th style="border: 1px solid #000000; padding: 4px 2px; text-align: center; font-size: 7pt; width: 3%;">N°</th>
+                <th style="border: 1px solid #000000; padding: 4px 2px; text-align: center; font-size: 7pt; width: 5%;">Mult_1</th>
+                <th style="border: 1px solid #000000; padding: 4px 2px; text-align: center; font-size: 7pt; width: 5%;">Area</th>
+            </tr>
+        </thead>
+        <tbody>
+            \${matrixRows}
+        </tbody>
+    </table>
+
+</div>
+</body>
+</html>
+        `;
+
+        const blob = new Blob(['\\ufeff', wordHtml], { type: 'application/msword;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const sanitized = (macroAreaName || 'Matriz_Carga_Fuego_Peso').replace(/[^a-zA-Z0-9_-]/g, '_');
+        a.download = `Matriz_Carga_Fuego_Peso_\${sanitized}.doc`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     // 13. Exportación Oficial a Documentos Microsoft Word (.doc) en Orientación Horizontal
