@@ -31,6 +31,16 @@
             align-items: flex-end;
         }
 
+        .photo-hub-selectors-grid.has-category {
+            grid-template-columns: 1fr 1.2fr 1fr auto;
+        }
+
+        @media (max-width: 1100px) {
+            .photo-hub-selectors-grid.has-category {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
         @media (max-width: 900px) {
             .photo-hub-selectors-grid {
                 grid-template-columns: 1fr;
@@ -359,6 +369,17 @@
                 </select>
             </div>
 
+            <!-- Selector de Categoría de Inspección (VISIBLE ÚNICAMENTE PARA INSPECCIÓN FOTOGRÁFICA) -->
+            <div class="hub-field-group" id="hubCategoryGroup" style="display: none;">
+                <label for="categorySelector" class="hub-field-label" style="color: #0284c7;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+                    <span>3. Categoría de Inspección:</span>
+                </label>
+                <select id="categorySelector" class="hub-select-input" style="border-color: #0284c7; background-color: #f0f9ff;" onchange="onCategorySelectChange(this.value)">
+                    <option value="todas">— Todas las Categorías —</option>
+                </select>
+            </div>
+
             <!-- Botón de Recarga / Refresco Rápido -->
             <div style="display: flex; gap: 8px;">
                 <button type="button" class="btn-secondary-subtle" onclick="refreshCurrentModuleData()" title="Recargar mediciones y fotografías del módulo seleccionado">
@@ -586,6 +607,7 @@
             measurements: [],
             grid: '2x3',
             selectedPoints: new Set(),
+            selectedCategory: 'todas',
             photoIndices: {},
             globalFit: 'contain',
             pointFits: {},
@@ -594,6 +616,35 @@
         };
 
         let photoReportAutoSaveTimeout = null;
+
+        // Obtener mediciones filtradas por categoría (si aplica)
+        function getFilteredMeasurements() {
+            const all = photoReportConfig.measurements || [];
+            if (!photoReportConfig.selectedCategory || photoReportConfig.selectedCategory === 'todas') {
+                return all;
+            }
+            const targetCat = photoReportConfig.selectedCategory.trim().toLowerCase();
+            return all.filter(m => {
+                const cat = (m.category || m.badge_label || '').trim().toLowerCase();
+                return cat === targetCat;
+            });
+        }
+
+        // Formato seguro y limpio de Fecha y Hora de registro
+        function formatDateTimeDisplay(date, time) {
+            const validDate = (date && date !== '—' && date !== 'null' && date !== 'undefined') ? String(date).trim() : '';
+            const validTime = (time && time !== '—' && time !== 'null' && time !== 'undefined') ? String(time).trim() : '';
+            if (validDate && validTime) {
+                return `${validDate} ${validTime}`;
+            }
+            if (validTime) {
+                return validTime;
+            }
+            if (validDate) {
+                return validDate;
+            }
+            return '—';
+        }
 
         // Inicialización al cargar la página
         document.addEventListener('DOMContentLoaded', function () {
@@ -700,6 +751,85 @@
             document.getElementById('hubEquipmentVal').textContent = data.module.equipment_name || 'Instrumento Certificado';
             document.getElementById('hubStaffVal').textContent = data.module.registered_by || 'Técnico de Campo';
 
+            // Detectar si el módulo activo es Inspección Fotográfica
+            const isPhotographic = Boolean(data.module && (
+                data.module.is_photographic ||
+                (data.module.key && (data.module.key.includes('fotograf') || data.module.key.includes('inspecc'))) ||
+                (data.module.name && (data.module.name.toLowerCase().includes('fotograf') || data.module.name.toLowerCase().includes('inspecc')))
+            ));
+
+            const categoryGroup = document.getElementById('hubCategoryGroup');
+            const categorySelect = document.getElementById('categorySelector');
+            const selectorsGrid = document.querySelector('.photo-hub-selectors-grid');
+
+            if (isPhotographic && categoryGroup && categorySelect) {
+                categoryGroup.style.display = 'flex';
+                if (selectorsGrid) selectorsGrid.classList.add('has-category');
+
+                // Conteo de puntos por cada categoría registrada en este módulo
+                const catCounts = {};
+                (data.measurements || []).forEach(m => {
+                    const c = (m.category || m.badge_label || '').trim();
+                    if (c && c !== '—' && c !== 'Evaluado' && c !== 'Inspección' && c !== 'Monitoreo') {
+                        catCounts[c] = (catCounts[c] || 0) + 1;
+                    }
+                });
+
+                categorySelect.innerHTML = '';
+                const optTodas = document.createElement('option');
+                optTodas.value = 'todas';
+                optTodas.textContent = `— Todas las Categorías (${(data.measurements || []).length} fotos) —`;
+                categorySelect.appendChild(optTodas);
+
+                const activeCats = Object.keys(catCounts).sort();
+                if (activeCats.length > 0) {
+                    const groupPresent = document.createElement('optgroup');
+                    groupPresent.label = 'Categorías en este Módulo';
+                    activeCats.forEach(cat => {
+                        const opt = document.createElement('option');
+                        opt.value = cat;
+                        opt.textContent = `${cat} (${catCounts[cat]} ${catCounts[cat] === 1 ? 'punto' : 'puntos'})`;
+                        groupPresent.appendChild(opt);
+                    });
+                    categorySelect.appendChild(groupPresent);
+                }
+
+                // Catálogo estándar para selección complementaria
+                const standardCategories = [
+                    'Extintores', 'Alarmas', 'Detectores', 'Bocas de incendio', 'Hidrantes',
+                    'Señalizaciones Baños', 'Cocina', 'Comedores', 'Vestidores', 'Áreas administrativas',
+                    'Mantenimiento', 'Áreas operativas', 'Almacenes', 'Residuos', 'Instalaciones electricas',
+                    'Ropa de Trabajo y EPP', 'Fachada y logo', 'Pasillos y áreas exteriores', 'Maquinaria y herramientas',
+                    'Sustancias peligrosas', 'Botiquin de primeros auxilios', 'Agua potable', 'Kit de emergencia para quimicos',
+                    'Bloqueo y etiquetado', 'Equipos a presion: Calderas, compresoras, hornos, bomba', 'Simulacro',
+                    'Capacitaciones', 'Transporte y vivienda', 'Otros'
+                ];
+                const otherCats = standardCategories.filter(c => !catCounts[c]);
+                if (otherCats.length > 0) {
+                    const groupOther = document.createElement('optgroup');
+                    groupOther.label = 'Otras Categorías Disponibles';
+                    otherCats.forEach(cat => {
+                        const opt = document.createElement('option');
+                        opt.value = cat;
+                        opt.textContent = cat;
+                        groupOther.appendChild(opt);
+                    });
+                    categorySelect.appendChild(groupOther);
+                }
+
+                // Mantener selección actual si es válida, de lo contrario volver a 'todas'
+                if (photoReportConfig.selectedCategory && (catCounts[photoReportConfig.selectedCategory] || photoReportConfig.selectedCategory === 'todas')) {
+                    categorySelect.value = photoReportConfig.selectedCategory;
+                } else {
+                    photoReportConfig.selectedCategory = 'todas';
+                    categorySelect.value = 'todas';
+                }
+            } else {
+                if (categoryGroup) categoryGroup.style.display = 'none';
+                if (selectorsGrid) selectorsGrid.classList.remove('has-category');
+                photoReportConfig.selectedCategory = 'todas';
+            }
+
             // Cargar configuración guardada
             const saved = data.photo_report_settings || {};
             const validGrids = ['2x3', '2x4', '3x3', '3x4'];
@@ -718,6 +848,22 @@
 
             updateGridSelectorButtonsUI();
             updateGlobalFitButtonsUI();
+            renderInteractiveGrid();
+            renderPhotoSheets();
+            updateSelectionCounterUI();
+        }
+
+        // Manejador del cambio de categoría de inspección
+        function onCategorySelectChange(category) {
+            photoReportConfig.selectedCategory = category || 'todas';
+
+            // Si hay puntos en el filtro actual, asegurar que estén seleccionados si ninguno lo estaba
+            const filtered = getFilteredMeasurements();
+            const hasAnySelected = filtered.some(m => photoReportConfig.selectedPoints.has(Number(m.id)));
+            if (!hasAnySelected && filtered.length > 0) {
+                filtered.forEach(m => photoReportConfig.selectedPoints.add(Number(m.id)));
+            }
+
             renderInteractiveGrid();
             renderPhotoSheets();
             updateSelectionCounterUI();
@@ -825,7 +971,8 @@
         }
 
         function selectAllPoints(select) {
-            photoReportConfig.measurements.forEach(m => {
+            const items = getFilteredMeasurements();
+            items.forEach(m => {
                 const id = Number(m.id);
                 const chk = document.getElementById('chkPoint_' + id);
                 const card = document.getElementById('photoPointCard_' + id);
@@ -846,11 +993,16 @@
         }
 
         function updateSelectionCounterUI() {
-            const count = photoReportConfig.selectedPoints.size;
-            const total = photoReportConfig.measurements.length;
+            const filtered = getFilteredMeasurements();
+            const count = filtered.filter(m => photoReportConfig.selectedPoints.has(Number(m.id))).length;
+            const total = filtered.length;
             const textEl = document.getElementById('photoSelectionCountText');
             if (textEl) {
-                textEl.textContent = `${count} de ${total} seleccionadas`;
+                if (photoReportConfig.selectedCategory && photoReportConfig.selectedCategory !== 'todas') {
+                    textEl.textContent = `${count} de ${total} (${photoReportConfig.selectedCategory})`;
+                } else {
+                    textEl.textContent = `${count} de ${total} seleccionadas`;
+                }
             }
 
             const perPage = getPhotosPerPage(photoReportConfig.grid);
@@ -920,13 +1072,20 @@
             const container = document.getElementById('photoInteractiveGridContainer');
             if (!container) return;
 
-            const items = photoReportConfig.measurements || [];
+            const items = getFilteredMeasurements();
             if (items.length === 0) {
+                const isCatFilter = photoReportConfig.selectedCategory && photoReportConfig.selectedCategory !== 'todas';
                 container.innerHTML = `
                     <div style="grid-column: 1 / -1; text-align: center; padding: 50px 20px; color: #94a3b8; background: #ffffff; border-radius: 12px; border: 1.5px dashed #cbd5e1;">
                         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="margin-bottom: 8px;"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-                        <p style="margin: 0; font-size: 14px; font-weight: 700; color: #334155;">Este módulo no tiene mediciones registradas con evidencia fotográfica.</p>
-                        <p style="margin: 6px 0 0 0; font-size: 12px; color: #64748b;">Ingresa al módulo para registrar nuevos puntos o inspecciones fotográficas.</p>
+                        <p style="margin: 0; font-size: 14px; font-weight: 700; color: #334155;">${isCatFilter ? `No hay registros con fotos en la categoría "${escapeHtml(photoReportConfig.selectedCategory)}"` : 'Este módulo no tiene mediciones registradas con evidencia fotográfica.'}</p>
+                        <p style="margin: 6px 0 0 0; font-size: 12px; color: #64748b;">${isCatFilter ? 'Selecciona otra categoría o restablece el filtro para ver todas.' : 'Ingresa al módulo para registrar nuevos puntos o inspecciones fotográficas.'}</p>
+                        ${isCatFilter ? `
+                            <button type="button" class="btn-secondary-subtle" onclick="onCategorySelectChange('todas'); if(document.getElementById('categorySelector')) document.getElementById('categorySelector').value = 'todas';" style="margin: 14px auto 0 auto; display: inline-flex; align-items: center; gap: 6px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                                <span>Ver todas las categorías</span>
+                            </button>
+                        ` : ''}
                     </div>
                 `;
                 return;
@@ -968,22 +1127,18 @@
 
                         <div class="photo-card-info-top">
                             <div class="photo-info-row">
-                                <span class="photo-info-label">Puesto:</span>
+                                <span class="photo-info-label">${m.category ? 'Categoría:' : 'Puesto:'}</span>
                                 <span class="photo-info-value" title="${escapeHtml(m.title)}" style="font-weight: 800; color: #0f172a;">${escapeHtml(m.title)}</span>
                             </div>
                             <div class="photo-info-row">
                                 <span class="photo-info-label">Área:</span>
                                 <span class="photo-info-value" title="${escapeHtml(m.area)}">${escapeHtml(m.area)}</span>
                             </div>
-                            <div class="photo-info-row" style="margin-top: 3px; align-items: center; gap: 6px;">
-                                <span style="font-size: 10px; font-weight: 800; color: ${m.badge_color || '#0284c7'}; background: ${m.badge_bg || '#e0f2fe'}; padding: 2px 7px; border-radius: 4px;">
-                                    ${escapeHtml(m.badge_label || 'Evaluado')}
-                                </span>
-                            </div>
-                            ${m.details ? `
-                                <div class="photo-info-row" style="margin-top: 2px;">
-                                    <span class="photo-info-label">Detalles:</span>
-                                    <span class="photo-info-value" style="font-size: 10.5px; color: #475569;" title="${escapeHtml(m.details)}">${escapeHtml(m.details)}</span>
+                            ${(!m.category && m.badge_label && m.badge_label !== 'Evaluado') ? `
+                                <div class="photo-info-row" style="margin-top: 3px; align-items: center; gap: 6px;">
+                                    <span style="font-size: 10px; font-weight: 800; color: ${m.badge_color || '#0284c7'}; background: ${m.badge_bg || '#e0f2fe'}; padding: 2px 7px; border-radius: 4px;">
+                                        ${escapeHtml(m.badge_label)}
+                                    </span>
                                 </div>
                             ` : ''}
                         </div>
@@ -1021,7 +1176,7 @@
                                 <svg class="photo-dt-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
                                     <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                                 </svg>
-                                ${escapeHtml(m.date || '—')} ${escapeHtml(m.time && m.time !== '—' ? m.time : '')}
+                                ${escapeHtml(formatDateTimeDisplay(m.date, m.time))}
                             </span>
                             <span class="photo-dt-pill" title="${escapeHtml(m.registered_by || '')}">Ev: ${escapeHtml(m.registered_by || 'Técnico')}</span>
                         </div>
@@ -1037,17 +1192,18 @@
             const sheetsContainer = document.getElementById('photoSheetsContainer');
             const printContainer = document.getElementById('photoReportPrintArea');
 
-            const allItems = photoReportConfig.measurements || [];
+            const allItems = getFilteredMeasurements();
             const info = photoReportConfig.moduleInfo || {};
             const selectedItems = allItems.filter(m => photoReportConfig.selectedPoints.has(Number(m.id)));
             const perPage = getPhotosPerPage(photoReportConfig.grid);
 
             if (selectedItems.length === 0) {
+                const isCatFilter = photoReportConfig.selectedCategory && photoReportConfig.selectedCategory !== 'todas';
                 const emptyHtml = `
                     <div style="text-align: center; padding: 50px 20px; color: #94a3b8; background: #ffffff; border-radius: 10px; border: 1.5px dashed #cbd5e1; max-width: 600px; margin: 30px auto;">
                         <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="margin-bottom: 8px;"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
                         <h3 style="font-size: 15px; margin: 0 0 6px 0; color: #334155;">No hay fotografías seleccionadas para el reporte Carta</h3>
-                        <p style="margin: 0; font-size: 12.5px;">Activa las casillas "Incluir en PDF" o pulsa en "Todas" para armar las páginas.</p>
+                        <p style="margin: 0; font-size: 12.5px;">${isCatFilter ? `En la categoría "${escapeHtml(photoReportConfig.selectedCategory)}" no hay puntos seleccionados.` : 'Activa las casillas "Incluir en PDF" o pulsa en "Todas" para armar las páginas.'}</p>
                     </div>
                 `;
                 if (sheetsContainer) sheetsContainer.innerHTML = emptyHtml;
@@ -1090,6 +1246,9 @@
                                     <h1>REPORTE FOTOGRÁFICO — ${escapeHtml((info.name || 'MONITOREO AMBIENTAL').toUpperCase())}</h1>
                                     <div class="sheet-header-subtitle-row">
                                         <span class="sheet-tech-tag">${escapeHtml(info.normative || 'METODOLOGÍA NORMATIVA VIGENTE')}</span>
+                                        ${photoReportConfig.selectedCategory && photoReportConfig.selectedCategory !== 'todas' ? `
+                                            <span class="sheet-tech-tag" style="background: rgba(16, 185, 223, 0.25); border-color: #38bdf8; color: #ffffff;">CATEGORÍA: ${escapeHtml(photoReportConfig.selectedCategory.toUpperCase())}</span>
+                                        ` : ''}
                                     </div>
                                 </div>
                             </div>
@@ -1134,22 +1293,16 @@
                                         <div class="photo-card-info-top">
                                             <div class="photo-info-row" style="justify-content: space-between;">
                                                 <span class="photo-code">${escapeHtml(m.code || ('P-' + m.num))}</span>
-                                                <span style="font-weight: 800; font-size: 8px; color: ${m.badge_color || '#0284c7'};">${escapeHtml(m.badge_label || '')}</span>
+                                                ${(!m.category && m.badge_label) ? `<span style="font-weight: 800; font-size: 8px; color: ${m.badge_color || '#0284c7'};">${escapeHtml(m.badge_label)}</span>` : ''}
                                             </div>
                                             <div class="photo-info-row" style="margin-top: 1px;">
-                                                <span class="photo-info-label">PUESTO:</span>
+                                                <span class="photo-info-label">${m.category ? 'CATEGORÍA:' : 'PUESTO:'}</span>
                                                 <span class="photo-info-value" style="font-weight: 800;" title="${escapeHtml(m.title)}">${escapeHtml(m.title)}</span>
                                             </div>
                                             <div class="photo-info-row">
                                                 <span class="photo-info-label">ÁREA:</span>
                                                 <span class="photo-info-value" title="${escapeHtml(m.area)}">${escapeHtml(m.area)}</span>
                                             </div>
-                                            ${m.details ? `
-                                                <div class="photo-info-row">
-                                                    <span class="photo-info-label">DETALLE:</span>
-                                                    <span class="photo-info-value" style="font-size: 7.5px; color: #64748b;" title="${escapeHtml(m.details)}">${escapeHtml(m.details)}</span>
-                                                </div>
-                                            ` : ''}
                                         </div>
 
                                         <div class="photo-card-img-box fit-${pointFit}">
@@ -1165,7 +1318,7 @@
                                         <div class="photo-card-info-bottom">
                                             <span class="photo-dt-label">
                                                 <svg class="photo-dt-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                                ${escapeHtml(m.date || '—')} ${escapeHtml(m.time && m.time !== '—' ? m.time : '')}
+                                                ${escapeHtml(formatDateTimeDisplay(m.date, m.time))}
                                             </span>
                                             <span class="photo-dt-pill">${escapeHtml(m.registered_by || 'Técnico')}</span>
                                         </div>

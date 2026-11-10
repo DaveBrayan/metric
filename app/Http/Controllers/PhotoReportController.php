@@ -215,10 +215,53 @@ class PhotoReportController extends Controller
                     return asset(ltrim($clean, '/'));
                 }, $flatImages)));
 
+                // Extracción inteligente y robusta de fecha
+                $dateVal = '—';
+                $rawDate = $item->inspection_date 
+                    ?? ($item->measurement_date 
+                    ?? ($item->measured_at 
+                    ?? ($item->date 
+                    ?? ($item->fecha 
+                    ?? ($item->created_at ?? null)))));
+
+                if ($rawDate) {
+                    try {
+                        $dateVal = Carbon::parse($rawDate)->format('d/m/Y');
+                    } catch (\Throwable $e) {
+                        $dateVal = (string)$rawDate;
+                    }
+                }
+
+                // Extracción inteligente y robusta de hora
+                $timeVal = '—';
+                $rawTime = $item->inspection_time 
+                    ?? ($item->measurement_time 
+                    ?? ($item->time 
+                    ?? ($item->hora 
+                    ?? ($item->hora_inicio ?? null))));
+
+                if (!empty($rawTime) && $rawTime !== '—') {
+                    $timeVal = substr((string)$rawTime, 0, 5);
+                } elseif (!empty($item->measured_at)) {
+                    try {
+                        $parsed = Carbon::parse($item->measured_at);
+                        if ($parsed->format('H:i') !== '00:00') {
+                            $timeVal = $parsed->format('H:i');
+                        }
+                    } catch (\Throwable $e) {}
+                }
+
+                if ($timeVal === '—' && !empty($item->created_at)) {
+                    try {
+                        $timeVal = Carbon::parse($item->created_at)->format('H:i');
+                    } catch (\Throwable $e) {}
+                }
+
                 $pointNum = $item->point_number ?: str_pad($index + 1, 2, '0', STR_PAD_LEFT);
                 $code = $this->formatPointCode($key, $pointNum);
 
                 $extracted = $this->extractTechnicalDetails($item, $key);
+                $category = $extracted['category'] ?? ($item->category ?? ($item->categoria ?? ($item->observation ?? '')));
 
                 return [
                     'id' => $item->id,
@@ -226,11 +269,12 @@ class PhotoReportController extends Controller
                     'code' => $code,
                     'title' => $extracted['title'],
                     'area' => $extracted['area'],
+                    'category' => $category,
                     'badge_label' => $extracted['badge_label'],
                     'badge_color' => $extracted['badge_color'],
                     'badge_bg' => $extracted['badge_bg'],
-                    'date' => $item->measurement_date ? Carbon::parse($item->measurement_date)->format('d/m/Y') : ($item->date ?? '—'),
-                    'time' => $item->measurement_time ?: ($item->time ?? '—'),
+                    'date' => $dateVal,
+                    'time' => $timeVal,
                     'registered_by' => $item->staff ? ($item->staff->full_name ?: $item->staff->name) : ($item->registered_by ?: $registeredByHeader),
                     'images' => $imagesUrls,
                     'image_path' => $imagesUrls[0] ?? null,
@@ -250,11 +294,28 @@ class PhotoReportController extends Controller
             'photo_fits' => $savedSettings['photo_fits'] ?? [],
         ];
 
+        $isPhotographic = str_contains($key, 'fotograf') 
+            || str_contains($key, 'inspecc') 
+            || str_contains(mb_strtolower($module->name ?? ''), 'fotograf') 
+            || str_contains(mb_strtolower($module->name ?? ''), 'inspecc');
+
+        $categoriesPresent = [];
+        if ($isPhotographic) {
+            $categoriesPresent = collect($measurementsList)
+                ->pluck('category')
+                ->filter(fn($c) => !empty($c) && $c !== '—' && $c !== 'Inspección' && $c !== 'Evaluado')
+                ->unique()
+                ->values()
+                ->toArray();
+        }
+
         return [
             'module' => [
                 'id' => $module->id,
                 'name' => $module->name,
                 'key' => $module->key,
+                'is_photographic' => $isPhotographic,
+                'categories' => $categoriesPresent,
                 'project_id' => $module->project_id,
                 'project_name' => $projectName,
                 'company_name' => $companyName,
@@ -324,7 +385,13 @@ class PhotoReportController extends Controller
             'opacidades' => 'opacityMeasurements',
             'opacity' => 'opacityMeasurements',
             'inspeccion_fotografica' => 'photographicInspections',
+            'inspeccion_fotograficas' => 'photographicInspections',
             'fotografica' => 'photographicInspections',
+            'fotograficas' => 'photographicInspections',
+            'photographic_inspection' => 'photographicInspections',
+            'photographic_inspections' => 'photographicInspections',
+            'inspeccion' => 'photographicInspections',
+            'inspecciones' => 'photographicInspections',
             'contaminantes_quimicos' => 'contaminantesQuimicosMeasurements',
             'quimicos' => 'contaminantesQuimicosMeasurements',
         ];
@@ -344,6 +411,9 @@ class PhotoReportController extends Controller
         }
         if (str_contains($nameLower, 'opacid') && method_exists($module, 'opacityMeasurements')) {
             return $module->opacityMeasurements()->with('staff')->get();
+        }
+        if ((str_contains($nameLower, 'fotograf') || str_contains($nameLower, 'inspecc')) && method_exists($module, 'photographicInspections')) {
+            return $module->photographicInspections()->with('staff')->get();
         }
 
         // Búsqueda inteligente de respaldo si no coincidiera la key exacta
@@ -451,6 +521,28 @@ class PhotoReportController extends Controller
             $badgeLabel = "{$conc} mg/m³";
             $badgeColor = '#475569'; $badgeBg = '#f1f5f9';
             $details = 'Fracción: ' . ($item->fraction_type ?? 'Inhalable');
+        } elseif (str_contains($key, 'fotograf') || str_contains($key, 'inspecc')) {
+            $category = trim((string)($item->category ?? ($item->categoria ?? ($item->observation ?? ($item->observacion ?? '')))));
+            if (empty($category)) {
+                $category = 'Inspección';
+            }
+
+            $title = $category;
+            if (!empty($item->puesto_trabajo)) {
+                $title = $item->puesto_trabajo;
+            } elseif (!empty($item->point_name)) {
+                $title = $item->point_name;
+            }
+
+            return [
+                'title' => $title,
+                'area' => $area,
+                'category' => $category,
+                'badge_label' => '',
+                'badge_color' => '',
+                'badge_bg' => '',
+                'details' => '',
+            ];
         } else {
             $badgeLabel = 'Evaluado';
             $badgeColor = '#0284c7'; $badgeBg = '#e0f2fe';
@@ -491,6 +583,7 @@ class PhotoReportController extends Controller
             str_contains($key, 'particul') => 'PART',
             str_contains($key, 'fuego') => 'FUEGO',
             str_contains($key, 'opacid') => 'OPAC',
+            str_contains($key, 'fotograf') || str_contains($key, 'inspecc') => 'INSP',
             default => 'MONIT',
         };
 
@@ -516,6 +609,7 @@ class PhotoReportController extends Controller
             str_contains($key, 'calor') => 'NORMA ISO 7243 • ESTIMACIÓN DEL ESTRÉS TÉRMICO MEDIANTE ÍNDICE TGBH',
             str_contains($key, 'frio') => 'NORMA ISO 11079 • EVALUACIÓN DE AMBIENTES FRÍOS Y AISLAMIENTO REQUERIDO',
             str_contains($key, 'opacid') || str_contains($key, 'opacity') => 'NORMA AMBIENTAL DE EMISIONES VEHICULARES • MÉTODO DE OPACIDAD RINGELMANN',
+            str_contains($key, 'fotograf') || str_contains($key, 'inspecc') => 'INSPECCIÓN TÉCNICA DE SEGURIDAD INDUSTRIAL Y CONDICIONES DE CAMPO',
             default => 'SISTEMA DE GESTIÓN DE SEGURIDAD Y SALUD EN EL TRABAJO — METRIC V2',
         };
     }
