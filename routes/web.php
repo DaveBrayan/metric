@@ -364,5 +364,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/configuracion', [SettingsController::class, 'update'])->name('settings.update');
     Route::post('/configuracion/test-gemini', [SettingsController::class, 'testGeminiConnection'])->name('settings.test-gemini');
     Route::post('/configuracion/gemini-models', [SettingsController::class, 'getAvailableGeminiModels'])->name('settings.gemini-models');
+    Route::post('/configuracion/test-openai', [SettingsController::class, 'testOpenAiConnection'])->name('settings.test-openai');
+    Route::post('/configuracion/openai-models', [SettingsController::class, 'getAvailableOpenAiModels'])->name('settings.openai-models');
+    Route::post('/configuracion/set-active-ai', [SettingsController::class, 'setActiveAiProvider'])->name('settings.set-active-ai');
 });
 

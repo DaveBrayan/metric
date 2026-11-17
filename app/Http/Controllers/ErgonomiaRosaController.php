@@ -1069,39 +1069,6 @@ class ErgonomiaRosaController extends Controller
         $evaluationId = $request->input('evaluation_id');
         $customPrompt = trim($request->input('prompt', ''));
 
-        // Cargar configuración de Gemini desde settings.json, services o .env
-        $settingsFile = storage_path('app/settings.json');
-        $apiKey = '';
-        $model = 'gemini-3.8-flash';
-        if (file_exists($settingsFile)) {
-            $settings = json_decode(file_get_contents($settingsFile), true) ?: [];
-            $apiKey = $settings['ai']['gemini_api_key'] ?? '';
-            $model = $settings['ai']['gemini_model'] ?? 'gemini-3.8-flash';
-        }
-        if (empty($apiKey)) {
-            $apiKey = config('services.gemini.api_key') ?: env('GEMINI_API_KEY', '');
-        }
-
-        // Auto-reemplazo de modelos deprecados
-        $deprecatedReplacements = [
-            'gemini-1.5-flash' => 'gemini-3.8-flash',
-            'gemini-1.5-pro' => 'gemini-3.1-pro-preview',
-            'gemini-2.0-flash' => 'gemini-3.8-flash',
-            'gemini-1.0-pro' => 'gemini-3.8-flash',
-            'gemini-2.5-flash' => 'gemini-3.8-flash',
-            'gemini-2.5-pro' => 'gemini-3.1-pro-preview',
-        ];
-        if (isset($deprecatedReplacements[$model])) {
-            $model = $deprecatedReplacements[$model];
-        }
-
-        if (empty($apiKey)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No se ha configurado la clave API de Google Gemini. Ve a la página de Configuración para ingresar tu API Key.'
-            ], 422);
-        }
-
         // Obtener datos de la evaluación
         $measurement = null;
         if ($evaluationId) {
@@ -1181,71 +1148,18 @@ Debes responder en español estructurando la respuesta EXACTAMENTE con los sigui
 {$guidelinesRec}";
 
         try {
-            $encodedKey = urlencode($apiKey);
-            $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$encodedKey}";
-            $response = Http::withoutVerifying()
-                ->timeout(60)
-                ->withHeaders([
-                    'x-goog-api-key' => $apiKey,
-                    'Content-Type' => 'application/json',
-                ])
-                ->post($url, [
-                    'contents' => [
-                        [
-                            'role' => 'user',
-                            'parts' => [
-                                ['text' => $fullPrompt]
-                            ]
-                        ]
-                    ],
-                    'generationConfig' => [
-                        'temperature' => 0.35,
-                        'maxOutputTokens' => 4096,
-                    ]
-                ]);
+            $aiResult = \App\Services\AiService::generateContent($fullPrompt);
 
-            if (!$response->successful() && $response->status() === 503 && $model !== 'gemini-3.8-flash') {
-                // Reintentar automáticamente con gemini-3.8-flash si el modelo anterior estaba saturado
-                $model = 'gemini-3.8-flash';
-                $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$encodedKey}";
-                $response = Http::withoutVerifying()
-                    ->timeout(60)
-                    ->withHeaders([
-                        'x-goog-api-key' => $apiKey,
-                        'Content-Type' => 'application/json',
-                    ])
-                    ->post($url, [
-                        'contents' => [
-                            [
-                                'role' => 'user',
-                                'parts' => [
-                                    ['text' => $fullPrompt]
-                                ]
-                            ]
-                        ],
-                        'generationConfig' => [
-                            'temperature' => 0.35,
-                            'maxOutputTokens' => 4096,
-                        ]
-                    ]);
-            }
-
-            if (!$response->successful()) {
-                $status = $response->status();
-                $err = $response->json('error.message') ?? $response->body();
-                $hint = '';
-                if ($status === 401 || $status === 403) {
-                    $hint = ' (Asegúrate de que la clave API sea válida y tenga permisos en Google AI Studio: https://aistudio.google.com/app/apikey).';
-                } elseif ($status === 503) {
-                    $hint = ' (El servicio de Google Gemini está saturado temporalmente. Por favor intenta en unos segundos).';
-                }
+            if (!$aiResult['success']) {
                 return response()->json([
                     'success' => false,
-                    'message' => "Error de la API de Gemini ({$status}): {$err}{$hint}"
-                ], 400);
+                    'message' => $aiResult['message'] ?? 'Error al procesar la solicitud de IA.',
+                ], $aiResult['status'] ?? 400);
             }
 
-            $rawText = trim($response->json('candidates.0.content.parts.0.text') ?? '');
+            $rawText = trim($aiResult['text'] ?? '');
+            $providerName = $aiResult['provider_name'] ?? 'Inteligencia Artificial';
+            $modelUsed = $aiResult['model'] ?? '';
 
             // Parsear secciones delimitadas
             $analisisTecnico = '';
@@ -1325,7 +1239,8 @@ Debes responder en español estructurando la respuesta EXACTAMENTE con los sigui
 
             return response()->json([
                 'success' => true,
-                'message' => '¡Contenido generado y guardado exitosamente con Google Gemini AI!',
+                'message' => "¡Contenido generado y guardado exitosamente con {$providerName}" . ($modelUsed ? " ({$modelUsed})" : "") . "!",
+                'provider' => $aiResult['provider'] ?? 'ai',
                 'data' => [
                     'prompt' => $customPrompt ?: $basePrompt,
                     'analisis_tecnico' => $analisisTecnico,
@@ -1337,7 +1252,7 @@ Debes responder en español estructurando la respuesta EXACTAMENTE con los sigui
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al conectar con la API de Gemini: ' . $e->getMessage()
+                'message' => 'Error al generar contenido con IA: ' . $e->getMessage()
             ], 500);
         }
     }

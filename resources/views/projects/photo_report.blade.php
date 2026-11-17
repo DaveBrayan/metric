@@ -15,6 +15,30 @@
             background: #ffffff !important;
         }
 
+        /* Renderizado tipográfico de alta nitidez en hojas de reporte Carta */
+        .photo-report-sheet {
+            -webkit-font-smoothing: antialiased !important;
+            -moz-osx-font-smoothing: grayscale !important;
+            text-rendering: optimizeLegibility !important;
+        }
+
+        .sheet-card-item .photo-info-label {
+            font-size: 8.5px !important;
+            font-weight: 800 !important;
+            color: #334155 !important;
+        }
+
+        .sheet-card-item .photo-info-value {
+            font-size: 8.5px !important;
+            font-weight: 700 !important;
+            color: #0f172a !important;
+        }
+
+        .sheet-card-item .photo-code {
+            font-size: 9px !important;
+            font-weight: 800 !important;
+        }
+
         .photo-hub-header-card {
             background: #ffffff;
             border: 1px solid #e2e8f0;
@@ -1442,12 +1466,11 @@
         const photoReportCompressedCache = new Map();
 
         /**
-         * Comprime y reescala imágenes en memoria usando Canvas off-screen.
-         * Reduce dimensiones excesivas (máximo 1000px) y codifica a JPEG 0.80.
-         * Acelera el rasterizado de html2canvas en hasta un 90% y reduce drásticamente el peso del PDF
-         * preservando nitidez y calidad visual fotográfica en tamaño Carta.
+         * Comprime y reescala imágenes en memoria usando Canvas off-screen con preservación de alta fidelidad.
+         * Mantiene dimensiones fotográficas nítidas (hasta 1600px) y codificación JPEG 0.92.
+         * Garantiza máxima nitidez en el renderizado final del PDF en hojas Carta.
          */
-        async function getOptimizedPhotoDataUrl(src, maxDimension = 1000, quality = 0.80) {
+        async function getOptimizedPhotoDataUrl(src, maxDimension = 1600, quality = 0.92) {
             if (!src || typeof src !== 'string') return src;
             if (photoReportCompressedCache.has(src)) {
                 return photoReportCompressedCache.get(src);
@@ -1702,7 +1725,7 @@
 
                 const compressedMap = new Map();
                 await Promise.all(uniqueSrcs.map(async (src) => {
-                    const compUrl = await getOptimizedPhotoDataUrl(src, 1000, 0.80);
+                    const compUrl = await getOptimizedPhotoDataUrl(src, 1600, 0.92);
                     compressedMap.set(src, compUrl);
                 }));
 
@@ -1751,31 +1774,38 @@
                     clonedSheet.style.borderRadius = '0';
                     clonedSheet.style.border = 'none';
                     clonedSheet.style.margin = '0';
+                    clonedSheet.style.width = '816px';
+                    clonedSheet.style.height = '1056px';
+                    clonedSheet.style.minHeight = '1056px';
+                    clonedSheet.style.maxHeight = '1056px';
+                    clonedSheet.style.webkitFontSmoothing = 'antialiased';
+                    clonedSheet.style.textRendering = 'optimizeLegibility';
                     sandbox.appendChild(clonedSheet);
 
                     const restoreImages = fixSheetImagesForCanvas(clonedSheet);
                     let canvas;
                     try {
-                        // Escala 1.25 (~120 DPI): renderizado ultrarrápido (<0.4s por hoja) manteniendo nitidez Carta
+                        // Escala 2.0 (~192 DPI): Ultra nitidez HD en tamaño Carta para eliminar pixelado en textos, insignias y fotos
                         canvas = await html2canvas(clonedSheet, {
-                            scale: 1.25,
+                            scale: 2.0,
                             useCORS: true,
                             logging: false,
-                            backgroundColor: '#ffffff'
+                            backgroundColor: '#ffffff',
+                            imageTimeout: 15000,
                         });
                     } finally {
                         restoreImages();
                         sandbox.innerHTML = '';
                     }
 
-                    // Compresión JPEG 0.78 en DataURL: rápida y ligera
-                    const imgData = canvas.toDataURL('image/jpeg', 0.78);
+                    // Compresión JPEG 0.95 de alta fidelidad: elimina artefactos de compresión y pixelado en textos y bordes
+                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
 
                     if (i > 0) {
                         pdf.addPage('letter', 'portrait');
                     }
 
-                    pdf.addImage(imgData, 'JPEG', 0, 0, letterWidthMm, letterHeightMm, undefined, 'FAST');
+                    pdf.addImage(imgData, 'JPEG', 0, 0, letterWidthMm, letterHeightMm, undefined, 'SLOW');
 
                     // Ceder el hilo de ejecución para que el navegador responda con fluidez
                     await new Promise(r => setTimeout(r, 20));

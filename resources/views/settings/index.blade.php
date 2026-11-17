@@ -247,11 +247,182 @@
             </div>
         </div>
 
-        <!-- Tab 3: Inteligencia Artificial (Google Gemini) -->
+        <!-- Tab 3: Inteligencia Artificial (Google Gemini & OpenAI) -->
         <div class="settings-tab-pane" id="tab-ai">
             <div class="settings-form-layout">
                 <div>
-                    <!-- Tarjeta: Configuración de Google Gemini -->
+                    @php
+                        $activeAi = $settings['ai']['active_provider'] ?? 'openai';
+                    @endphp
+
+                    <!-- Selector de Proveedor Activo de IA -->
+                    <input type="hidden" name="active_provider" id="activeProviderInput" value="{{ $activeAi }}">
+
+                    <div class="glass-card settings-card" style="margin-bottom: 20px; border: 1.5px solid #cbd5e1; background: #ffffff;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
+                            <div>
+                                <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #0f172a;">Motor de Inteligencia Artificial Activo</h3>
+                                <p style="margin: 3px 0 0 0; font-size: 12.5px; color: #64748b;">
+                                    Elige qué IA procesará la redacción biomecánica, observaciones y recomendaciones normativas en los módulos (Ergonomía ROSA, REBA, etc.).
+                                </p>
+                            </div>
+                            <div id="activeProviderStatusBadge" style="display: flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 999px; font-size: 12px; font-weight: 700; {{ $activeAi === 'openai' ? 'background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0;' : 'background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd;' }}">
+                                <span style="width: 8px; height: 8px; border-radius: 50%; background: currentColor;"></span>
+                                <span id="activeProviderBadgeLabel">Actualmente en uso: {{ $activeAi === 'openai' ? 'OpenAI (ChatGPT)' : 'Google Gemini' }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Selector Cards -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <!-- Opción 1: OpenAI -->
+                            <div id="providerCardOpenAi" onclick="selectAiProvider('openai')" 
+                                style="cursor: pointer; padding: 14px 16px; border-radius: 12px; border: 2px solid {{ $activeAi === 'openai' ? '#10b981' : '#e2e8f0' }}; background: {{ $activeAi === 'openai' ? '#f0fdf4' : '#f8fafc' }}; transition: all 0.2s ease; display: flex; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div style="width: 38px; height: 38px; border-radius: 9px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); display: flex; align-items: center; justify-content: center; color: #ffffff; box-shadow: 0 2px 6px rgba(16,185,129,0.3);">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <path d="m9 12 2 2 4-4"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 14px; color: #0f172a;">OpenAI (ChatGPT)</div>
+                                        <div style="font-size: 11.5px; color: #64748b;">GPT-4o, GPT-4o-mini & o3-mini</div>
+                                    </div>
+                                </div>
+                                <span id="openaiCheckBadge" style="font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 999px; {{ $activeAi === 'openai' ? 'background: #10b981; color: #ffffff;' : 'background: #e2e8f0; color: #64748b;' }}">
+                                    {{ $activeAi === 'openai' ? 'ACTIVADO' : 'ACTIVAR' }}
+                                </span>
+                            </div>
+
+                            <!-- Opción 2: Google Gemini -->
+                            <div id="providerCardGemini" onclick="selectAiProvider('gemini')" 
+                                style="cursor: pointer; padding: 14px 16px; border-radius: 12px; border: 2px solid {{ $activeAi === 'gemini' ? '#0284c7' : '#e2e8f0' }}; background: {{ $activeAi === 'gemini' ? '#f0f9ff' : '#f8fafc' }}; transition: all 0.2s ease; display: flex; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div style="width: 38px; height: 38px; border-radius: 9px; background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%); display: flex; align-items: center; justify-content: center; color: #ffffff; box-shadow: 0 2px 6px rgba(2,132,199,0.3);">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 14px; color: #0f172a;">Google Gemini</div>
+                                        <div style="font-size: 11.5px; color: #64748b;">Gemini 3.8 Flash, Pro & Multimodal</div>
+                                    </div>
+                                </div>
+                                <span id="geminiCheckBadge" style="font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 999px; {{ $activeAi === 'gemini' ? 'background: #0284c7; color: #ffffff;' : 'background: #e2e8f0; color: #64748b;' }}">
+                                    {{ $activeAi === 'gemini' ? 'ACTIVADO' : 'ACTIVAR' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta 1: Configuración de OpenAI -->
+                    <div class="glass-card settings-card" style="border: 1.5px solid rgba(16, 185, 129, 0.4); background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%); margin-bottom: 20px;">
+                        <div class="settings-section-head">
+                            <div class="kpi-icon-glow" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; width: 44px; height: 44px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8Z"/>
+                                    <path d="m9 12 2 2 4-4"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <h2 style="margin: 0; font-size: 16px; color: #0f172a;">OpenAI API (ChatGPT / GPT-4o)</h2>
+                                    <span style="font-size: 11px; font-weight: 700; background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 999px; border: 1px solid #bbf7d0;">
+                                        {{ !empty($settings['ai']['openai_api_key']) ? 'CONFIGURADO' : 'PENDIENTE' }}
+                                    </span>
+                                </div>
+                                <p style="margin: 3px 0 0 0; color: #64748b; font-size: 12.5px;">
+                                    Configuración de la API Key de OpenAI para redacción de informes técnicos de ergonomía y generación biomecánica. Se almacena de forma segura y persistente en la Base de Datos.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Campo: Clave de API de OpenAI -->
+                        <div class="form-field-group" style="margin-top: 16px;">
+                            <label class="form-field-label" style="font-weight: 700; color: #0f172a;">Clave de API de OpenAI (API Key)</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="password" id="openaiApiKeyInput" name="openai_api_key" class="custom-form-input" 
+                                    style="font-family: monospace; font-size: 13.5px; font-weight: 600; color: #0f172a; background: #ffffff;"
+                                    value="{{ $settings['ai']['openai_api_key'] ?? '' }}"
+                                    placeholder="sk-proj-..." autocomplete="off">
+                                <button type="button" class="btn-copy-code" style="height: 42px; border-radius: 10px; padding: 0 14px;" 
+                                    onclick="toggleApiKeyVisibility('openaiApiKeyInput', 'openaiEyeIcon')" title="Mostrar / Ocultar Clave">
+                                    <span id="openaiEyeIcon">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
+                                    </span>
+                                </button>
+                                <button type="button" class="btn-copy-code" style="height: 42px; border-radius: 10px; padding: 0 14px;" 
+                                    onclick="pasteFromClipboard('openaiApiKeyInput')" title="Pegar del portapapeles">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect width="13" height="13" x="9" y="9" rx="2" ry="2"/>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                    </svg>
+                                    <span style="margin-left: 4px;">Pegar</span>
+                                </button>
+                            </div>
+                            <div class="form-field-hint" style="margin-top: 6px; font-size: 12px; color: #64748b;">
+                                Guardada de forma permanente en la base de datos (tabla <code>system_settings</code>). No expuesta en archivos <code>.env</code>.
+                            </div>
+                        </div>
+
+                        <!-- Fila 2: Modelo de OpenAI & Botón de Prueba -->
+                        <div class="form-row-grid" style="margin-top: 16px; margin-bottom: 0; align-items: flex-end;">
+                            <div class="form-field-group" style="margin-bottom: 0;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <label class="form-field-label" style="font-weight: 700; color: #0f172a; margin-bottom: 0;">Modelo de OpenAI</label>
+                                    <button type="button" onclick="fetchOpenAiModelsAjax()" title="Obtener lista de modelos en tiempo real desde la API de OpenAI" 
+                                        style="background: transparent; border: none; color: #10b981; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 2px 4px; border-radius: 4px;">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                                        <span id="btnSyncOpenAiModelsText">Actualizar Modelos</span>
+                                    </button>
+                                </div>
+                                @php
+                                    $curOpenAiModel = $settings['ai']['openai_model'] ?? 'gpt-4o-mini';
+                                @endphp
+                                <select name="openai_model" id="openaiModelSelect" class="custom-form-select" style="font-weight: 600; color: #0f172a;">
+                                    <option value="gpt-4o-mini" {{ $curOpenAiModel == 'gpt-4o-mini' ? 'selected' : '' }}>
+                                        gpt-4o-mini (Recomendado — Ultrarrápido, Económico y Alta Precisión)
+                                    </option>
+                                    <option value="gpt-4o" {{ $curOpenAiModel == 'gpt-4o' ? 'selected' : '' }}>
+                                        gpt-4o (Insignia — Máximo Razonamiento y Redacción Avanzada)
+                                    </option>
+                                    <option value="gpt-4.1-mini" {{ $curOpenAiModel == 'gpt-4.1-mini' ? 'selected' : '' }}>
+                                        gpt-4.1-mini (Nueva Generación GPT-4.1 Mini)
+                                    </option>
+                                    <option value="gpt-4.1" {{ $curOpenAiModel == 'gpt-4.1' ? 'selected' : '' }}>
+                                        gpt-4.1 (Nueva Generación GPT-4.1 Completo)
+                                    </option>
+                                    <option value="o3-mini" {{ $curOpenAiModel == 'o3-mini' ? 'selected' : '' }}>
+                                        o3-mini (Razonamiento Lógico Profundo y Deducción)
+                                    </option>
+                                    <option value="o1-mini" {{ $curOpenAiModel == 'o1-mini' ? 'selected' : '' }}>
+                                        o1-mini (Razonamiento y Matemáticas)
+                                    </option>
+                                    <option value="gpt-4-turbo" {{ $curOpenAiModel == 'gpt-4-turbo' ? 'selected' : '' }}>
+                                        gpt-4-turbo (Análisis Extenso y Técnico)
+                                    </option>
+                                    <option value="gpt-3.5-turbo" {{ $curOpenAiModel == 'gpt-3.5-turbo' ? 'selected' : '' }}>
+                                        gpt-3.5-turbo (Legado Rápido)
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="form-field-group" style="margin-bottom: 0; display: flex; align-items: flex-end;">
+                                <button type="button" id="btnTestOpenAi" onclick="testOpenAiConnectionAjax()" 
+                                    style="width: 100%; height: 42px; border-radius: 8px; border: 1.5px solid #10b981; background: #10b981; color: #ffffff; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.25); transition: all 0.2s ease;">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m9 12 2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+                                    <span id="btnTestOpenAiText">Probar Conexión con OpenAI</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="openaiTestResult" style="display: none; margin-top: 14px; padding: 12px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 600; line-height: 1.45;"></div>
+                    </div>
+
+                    <!-- Tarjeta 2: Configuración de Google Gemini -->
                     <div class="glass-card settings-card" style="border: 1.5px solid rgba(2, 132, 199, 0.35); background: linear-gradient(180deg, #ffffff 0%, #f0f9ff 100%);">
                         <div class="settings-section-head">
                             <div class="kpi-icon-glow" style="background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%); color: #ffffff; width: 44px; height: 44px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);">
@@ -263,13 +434,13 @@
                             </div>
                             <div>
                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                    <h2 style="margin: 0; font-size: 16px; color: #0f172a;">Inteligencia Artificial — Google Gemini API</h2>
+                                    <h2 style="margin: 0; font-size: 16px; color: #0f172a;">Google Gemini API</h2>
                                     <span style="font-size: 11px; font-weight: 700; background: #e0f2fe; color: #0284c7; padding: 2px 8px; border-radius: 999px; border: 1px solid #bae6fd;">
                                         {{ !empty($settings['ai']['gemini_api_key']) ? 'CONFIGURADO' : 'PENDIENTE' }}
                                     </span>
                                 </div>
                                 <p style="margin: 3px 0 0 0; color: #64748b; font-size: 12.5px;">
-                                    Configuración del motor de Inteligencia Artificial para la redacción técnica biomecánica, observaciones críticas y recomendaciones ergonómicas automáticas.
+                                    Configuración del motor Google Gemini. También almacenado de manera segura en la base de datos.
                                 </p>
                             </div>
                         </div>
@@ -283,16 +454,25 @@
                                     value="{{ $settings['ai']['gemini_api_key'] ?? '' }}"
                                     placeholder="AQ.Ab8RN6lr7Gd-... o AIzaSy..." autocomplete="off">
                                 <button type="button" class="btn-copy-code" style="height: 42px; border-radius: 10px; padding: 0 14px;" 
-                                    onclick="toggleApiKeyVisibility()" title="Mostrar / Ocultar Clave">
-                                    <span id="geminiEyeIcon">👁️</span>
+                                    onclick="toggleApiKeyVisibility('geminiApiKeyInput', 'geminiEyeIcon')" title="Mostrar / Ocultar Clave">
+                                    <span id="geminiEyeIcon">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
+                                    </span>
                                 </button>
                                 <button type="button" class="btn-copy-code" style="height: 42px; border-radius: 10px; padding: 0 14px;" 
                                     onclick="pasteFromClipboard('geminiApiKeyInput')" title="Pegar del portapapeles">
-                                    <span>📋 Pegar</span>
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect width="13" height="13" x="9" y="9" rx="2" ry="2"/>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                    </svg>
+                                    <span style="margin-left: 4px;">Pegar</span>
                                 </button>
                             </div>
                             <div class="form-field-hint" style="margin-top: 6px; font-size: 12px; color: #64748b;">
-                                🔑 Obtenida en <b>Google AI Studio</b> o Google Cloud Console. Permite generar reportes técnicos con modelos LLM de última generación.
+                                Obtenida en <b>Google AI Studio</b> o Google Cloud Console.
                             </div>
                         </div>
 
@@ -388,20 +568,30 @@
 
                         <div style="display: flex; flex-direction: column; gap: 14px; font-size: 13px;">
                             <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                                <span style="color: #64748b;">Proveedor Activo</span>
+                                <span id="activeProviderSummary" style="color: {{ $activeAi === 'openai' ? '#059669' : '#0284c7' }}; font-weight: 800;">
+                                    {{ $activeAi === 'openai' ? 'OpenAI (ChatGPT)' : 'Google Gemini' }}
+                                </span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                                <span style="color: #64748b;">Almacenamiento Claves</span>
+                                <b style="color: #059669;">Base de Datos (MySQL)</b>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
                                 <span style="color: #64748b;">Ergonomía ROSA (Paso 3)</span>
+                                <span style="color: #0284c7; font-weight: 700;">● Habilitado</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                                <span style="color: #64748b;">Ergonomía REBA (Paso 3)</span>
                                 <span style="color: #0284c7; font-weight: 700;">● Habilitado</span>
                             </div>
                             <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
                                 <span style="color: #64748b;">Análisis Biomecánico</span>
                                 <b style="color: #0f172a;">Automático</b>
                             </div>
-                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
-                                <span style="color: #64748b;">Recomendaciones SySO</span>
-                                <b style="color: #0f172a;">Normativo ISO</b>
-                            </div>
                             <div style="display: flex; justify-content: space-between;">
-                                <span style="color: #64748b;">Proveedor de IA</span>
-                                <span style="color: #0284c7; font-weight: 700;">Google Gemini API</span>
+                                <span style="color: #64748b;">Recomendaciones SySO</span>
+                                <b style="color: #0f172a;">Normativo ISO / UNE</b>
                             </div>
                         </div>
                     </div>
@@ -596,15 +786,20 @@
             }
         }
 
-        function toggleApiKeyVisibility() {
-            const input = document.getElementById('geminiApiKeyInput');
-            const icon = document.getElementById('geminiEyeIcon');
+        function toggleApiKeyVisibility(inputId = 'geminiApiKeyInput', iconId = 'geminiEyeIcon') {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (!input) return;
             if (input.type === 'password') {
                 input.type = 'text';
-                icon.textContent = '🙈';
+                if (icon) {
+                    icon.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+                }
             } else {
                 input.type = 'password';
-                icon.textContent = '👁️';
+                if (icon) {
+                    icon.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+                }
             }
         }
 
@@ -617,11 +812,209 @@
                     triggerToast('Clave pegada correctamente', '📋');
                 }
             } catch (err) {
-                const manual = prompt('Pega aquí tu clave de API de Gemini:', '');
+                const manual = prompt('Pega aquí tu clave de API:', '');
                 if (manual) {
                     const input = document.getElementById(targetId);
                     if (input) input.value = manual.trim();
                 }
+            }
+        }
+
+        async function selectAiProvider(provider) {
+            const hiddenInput = document.getElementById('activeProviderInput');
+            if (hiddenInput) hiddenInput.value = provider;
+
+            const cardOpenAi = document.getElementById('providerCardOpenAi');
+            const cardGemini = document.getElementById('providerCardGemini');
+            const badgeOpenAi = document.getElementById('openaiCheckBadge');
+            const badgeGemini = document.getElementById('geminiCheckBadge');
+            const statusBadge = document.getElementById('activeProviderStatusBadge');
+            const statusLabel = document.getElementById('activeProviderBadgeLabel');
+            const summaryLabel = document.getElementById('activeProviderSummary');
+
+            if (provider === 'openai') {
+                if (cardOpenAi) {
+                    cardOpenAi.style.border = '2px solid #10b981';
+                    cardOpenAi.style.background = '#f0fdf4';
+                }
+                if (badgeOpenAi) {
+                    badgeOpenAi.style.background = '#10b981';
+                    badgeOpenAi.style.color = '#ffffff';
+                    badgeOpenAi.textContent = 'ACTIVADO';
+                }
+                if (cardGemini) {
+                    cardGemini.style.border = '2px solid #e2e8f0';
+                    cardGemini.style.background = '#f8fafc';
+                }
+                if (badgeGemini) {
+                    badgeGemini.style.background = '#e2e8f0';
+                    badgeGemini.style.color = '#64748b';
+                    badgeGemini.textContent = 'ACTIVAR';
+                }
+                if (statusBadge) {
+                    statusBadge.style.background = '#ecfdf5';
+                    statusBadge.style.color = '#047857';
+                    statusBadge.style.border = '1px solid #a7f3d0';
+                }
+                if (statusLabel) statusLabel.textContent = 'Actualmente en uso: OpenAI (ChatGPT)';
+                if (summaryLabel) {
+                    summaryLabel.textContent = 'OpenAI (ChatGPT)';
+                    summaryLabel.style.color = '#059669';
+                }
+            } else {
+                if (cardGemini) {
+                    cardGemini.style.border = '2px solid #0284c7';
+                    cardGemini.style.background = '#f0f9ff';
+                }
+                if (badgeGemini) {
+                    badgeGemini.style.background = '#0284c7';
+                    badgeGemini.style.color = '#ffffff';
+                    badgeGemini.textContent = 'ACTIVADO';
+                }
+                if (cardOpenAi) {
+                    cardOpenAi.style.border = '2px solid #e2e8f0';
+                    cardOpenAi.style.background = '#f8fafc';
+                }
+                if (badgeOpenAi) {
+                    badgeOpenAi.style.background = '#e2e8f0';
+                    badgeOpenAi.style.color = '#64748b';
+                    badgeOpenAi.textContent = 'ACTIVAR';
+                }
+                if (statusBadge) {
+                    statusBadge.style.background = '#e0f2fe';
+                    statusBadge.style.color = '#0284c7';
+                    statusBadge.style.border = '1px solid #bae6fd';
+                }
+                if (statusLabel) statusLabel.textContent = 'Actualmente en uso: Google Gemini';
+                if (summaryLabel) {
+                    summaryLabel.textContent = 'Google Gemini';
+                    summaryLabel.style.color = '#0284c7';
+                }
+            }
+
+            // Guardar inmediatamente vía AJAX en base de datos
+            try {
+                const resp = await fetch("{{ route('settings.set-active-ai') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ provider: provider })
+                });
+                const resData = await resp.json();
+                if (resData.success) {
+                    triggerToast(`Proveedor activo: ${resData.provider_name}`, '⚡');
+                }
+            } catch (err) {
+                console.warn('No se pudo guardar proveedor de IA por AJAX, se guardará al presionar Guardar Cambios.', err);
+            }
+        }
+
+        async function fetchOpenAiModelsAjax() {
+            const btnText = document.getElementById('btnSyncOpenAiModelsText');
+            const apiKey = document.getElementById('openaiApiKeyInput').value.trim();
+            const select = document.getElementById('openaiModelSelect');
+            const resultBox = document.getElementById('openaiTestResult');
+
+            if (!apiKey) {
+                alert('Por favor ingresa tu clave de API de OpenAI para consultar los modelos.');
+                return;
+            }
+
+            const origText = btnText.textContent;
+            btnText.textContent = 'Consultando...';
+
+            try {
+                const resp = await fetch("{{ route('settings.openai-models') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ openai_api_key: apiKey })
+                });
+                const data = await resp.json();
+                if (data.success && data.models && data.models.length > 0) {
+                    const currentVal = select.value;
+                    select.innerHTML = '';
+                    data.models.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m.id;
+                        opt.textContent = `${m.id}`;
+                        if (m.id === currentVal || (currentVal === 'gpt-4o-mini' && m.id === 'gpt-4o-mini')) {
+                            opt.selected = true;
+                        }
+                        select.appendChild(opt);
+                    });
+                    resultBox.style.display = 'block';
+                    resultBox.style.background = '#ecfdf5';
+                    resultBox.style.color = '#065f46';
+                    resultBox.style.border = '1px solid #a7f3d0';
+                    resultBox.innerHTML = `✓ <strong>Modelos actualizados:</strong> Se encontraron ${data.models.length} modelos de OpenAI disponibles para tu cuenta.`;
+                } else {
+                    alert(data.message || 'No se pudieron recuperar los modelos de OpenAI.');
+                }
+            } catch (err) {
+                alert('Error al consultar los modelos de OpenAI.');
+            } finally {
+                btnText.textContent = origText;
+            }
+        }
+
+        async function testOpenAiConnectionAjax() {
+            const btn = document.getElementById('btnTestOpenAi');
+            const btnText = document.getElementById('btnTestOpenAiText');
+            const resultBox = document.getElementById('openaiTestResult');
+            const apiKey = document.getElementById('openaiApiKeyInput').value.trim();
+            const model = document.getElementById('openaiModelSelect').value;
+
+            if (!apiKey) {
+                alert('Por favor introduce tu clave de API de OpenAI antes de probar la conexión.');
+                return;
+            }
+
+            btn.disabled = true;
+            btnText.textContent = 'Probando conexión...';
+            resultBox.style.display = 'none';
+
+            try {
+                const resp = await fetch("{{ route('settings.test-openai') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        openai_api_key: apiKey,
+                        openai_model: model
+                    })
+                });
+                const data = await resp.json();
+                resultBox.style.display = 'block';
+                if (data.success) {
+                    resultBox.style.background = '#ecfdf5';
+                    resultBox.style.color = '#065f46';
+                    resultBox.style.border = '1px solid #a7f3d0';
+                    resultBox.innerHTML = `✓ <strong>${data.message}</strong>`;
+                } else {
+                    resultBox.style.background = '#fef2f2';
+                    resultBox.style.color = '#991b1b';
+                    resultBox.style.border = '1px solid #fecaca';
+                    resultBox.innerHTML = `✕ <strong>Error:</strong> ${data.message}`;
+                }
+            } catch (e) {
+                resultBox.style.display = 'block';
+                resultBox.style.background = '#fef2f2';
+                resultBox.style.color = '#991b1b';
+                resultBox.style.border = '1px solid #fecaca';
+                resultBox.innerHTML = `✕ <strong>Error de red:</strong> No se pudo comunicar con el servidor`;
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Probar Conexión con OpenAI';
             }
         }
 

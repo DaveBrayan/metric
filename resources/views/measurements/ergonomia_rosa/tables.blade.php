@@ -1801,7 +1801,7 @@
                             </button>
 
                             <button type="button" class="btn-ai-generate-sheet" id="btnGenerateStep3Ai" onclick="generateRosaContentWithAi()"
-                                title="Generar automáticamente con Gemini IA el Análisis Técnico, Observaciones y Recomendaciones (Puntos 4, 5 y 6)"
+                                title="Generar automáticamente con Inteligencia Artificial el Análisis Técnico, Observaciones y Recomendaciones (Puntos 4, 5 y 6)"
                                 style="display: inline-flex; align-items: center; gap: 7px; padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #ffffff; border: 1px solid #0284c7; cursor: pointer; box-shadow: 0 2px 4px rgba(2, 132, 199, 0.25); transition: all 0.2s ease;">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
@@ -3982,7 +3982,7 @@
                                (elRec && elRec.textContent.trim().length > 0);
 
             if (!hasContent) {
-                showActionToast('Primero debes generar el contenido con Gemini IA antes de descargar el documento Word.', 'warning');
+                showActionToast('Primero debes generar el contenido con IA antes de descargar el documento Word.', 'warning');
                 return;
             }
 
@@ -5229,13 +5229,13 @@ Genera la redacción técnica especializada dividida obligatoriamente en los sig
                 btnStep3.disabled = true;
                 btnStep3.style.opacity = '0.75';
             }
-            if (btnStep3Text) btnStep3Text.innerHTML = '⚡ Generando con Gemini IA...';
-            showActionToast('Conectando con Google Gemini IA para generar el contenido...', 'info');
+            if (btnStep3Text) btnStep3Text.innerHTML = '⚡ Generando con IA...';
+            showActionToast('Conectando con el motor de Inteligencia Artificial...', 'info');
 
             // SweetAlert2 centrado en progreso de generación
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
-                    title: 'Generando informe con Gemini IA',
+                    title: 'Generando informe con Inteligencia Artificial',
                     html: `
                         <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 6px 0;">
                             <div style="font-size: 14px; color: #475569; line-height: 1.5; text-align: center;">
@@ -5317,7 +5317,7 @@ Genera la redacción técnica especializada dividida obligatoriamente en los sig
                         btnWord.removeAttribute('disabled');
                     }
 
-                    showActionToast('¡Puntos 4, 5 y 6 generados exitosamente con Gemini IA!');
+                    showActionToast(data.message || '¡Puntos 4, 5 y 6 generados exitosamente con IA!');
 
                     // SweetAlert2 Éxito Centrado
                     if (typeof Swal !== 'undefined') {
