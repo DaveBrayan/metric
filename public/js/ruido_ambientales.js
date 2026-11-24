@@ -307,6 +307,70 @@ window.closeCreateMeasurementModal = function() {
     if (m) m.classList.remove('open');
 };
 
+let isEditUnlocked = false;
+
+window.applyEditModeState = function(isEditing) {
+    isEditUnlocked = isEditing;
+    const form = document.getElementById('editMeasurementForm');
+    if (form) {
+        if (isEditing) {
+            form.classList.remove('modal-view-mode');
+        } else {
+            form.classList.add('modal-view-mode');
+        }
+        form.querySelectorAll('input:not([type="hidden"]), select, textarea').forEach(el => {
+            el.disabled = !isEditing;
+        });
+        form.querySelectorAll('.btn-icon-add-point, .btn-icon-del-point').forEach(el => {
+            el.style.display = isEditing ? 'inline-flex' : 'none';
+        });
+    }
+
+    const gpsBtn = document.getElementById('edit_btn_gps_capture');
+    if (gpsBtn) {
+        gpsBtn.style.display = isEditing ? 'inline-flex' : 'none';
+    }
+
+    const badge = document.getElementById('modalModeStatusBadge');
+    if (badge) {
+        badge.className = isEditing ? 'modal-badge-edit' : 'modal-badge-view';
+        badge.textContent = isEditing ? 'Modo Edición' : 'Solo Lectura';
+    }
+
+    const btn = document.getElementById('btnToggleEditMode');
+    const btnText = document.getElementById('btnToggleEditModeText');
+    const btnIcon = document.getElementById('btnToggleEditModeIcon');
+    if (btn) {
+        if (isEditing) {
+            btn.classList.add('active-editing');
+            if (btnText) btnText.textContent = 'Lectura';
+            if (btnIcon) {
+                btnIcon.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`;
+            }
+        } else {
+            btn.classList.remove('active-editing');
+            if (btnText) btnText.textContent = 'Editar';
+            if (btnIcon) {
+                btnIcon.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`;
+            }
+        }
+    }
+
+    const submitBtn = document.getElementById('edit_modal_submit_btn');
+    if (submitBtn) {
+        submitBtn.style.display = isEditing ? 'inline-flex' : 'none';
+    }
+};
+
+window.toggleModalEditMode = function() {
+    window.applyEditModeState(!isEditUnlocked);
+};
+
+window.openViewMeasurementModal = function(item) {
+    window.openEditMeasurementModal(item);
+    window.applyEditModeState(false);
+};
+
 window.openEditMeasurementModal = function(item) {
     const m = document.getElementById('editMeasurementModal');
     if (!m) return;
@@ -316,15 +380,20 @@ window.openEditMeasurementModal = function(item) {
         form.action = `/modulos/${MODULE_ID}/ruido-ambiental/mediciones/${item.id}`;
     }
 
+    const regByEl = document.getElementById('edit_modal_registered_by');
+    if (regByEl) {
+        regByEl.textContent = item.registered_by || 'Técnico de Campo';
+    }
+
     // Set fields
     const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ''; };
-    setVal('edit_measurement_date', item.raw_date);
+    setVal('edit_measurement_date', item.raw_date || item.date);
     setVal('edit_measurement_time', item.time);
     setVal('edit_normativa', item.normativa);
     handleNormativaChange('edit');
     setVal('edit_tipo_zona', item.tipo_zona);
     handleTipoZonaChange('edit');
-    setVal('edit_limite_normativa', item.raw_limite_normativa);
+    setVal('edit_limite_normativa', item.raw_limite_normativa || item.limite_normativa);
     setVal('edit_zona_banda', item.zona_banda);
 
     setVal('edit_norte_colindancia', item.norte_colindancia);
@@ -352,6 +421,10 @@ window.openEditMeasurementModal = function(item) {
     setVal('edit_p4_oeste_inicio', item.p4_oeste_inicio);
     setVal('edit_p4_oeste_fin', item.p4_oeste_fin);
 
+    if (item.staff_id && document.getElementById('edit_staff_id')) {
+        document.getElementById('edit_staff_id').value = item.staff_id;
+    }
+
     // Populate cardinal point input rows
     const populatePoints = (cardinalKey, pointsList) => {
         const container = document.getElementById(`edit_${cardinalKey}_points_container`);
@@ -361,8 +434,8 @@ window.openEditMeasurementModal = function(item) {
             const row = document.createElement('div');
             row.className = 'point-pill-input-row';
             row.innerHTML = `
-                <input type="number" step="0.1" class="custom-form-input cardinal-point-val" value="${val}" oninput="recalcRuidoAmbiental('edit')">
-                <button type="button" class="btn-icon-del-point" onclick="this.closest('.point-pill-input-row').remove(); recalcRuidoAmbiental('edit');">
+                <input type="number" step="0.1" class="custom-form-input cardinal-point-val" value="${val}" ${isEditUnlocked ? '' : 'disabled'} oninput="recalcRuidoAmbiental('edit')">
+                <button type="button" class="btn-icon-del-point" onclick="this.closest('.point-pill-input-row').remove(); recalcRuidoAmbiental('edit');" style="display: ${isEditUnlocked ? 'inline-flex' : 'none'};">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
             `;
@@ -375,17 +448,21 @@ window.openEditMeasurementModal = function(item) {
     populatePoints('p3_este', item.p3_este_puntos);
     populatePoints('p4_oeste', item.p4_oeste_puntos);
 
-    setVal('edit_observations', item.raw_observations);
+    setVal('edit_observations', item.raw_observations || item.observations);
     setVal('edit_latitude', item.latitude);
     setVal('edit_longitude', item.longitude);
 
     recalcRuidoAmbiental('edit');
+    window.applyEditModeState(false);
     m.classList.add('open');
 };
 
 window.closeEditMeasurementModal = function() {
     const m = document.getElementById('editMeasurementModal');
-    if (m) m.classList.remove('open');
+    if (m) {
+        m.classList.remove('open');
+        window.applyEditModeState(false);
+    }
 };
 
 window.confirmDeleteMeasurement = function(id, pointNum) {

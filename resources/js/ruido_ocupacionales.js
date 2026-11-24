@@ -1213,6 +1213,264 @@ window.closeExportModal = function () {
     }
 };
 
+/* ==========================================================================
+   EXPORTACIÓN TÉCNICA OFICIAL EN EXCEL CON EXCELJS (RUIDO OCUPACIONAL NTS-002/17)
+   ========================================================================== */
+async function downloadRuidoOcupacionalExcel() {
+    if (typeof ExcelJS === 'undefined') {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Cargando librería...',
+                text: 'La librería ExcelJS se está inicializando. Por favor intenta de nuevo en unos segundos.',
+                icon: 'info',
+                confirmButtonText: 'Entendido',
+                buttonsStyling: false,
+                customClass: { popup: 'metric-swal-popup', confirmButton: 'metric-swal-btn-confirm' }
+            });
+        } else {
+            alert('Librería ExcelJS no cargada aún. Por favor espera un momento.');
+        }
+        return;
+    }
+
+    try {
+        const workbook = new ExcelJS.Workbook();
+        workbook.creator = 'Metric v2 — Pachabol';
+        workbook.created = new Date();
+
+        const sheet = workbook.addWorksheet('Ruido Ocupacional NTS-002', {
+            views: [{ showGridLines: true }],
+            pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 }
+        });
+
+        const darkHeaderFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } };
+        const lightBlueFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0F2FE' } };
+        const grayHeaderFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+
+        // Fila 1: Título Oficial
+        sheet.mergeCells('A1:P1');
+        const titleCell = sheet.getCell('A1');
+        titleCell.value = 'PLANILLA TÉCNICA OFICIAL — MONITOREO DE RUIDO OCUPACIONAL (NORMATIVA NTS-002/17 • R.M. 343/18)';
+        titleCell.font = { name: 'Arial', size: 12, bold: true, color: { argb: 'FFFFFFFF' } };
+        titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        titleCell.fill = darkHeaderFill;
+        sheet.getRow(1).height = 32;
+
+        // Fila 2: Metadatos Técnicos
+        const tech = window.TECHNICAL_HEADER_DATA || (window.METRIC_RUIDO_OCUPACIONAL_CONFIG ? window.METRIC_RUIDO_OCUPACIONAL_CONFIG.technicalHeader : {}) || {};
+
+        sheet.mergeCells('A2:D2');
+        sheet.getCell('A2').value = `INSTALACIÓN: ${tech.installationName || 'No especificada'}`;
+        sheet.getCell('A2').font = { name: 'Arial', size: 9.5, bold: true, color: { argb: 'FF0F172A' } };
+        sheet.getCell('A2').fill = grayHeaderFill;
+        sheet.getCell('A2').alignment = { vertical: 'middle', indent: 1 };
+
+        sheet.mergeCells('E2:H2');
+        sheet.getCell('E2').value = `PERÍODO: ${tech.startDateFormatted || '-'} al ${tech.endDateFormatted || '-'}`;
+        sheet.getCell('E2').font = { name: 'Arial', size: 9.5, bold: true, color: { argb: 'FF0F172A' } };
+        sheet.getCell('E2').fill = grayHeaderFill;
+        sheet.getCell('E2').alignment = { vertical: 'middle', indent: 1 };
+
+        sheet.mergeCells('I2:L2');
+        const eqText = (tech.equipmentName || 'Sonómetro') +
+            (tech.equipmentModel ? ` (${tech.equipmentModel})` : '') +
+            (tech.equipmentSerial ? ` - S/N: ${tech.equipmentSerial}` : '');
+        sheet.getCell('I2').value = `EQUIPO: ${eqText}`;
+        sheet.getCell('I2').font = { name: 'Arial', size: 9.5, bold: true, color: { argb: 'FF0F172A' } };
+        sheet.getCell('I2').fill = grayHeaderFill;
+        sheet.getCell('I2').alignment = { vertical: 'middle', indent: 1 };
+
+        sheet.mergeCells('M2:P2');
+        const techStaff = tech.registeredByHeader || window.REGISTERED_BY_HEADER ||
+            (window.METRIC_RUIDO_OCUPACIONAL_CONFIG ? window.METRIC_RUIDO_OCUPACIONAL_CONFIG.registeredByHeader : '') || 'Técnico de Campo';
+        sheet.getCell('M2').value = `TÉCNICO: ${techStaff}`;
+        sheet.getCell('M2').font = { name: 'Arial', size: 9.5, bold: true, color: { argb: 'FF0F172A' } };
+        sheet.getCell('M2').fill = grayHeaderFill;
+        sheet.getCell('M2').alignment = { vertical: 'middle', indent: 1 };
+        sheet.getRow(2).height = 24;
+
+        // Fila 3: Espaciador
+        sheet.getRow(3).height = 8;
+
+        // Fila 4: Encabezados de Columnas
+        const headers = [
+            'N°', 'FECHA', 'HORA', 'ÁREA / SECTOR', 'PUESTO / PUNTO',
+            'ACTIVIDAD', 'TIPO RUIDO', 'TPE (h)', 'POND.', 'RESP.', 'LEQ (dBA)',
+            'TMPE (h)', 'DOSIS (%)', 'EVALUACIÓN NTS-002/17', 'REGISTRADO POR', 'OBSERVACIONES'
+        ];
+
+        const headerRow = sheet.addRow(headers);
+        headerRow.height = 26;
+        headerRow.eachCell((cell) => {
+            cell.fill = lightBlueFill;
+            cell.font = { name: 'Arial', bold: true, color: { argb: 'FF0F172A' }, size: 9.5 };
+            cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+            cell.border = {
+                top: { style: 'thin', color: { argb: 'FF94A3B8' } },
+                bottom: { style: 'medium', color: { argb: 'FF0284C7' } },
+                left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+                right: { style: 'thin', color: { argb: 'FFCBD5E1' } }
+            };
+        });
+
+        // Obtener mediciones
+        let measurements = window.ALL_MEASUREMENTS_DATA;
+        if (!measurements || !Array.isArray(measurements) || measurements.length === 0) {
+            if (window.METRIC_RUIDO_OCUPACIONAL_CONFIG && Array.isArray(window.METRIC_RUIDO_OCUPACIONAL_CONFIG.measurements)) {
+                measurements = window.METRIC_RUIDO_OCUPACIONAL_CONFIG.measurements;
+            } else if (typeof ALL_MEASUREMENTS_DATA !== 'undefined' && Array.isArray(ALL_MEASUREMENTS_DATA)) {
+                measurements = ALL_MEASUREMENTS_DATA;
+            } else {
+                measurements = [];
+            }
+        }
+
+        measurements.forEach((m, idx) => {
+            const num = m.num || m.point_number || (idx + 1);
+            const date = m.date || m.date_formatted || m.raw_date || '—';
+            const time = m.time || m.raw_time || '—';
+            const area = m.area || '—';
+            const puesto = m.punto_medicion || m.workstation || '—';
+            const actividad = m.actividad || '—';
+            const tipoRuido = m.tipo_ruido || 'Continuo';
+            const tpe = (m.tiempo_expos_h !== null && m.tiempo_expos_h !== undefined && m.tiempo_expos_h !== '')
+                ? Number(m.tiempo_expos_h)
+                : 8.0;
+            const pond = m.ponderacion || 'A';
+            const resp = m.respuesta || 'Lenta';
+            const leq = (m.leq_t_db !== null && m.leq_t_db !== undefined && m.leq_t_db !== '')
+                ? Number(m.leq_t_db)
+                : null;
+            const tmpe = (m.tmpe !== null && m.tmpe !== undefined && m.tmpe !== '')
+                ? Number(m.tmpe)
+                : (leq !== null ? (8 / Math.pow(2, (leq - 85) / 3)) : null);
+            const dosis = (m.dosis !== null && m.dosis !== undefined && m.dosis !== '')
+                ? (Number(m.dosis) * 100)
+                : (tmpe !== null && tmpe > 0 ? ((tpe / tmpe) * 100) : null);
+            const cumple = (leq !== null && leq <= 85.0);
+            const evalText = leq !== null ? (cumple ? 'CUMPLE LMP' : 'SUPERA LMP') : '—';
+            const staff = m.registered_by || '—';
+            const obs = m.observations || '—';
+
+            const row = sheet.addRow([
+                num, date, time, area, puesto,
+                actividad, tipoRuido, tpe.toFixed(2), pond, resp,
+                leq !== null ? Number(leq.toFixed(1)) : '—',
+                tmpe !== null ? Number(tmpe.toFixed(2)) : '—',
+                dosis !== null ? `${dosis.toFixed(1)}%` : '—',
+                evalText, staff, obs
+            ]);
+
+            row.height = 20;
+            row.alignment = { vertical: 'middle' };
+            row.font = { name: 'Arial', size: 9 };
+
+            // Alineaciones
+            row.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+            row.getCell(2).alignment = { horizontal: 'center', vertical: 'middle' };
+            row.getCell(3).alignment = { horizontal: 'center', vertical: 'middle' };
+            row.getCell(7).alignment = { horizontal: 'center', vertical: 'middle' };
+            row.getCell(8).alignment = { horizontal: 'center', vertical: 'middle' };
+            row.getCell(9).alignment = { horizontal: 'center', vertical: 'middle' };
+            row.getCell(10).alignment = { horizontal: 'center', vertical: 'middle' };
+            row.getCell(11).alignment = { horizontal: 'right', vertical: 'middle' };
+            row.getCell(12).alignment = { horizontal: 'right', vertical: 'middle' };
+            row.getCell(13).alignment = { horizontal: 'right', vertical: 'middle' };
+            row.getCell(14).alignment = { horizontal: 'center', vertical: 'middle' };
+
+            // Colorear celda de evaluación
+            const evalCell = row.getCell(14);
+            if (leq !== null) {
+                if (cumple) {
+                    evalCell.font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF065F46' } };
+                    evalCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
+                } else {
+                    evalCell.font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF991B1B' } };
+                    evalCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
+                }
+            }
+
+            row.eachCell((cell) => {
+                cell.border = {
+                    top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+                    bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+                    left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+                    right: { style: 'thin', color: { argb: 'FFE2E8F0' } }
+                };
+            });
+        });
+
+        // Configurar anchos óptimos de columnas
+        const colWidths = [
+            7,   // A: N°
+            13,  // B: FECHA
+            10,  // C: HORA
+            24,  // D: ÁREA / SECTOR
+            24,  // E: PUESTO / PUNTO
+            20,  // F: ACTIVIDAD
+            15,  // G: TIPO RUIDO
+            11,  // H: TPE (h)
+            9,   // I: POND.
+            11,  // J: RESP.
+            13,  // K: LEQ (dBA)
+            13,  // L: TMPE (h)
+            13,  // M: DOSIS (%)
+            22,  // N: EVALUACIÓN NTS-002/17
+            24,  // O: REGISTRADO POR
+            32   // P: OBSERVACIONES
+        ];
+
+        colWidths.forEach((width, i) => {
+            sheet.getColumn(i + 1).width = width;
+        });
+
+        // Generar archivo y descargar
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const instClean = (tech.installationName || 'Monitoreo').trim().replace(/[^a-zA-Z0-9_\-]/g, '_').substring(0, 25);
+        a.download = `Planilla_Ruido_Ocupacional_${instClean}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        closeExportModal();
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '¡Descarga Exitosa!',
+                text: 'La planilla técnica oficial en Excel se ha generado correctamente.',
+                icon: 'success',
+                timer: 3000,
+                timerProgressBar: true,
+                confirmButtonText: 'Aceptar',
+                buttonsStyling: false,
+                customClass: { popup: 'metric-swal-popup', confirmButton: 'metric-swal-btn-confirm' }
+            });
+        }
+    } catch (err) {
+        console.error('[Ruido Ocupacional] Error exportando Excel:', err);
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Error al exportar',
+                text: 'No se pudo generar la planilla Excel: ' + (err.message || 'Error desconocido'),
+                icon: 'error',
+                confirmButtonText: 'Aceptar',
+                buttonsStyling: false,
+                customClass: { popup: 'metric-swal-popup', confirmButton: 'metric-swal-btn-danger' }
+            });
+        } else {
+            alert('Error al exportar Excel: ' + err.message);
+        }
+    }
+}
+window.downloadRuidoOcupacionalExcel = downloadRuidoOcupacionalExcel;
+window.downloadExcelPlanilla = downloadRuidoOcupacionalExcel;
+window.exportRuidoOcupacionalExcel = downloadRuidoOcupacionalExcel;
+
 window.openruidoOcupacionalTablesModal = function () {
     const m = document.getElementById('ruidoOcupacionalTablesModal');
     if (m) m.classList.add('open');
